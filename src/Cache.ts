@@ -1,10 +1,7 @@
-import { CustomConfig } from './types';
-
 type KeyHandler<K> = (k: K) => string;
 
 export default class Cache<K, V> {
   private readonly cache = new Map<string, { value: V; expires: number }>();
-
   private readonly keyHandler: KeyHandler<K>;
 
   constructor(keyHandler?: KeyHandler<K>) {
@@ -31,10 +28,7 @@ export default class Cache<K, V> {
     return v.value;
   }
 
-  set(key: K, value: V, customConfig: CustomConfig = {}) {
-    const defaultTimeout = 5 * 1000;
-    const timeout =
-      typeof customConfig.useCache === 'object' ? customConfig.useCache?.timeout : defaultTimeout;
+  set(key: K, value: V, { timeout = 5 * 1000 }: { timeout?: number } = {}) {
     this.cache.set(this.keyHandler(key), { value, expires: timeout + Date.now() });
     this.clearDeadCache();
   }
