@@ -12,7 +12,10 @@
   "scripts": {
     "test": "jest",
     "cov": "jest --coverage",
-    "build": "tsc --build tsconfig.build.json"
+    "compile": "tsc --build tsconfig.build.json",
+    "babel": "babel dist --out-dir dist",
+    "build": "run-p compile babel",
+    "type-check": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -38,6 +41,11 @@
     "jest": "^27.5.1",
     "prettier": "^2.6.2",
     "ts-jest": "^27.1.4",
-    "typescript": "^4.6.3"
+    "tslib": "^2.3.1",
+    "typescript": "^4.6.3",
+    "@babel/core": "^7.17.9",
+    "babel-plugin-transform-remove-console": "^6.9.4",
+    "@babel/cli": "^7.17.6",
+    "npm-run-all": "^4.1.5"
   }
 }
