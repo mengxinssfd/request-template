@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "es2017",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "types",
+    "sourceMap": false
+  },
+  "include": ["src"]
+}
