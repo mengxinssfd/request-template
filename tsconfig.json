@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    // "outDir": "lib-es",
+    // "module": "commonjs",
+    // "target": "es5",
+    "lib": ["esnext", "dom"],
+    "target": "esnext",
+    "sourceMap": true,
+    // jest webstorm debugger和报错信息显示必须开启sourcemap
+    "allowJs": true,
+    // "jsx": "react",
+    "moduleResolution": "node",
+    // "removeComments": true,
+    "declaration": true,
+    //    "rootDir": "src",
+    "forceConsistentCasingInFileNames": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": false,
+    "noImplicitAny": false,
+    "importHelpers": true,
+    "strictNullChecks": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "noUnusedLocals": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "incremental": true // 增量编译tsc，除第一次编译全部之外，其余时候只编译有改动部分，但不会删除掉改名前的文件和d.ts
+    // "allowSyntheticDefaultImports": true,
+  },
+  "include": ["src", "__test__"]
+}
