@@ -1,5 +1,11 @@
 import type { ResType, CustomConfig } from './types';
-import axios, { AxiosInstance, AxiosPromise, AxiosRequestConfig, AxiosResponse, Method } from "axios";
+import axios, {
+  AxiosInstance,
+  AxiosPromise,
+  AxiosRequestConfig,
+  AxiosResponse,
+  Method,
+} from 'axios';
 import Qs from 'qs';
 import Cache from './Cache';
 
@@ -58,14 +64,13 @@ export default class AxiosWrapper {
     customConfig: CustomConfig<boolean>,
   ): Promise<ResType<T>> {
     const code = data.code ?? 'default';
-    const handlers = customConfig.statusHandlers;
-    const defaultHandlers = this.customConfig.statusHandlers || {
+    const handlers = {
       default: (res, data, customConfig) => Promise.reject(customConfig.returnRes ? res : data),
+      ...this.customConfig.statusHandlers,
+      ...customConfig.statusHandlers,
     };
-    const statusHandler =
-      (handlers && (handlers[code] || handlers.default)) ||
-      defaultHandlers[code] ||
-      defaultHandlers.default;
+
+    const statusHandler = handlers[code] || handlers.default;
     return statusHandler(res, data, customConfig as CustomConfig);
   }
 
@@ -118,13 +123,14 @@ export default class AxiosWrapper {
       // 错误处理
       const response: AxiosResponse<ResType<any>> = e.response;
       const data = this.transferRes<T>(response);
-      if (data && data.msg) {
+      if (data && data.code !== undefined) {
         return this.handleResponse<T>(response, data, customConfig);
       }
+      throw e;
     }
   }
 
-  protected static methodFactory(method: Method, ins: AxiosWrapper) {
+  static methodFactory(method: Method, ins: AxiosWrapper) {
     return function <T = never, RC extends boolean = false>(
       url: string,
       data = {},
