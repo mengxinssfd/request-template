@@ -1,6 +1,5 @@
 // 主域名请求
-import { StatusHandlers } from '../src/types';
-import AxiosWrapper from '../src';
+import { StatusHandlers, AxiosWrapper } from '../src';
 
 const statusHandlers: StatusHandlers = {
   200: (res, data, customConfig) => {
