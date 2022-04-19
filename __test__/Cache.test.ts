@@ -50,4 +50,15 @@ describe('Cache', () => {
     expect(cache.get(key)).toEqual(null);
     expect(cache.has(key)).toBeFalsy();
   });
+  test('遍历删除过期缓存', async () => {
+    const cache = new Cache<object, object>();
+    const key = { a: 123 };
+    cache.set(key, { a: 123 }, { timeout: 200 });
+
+    await sleep(300);
+
+    cache.set({ b: 123 }, { b: 222 }, { timeout: 200 });
+    expect(cache.get(key)).toEqual(null);
+    expect(cache.get({ b: 123 })).toEqual({ b: 222 });
+  });
 });

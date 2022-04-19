@@ -13,7 +13,7 @@ import Cache from './Cache';
 export default class AxiosWrapper {
   private readonly axios: AxiosInstance;
   private readonly cache: Cache<AxiosRequestConfig, AxiosPromise>;
-  constructor(config: AxiosRequestConfig = {}, private customConfig: CustomConfig<boolean>) {
+  constructor(config: AxiosRequestConfig = {}, private customConfig: CustomConfig<boolean> = {}) {
     // 1、保存基础配置
     this.axios = axios.create(config);
     this.setInterceptors();
@@ -63,7 +63,7 @@ export default class AxiosWrapper {
     data: ResType<any>,
     customConfig: CustomConfig<boolean>,
   ): Promise<ResType<T>> {
-    const code = data.code ?? 'default';
+    const code = data?.code ?? 'default';
     const handlers = {
       default: (res, data, customConfig) => Promise.reject(customConfig.returnRes ? res : data),
       ...this.customConfig.statusHandlers,
@@ -74,7 +74,7 @@ export default class AxiosWrapper {
     return statusHandler(res, data, customConfig as CustomConfig);
   }
 
-  private _request(customConfig: CustomConfig = {}, axiosConfig: AxiosRequestConfig = {}) {
+  private _request(customConfig: CustomConfig, axiosConfig: AxiosRequestConfig) {
     if (customConfig.useCache) {
       const c = this.cache.get(axiosConfig);
       if (c) {
@@ -85,11 +85,7 @@ export default class AxiosWrapper {
 
     const useCache = customConfig.useCache;
     if (useCache) {
-      this.cache.set(
-        axiosConfig,
-        res,
-        useCache === true ? undefined : { timeout: useCache.timeout },
-      );
+      this.cache.set(axiosConfig, res, typeof useCache === 'object' ? useCache : undefined);
     }
 
     return res;
@@ -98,7 +94,7 @@ export default class AxiosWrapper {
   request<T = never>(url: string, data?: {}): Promise<ResType<T>>;
   request<T = never, RC extends boolean = false>(
     url: string,
-    data: {},
+    data?: {},
     customConfig?: CustomConfig<RC>,
     axiosConfig?: AxiosRequestConfig,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
@@ -133,9 +129,9 @@ export default class AxiosWrapper {
   static methodFactory(method: Method, ins: AxiosWrapper) {
     return function <T = never, RC extends boolean = false>(
       url: string,
-      data = {},
-      customConfig: CustomConfig<RC> = {},
-      axiosConfig: AxiosRequestConfig = {},
+      data?: {},
+      customConfig?: CustomConfig<RC>,
+      axiosConfig?: AxiosRequestConfig,
     ) {
       return ins.request<T, RC>(url, data, customConfig, { ...axiosConfig, method });
     };

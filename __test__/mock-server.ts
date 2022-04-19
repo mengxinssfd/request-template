@@ -5,8 +5,11 @@ function buildRes(res: { code: number; data?: any; msg: string }) {
 }
 
 export const routers = {
-  '/user'() {
-    return buildRes({ code: 200, data: { username: 'test', id: 1 }, msg: 'success' });
+  '/user'(data: any, method: string) {
+    if (method === 'post') {
+      return buildRes({ code: 200, data: { username: 'post', id: 2 }, msg: 'success' });
+    }
+    return buildRes({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
   },
   '/login'(data: string) {
     const d: any = Qs.parse(data);
@@ -20,5 +23,8 @@ export const routers = {
       return Promise.reject({ status: 404, response: { data: { code: 200 } } });
     }
     return Promise.reject('404');
+  },
+  '/nocode'() {
+    return Promise.resolve({ status: 200, data: '1' });
   },
 };
