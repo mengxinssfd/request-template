@@ -1,12 +1,12 @@
 {
-  "name": "axios-wrapper",
+  "name": "@mxssfd/axios-wrapper",
   "version": "0.0.1",
   "description": "axios封装类库",
   "main": "dist/index.js",
   "typings": "./types/",
   "sideEffects": false,
   "files": [
-    "dist/*",
+    "dist/*.js",
     "types/*"
   ],
   "scripts": {
