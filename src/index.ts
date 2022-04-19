@@ -1,13 +1,19 @@
 import type { ResType, CustomConfig } from './types';
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, Method } from 'axios';
+import axios, {
+  AxiosInstance,
+  AxiosPromise,
+  AxiosRequestConfig,
+  AxiosResponse,
+  Method,
+} from 'axios';
 import Qs from 'qs';
 import Cache from './Cache';
 
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
 export default class AxiosWrapper {
   private readonly axios: AxiosInstance;
-  private readonly cache: Cache<AxiosRequestConfig, Promise<any>>;
-  constructor(config: AxiosRequestConfig = {}, private customConfig: CustomConfig<boolean>) {
+  private readonly cache: Cache<AxiosRequestConfig, AxiosPromise>;
+  constructor(config: AxiosRequestConfig = {}, private customConfig: CustomConfig<boolean> = {}) {
     // 1、保存基础配置
     this.axios = axios.create(config);
     this.setInterceptors();
@@ -21,7 +27,7 @@ export default class AxiosWrapper {
   }
   // 转换数据结构为ResType
   protected transferRes<T>(res: AxiosResponse): ResType<T> {
-    return res.data as ResType;
+    return res?.data as ResType;
   }
   // 获取拦截器
   protected get interceptors() {
@@ -57,17 +63,18 @@ export default class AxiosWrapper {
     data: ResType<any>,
     customConfig: CustomConfig<boolean>,
   ): Promise<ResType<T>> {
-    const code = data.code ?? 'default';
-    const handlers = customConfig.statusHandlers;
-    const defaultHandlers = this.customConfig.statusHandlers || { default: (res) => res.data };
-    const statusHandler =
-      (handlers && (handlers[code] || handlers.default)) ||
-      defaultHandlers[code] ||
-      defaultHandlers.default;
+    const code = data?.code ?? 'default';
+    const handlers = {
+      default: (res, data, customConfig) => Promise.reject(customConfig.returnRes ? res : data),
+      ...this.customConfig.statusHandlers,
+      ...customConfig.statusHandlers,
+    };
+
+    const statusHandler = handlers[code] || handlers.default;
     return statusHandler(res, data, customConfig as CustomConfig);
   }
 
-  private _request(customConfig: CustomConfig = {}, axiosConfig: AxiosRequestConfig = {}) {
+  private _request(customConfig: CustomConfig, axiosConfig: AxiosRequestConfig) {
     if (customConfig.useCache) {
       const c = this.cache.get(axiosConfig);
       if (c) {
@@ -76,8 +83,9 @@ export default class AxiosWrapper {
     }
     const res = this.axios(axiosConfig);
 
-    if (customConfig.useCache) {
-      this.cache.set(axiosConfig, res, customConfig);
+    const useCache = customConfig.useCache;
+    if (useCache) {
+      this.cache.set(axiosConfig, res, typeof useCache === 'object' ? useCache : undefined);
     }
 
     return res;
@@ -86,7 +94,7 @@ export default class AxiosWrapper {
   request<T = never>(url: string, data?: {}): Promise<ResType<T>>;
   request<T = never, RC extends boolean = false>(
     url: string,
-    data: {},
+    data?: {},
     customConfig?: CustomConfig<RC>,
     axiosConfig?: AxiosRequestConfig,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
@@ -111,18 +119,19 @@ export default class AxiosWrapper {
       // 错误处理
       const response: AxiosResponse<ResType<any>> = e.response;
       const data = this.transferRes<T>(response);
-      if (data && data.msg) {
+      if (data && data.code !== undefined) {
         return this.handleResponse<T>(response, data, customConfig);
       }
+      throw e;
     }
   }
 
-  protected static methodFactory(method: Method, ins: AxiosWrapper) {
+  static methodFactory(method: Method, ins: AxiosWrapper) {
     return function <T = never, RC extends boolean = false>(
       url: string,
-      data: {},
-      customConfig: CustomConfig<RC> = {},
-      axiosConfig: AxiosRequestConfig = {},
+      data?: {},
+      customConfig?: CustomConfig<RC>,
+      axiosConfig?: AxiosRequestConfig,
     ) {
       return ins.request<T, RC>(url, data, customConfig, { ...axiosConfig, method });
     };
