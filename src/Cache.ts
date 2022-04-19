@@ -1,6 +1,6 @@
 type KeyHandler<K> = (k: K) => string;
 
-export default class Cache<K, V> {
+export class Cache<K, V> {
   private readonly cache = new Map<string, { value: V; expires: number }>();
   private readonly keyHandler: KeyHandler<K>;
 
