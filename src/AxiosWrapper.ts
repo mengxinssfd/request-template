@@ -5,6 +5,8 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
   Method,
+  Canceler,
+  CancelToken,
 } from 'axios';
 import Qs from 'qs';
 import { Cache } from './Cache';
@@ -21,6 +23,10 @@ export class AxiosWrapper<CC extends CustomConfig<boolean> = CustomConfig<boolea
   protected readonly axiosIns: AxiosInstance;
   // 子类不可访问缓存
   private readonly cache: Cache<AxiosRequestConfig, AxiosPromise>;
+
+  private readonly cancelerMap = new Map<CancelToken, Canceler>();
+
+  cancelCurrentRequest!: Canceler;
 
   constructor(config: AxiosRequestConfig = {}, private customConfig = {} as CC) {
     // 1、保存基础配置
@@ -59,7 +65,16 @@ export class AxiosWrapper<CC extends CustomConfig<boolean> = CustomConfig<boolea
   }
   // 处理axiosRequestConfig
   protected handleAxiosRequestConfig(url: string, config: AxiosRequestConfig): AxiosRequestConfig {
-    const finalConfig: AxiosRequestConfig = { ...config, url };
+    // 缓存取消函数
+    const { cancel, token } = axios.CancelToken.source();
+    this.cancelerMap.set(token, cancel);
+    this.cancelCurrentRequest = (msg) => {
+      cancel(msg);
+      // 请求成功后去除取消函数
+      this.cancelerMap.delete(token);
+    };
+
+    const finalConfig: AxiosRequestConfig = { ...config, url, cancelToken: token };
     finalConfig.method = finalConfig.method || 'get';
     return finalConfig;
   }
@@ -99,16 +114,18 @@ export class AxiosWrapper<CC extends CustomConfig<boolean> = CustomConfig<boolea
   }
 
   // 请求，子类不可更改
-  private _request(axiosConfig: AxiosRequestConfig, customConfig: CC) {
-    if (customConfig.useCache) {
+  private async _request(axiosConfig: AxiosRequestConfig, customConfig: CC) {
+    // 使用缓存
+    const useCache = customConfig.useCache;
+    if (useCache) {
       const c = this.cache.get(axiosConfig);
-      if (c) {
-        return c;
-      }
+      if (c) return c;
     }
+
+    // 请求
     const res = this.axiosIns(axiosConfig);
 
-    const useCache = customConfig.useCache;
+    // 缓存
     if (useCache) {
       this.cache.set(axiosConfig, res, typeof useCache === 'object' ? useCache : undefined);
     }
@@ -138,11 +155,15 @@ export class AxiosWrapper<CC extends CustomConfig<boolean> = CustomConfig<boolea
     try {
       // 3、请求
       const response: AxiosResponse = await this._request(axiosConfig, customConfig);
+      // 移除cancel
+      this.cancelCurrentRequest();
       // 4、请求结果数据结构处理
       const data = this.transformRes<T>(axiosConfig, customConfig, response);
       // 5、状态码处理，并返回结果
       return this.handleResponse<T>(response, data, customConfig);
     } catch (e: any) {
+      // 移除cancel
+      this.cancelCurrentRequest();
       // 错误处理
       const response: AxiosResponse<ResType<any>> = e.response;
       const data = this.transformRes<T>(axiosConfig, customConfig, response);
@@ -154,8 +175,11 @@ export class AxiosWrapper<CC extends CustomConfig<boolean> = CustomConfig<boolea
     }
   }
 
-  // todo 取消请求
-  // cancelAllPending() {}
+  // 取消请求
+  cancelAll(msg?: string) {
+    this.cancelerMap.forEach((canceler) => canceler(msg));
+    this.cancelerMap.clear();
+  }
 
   // 简单工厂：生成get post delete等method
   methodFactory(method: Method) {

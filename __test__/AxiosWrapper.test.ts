@@ -3,12 +3,25 @@ import { routers } from './mock-server';
 import { StatusHandlers, AxiosWrapper, CustomConfig } from '../src';
 
 jest.mock('axios');
+const map = new Map<string, Function>();
 const mockCreate = (/*config: AxiosRequestConfig*/) => {
   // console.log(config);
-  return function ({ url, data, params, method }) {
-    return (routers[url] || routers['404'])(data || params, method);
+  return function ({ url, data, params, method, cancelToken }) {
+    return new Promise((res, rej) => {
+      map.set(cancelToken, rej);
+      (routers[url] || routers['404'])(data || params, method).then(res, rej);
+    });
   };
 };
+(axios.CancelToken.source as any).mockImplementation(() => {
+  const token = Math.floor(Math.random() * 0xffffffffff).toString(16);
+  return {
+    token,
+    cancel(msg?: string) {
+      map.get(token)?.(msg);
+    },
+  };
+});
 
 (axios as any).create.mockImplementation(mockCreate);
 
@@ -153,5 +166,37 @@ describe('AxiosWrapper', () => {
       status: 200,
       data: { code: 200, data: { username: 'get', id: 1 }, msg: 'success' },
     });
+  });
+  test('cancel all', async () => {
+    const req = new AxiosWrapper<CustomConfig<true>>();
+    const get = req.methodFactory('get');
+    const reqList = [get('/user'), get('/user'), get('/user')];
+    req.cancelAll('test');
+
+    const res = await Promise.allSettled(reqList);
+
+    expect(res).toEqual([
+      { status: 'rejected', reason: 'test' },
+      { status: 'rejected', reason: 'test' },
+      { status: 'rejected', reason: 'test' },
+    ]);
+  });
+  test('cancel current', async () => {
+    const req = new AxiosWrapper<CustomConfig<true>>();
+    const get = req.methodFactory('get');
+    const res1 = get('/user');
+    req.cancelCurrentRequest('cancel1');
+    const res2 = get('/user');
+    req.cancelCurrentRequest('cancel2');
+    const res3 = get('/user');
+    req.cancelCurrentRequest('cancel3');
+
+    const res = await Promise.allSettled([res1, res2, res3]);
+
+    expect(res).toEqual([
+      { status: 'rejected', reason: 'cancel1' },
+      { status: 'rejected', reason: 'cancel2' },
+      { status: 'rejected', reason: 'cancel3' },
+    ]);
   });
 });

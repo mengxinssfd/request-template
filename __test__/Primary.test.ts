@@ -1,30 +1,5 @@
-import axios, { AxiosRequestConfig } from 'axios';
-import { routers } from './mock-server';
-
-jest.mock('axios');
-const mockCreate = (config: AxiosRequestConfig) => {
-  type InterceptorCB = (config: AxiosRequestConfig) => AxiosRequestConfig | void;
-  const interceptors = {
-    request: [] as InterceptorCB[],
-  };
-  function AxiosIns({ url, data, params }) {
-    const cfg = interceptors.request.reduce((prev, cur) => {
-      return cur(config) || config;
-    }, config);
-    if (cfg) Object.assign(config, cfg);
-    return (routers[url] || routers['404'])(data || params);
-  }
-  AxiosIns.interceptors = {
-    request: {
-      use: (cb: InterceptorCB) => {
-        interceptors.request.push(cb);
-      },
-    },
-  };
-  return AxiosIns;
-};
-
-(axios as any).create.mockImplementation(mockCreate);
+import { useMockAxios, routers } from './mock-server';
+useMockAxios(routers);
 import Primary from './Primary';
 
 describe('Primary', () => {

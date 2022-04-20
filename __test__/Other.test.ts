@@ -1,35 +1,12 @@
-import axios, { AxiosRequestConfig } from 'axios';
-import { routers as r } from './mock-server';
+import { routers as r, useMockAxios } from './mock-server';
 const routers = {
   ...r,
   '/create': () => {
     return Promise.resolve({ status: 200, data: { code: 500, msg: 111 } });
   },
 };
-jest.mock('axios');
-const mockCreate = (config: AxiosRequestConfig) => {
-  type InterceptorCB = (config: AxiosRequestConfig) => AxiosRequestConfig | void;
-  const interceptors = {
-    request: [] as InterceptorCB[],
-  };
-  function AxiosIns({ url, data, params }) {
-    const cfg = interceptors.request.reduce((prev, cur) => {
-      return cur(config) || config;
-    }, config);
-    if (cfg) Object.assign(config, cfg);
-    return (routers[url] || routers['404'])(data || params);
-  }
-  AxiosIns.interceptors = {
-    request: {
-      use: (cb: InterceptorCB) => {
-        interceptors.request.push(cb);
-      },
-    },
-  };
-  return AxiosIns;
-};
+useMockAxios(routers);
 
-(axios as any).create.mockImplementation(mockCreate);
 import Other from './Other';
 
 describe('Other', () => {
