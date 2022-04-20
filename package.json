@@ -1,6 +1,6 @@
 {
   "name": "@mxssfd/axios-wrapper",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "axios封装类库",
   "main": "dist/index.js",
   "typings": "./types/",
@@ -14,10 +14,10 @@
     "cov": "jest --coverage",
     "compile": "tsc --build tsconfig.build.json",
     "babel": "babel dist --out-dir dist",
-    "build": "run-p compile babel",
+    "build-b": "run-p compile babel pub",
+    "build": "run-p compile pub",
     "type-check": "tsc --noEmit",
-    "pub": "npm publish",
-    "publish": "run-p compile pub"
+    "pub": "npm publish"
   },
   "repository": {
     "type": "git",
