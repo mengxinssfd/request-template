@@ -31,7 +31,7 @@ describe('Primary', () => {
   const { get, post } = Primary;
 
   test('base', async () => {
-    const res = await get<{ username: string; id: number }>('/user');
+    const res = await get<{ username: string; id: number }, true>('/user');
     expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
 
     const res2 = await get<{ username: string; id: number }, true>(

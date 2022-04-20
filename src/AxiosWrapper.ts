@@ -9,11 +9,17 @@ import axios, {
 import Qs from 'qs';
 import { Cache } from './Cache';
 
+type DynamicCustomConfig<CC extends CustomConfig<boolean>, RC extends boolean> = Omit<
+  CC,
+  'returnRes'
+> &
+  (RC extends false ? { returnRes?: RC } : { returnRes: true });
+
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
-export class AxiosWrapper {
+export class AxiosWrapper<CC extends CustomConfig<boolean> = CustomConfig<boolean>> {
   private readonly axios: AxiosInstance;
   private readonly cache: Cache<AxiosRequestConfig, AxiosPromise>;
-  constructor(config: AxiosRequestConfig = {}, private customConfig: CustomConfig<boolean> = {}) {
+  constructor(config: AxiosRequestConfig = {}, private customConfig = {} as CC) {
     // 1、保存基础配置
     this.axios = axios.create(config);
     this.setInterceptors();
@@ -45,6 +51,9 @@ export class AxiosWrapper {
     finalConfig.method = finalConfig.method || 'get';
     return finalConfig;
   }
+  protected handleCustomConfig(config: CC) {
+    return { ...this.customConfig, ...config };
+  }
   protected handleParams(data: {}, config: AxiosRequestConfig) {
     if (config.method === 'get') {
       config.params = data;
@@ -61,7 +70,7 @@ export class AxiosWrapper {
   protected handleResponse<T>(
     res: AxiosResponse<ResType<any>>,
     data: ResType<any>,
-    customConfig: CustomConfig<boolean>,
+    customConfig: CC,
   ): Promise<ResType<T>> {
     const code = data?.code ?? 'default';
     const handlers = {
@@ -74,7 +83,7 @@ export class AxiosWrapper {
     return statusHandler(res, data, customConfig as CustomConfig);
   }
 
-  private _request(customConfig: CustomConfig, axiosConfig: AxiosRequestConfig) {
+  private _request(customConfig: CC, axiosConfig: AxiosRequestConfig) {
     if (customConfig.useCache) {
       const c = this.cache.get(axiosConfig);
       if (c) {
@@ -95,17 +104,18 @@ export class AxiosWrapper {
   request<T = never, RC extends boolean = false>(
     url: string,
     data?: {},
-    customConfig?: CustomConfig<RC>,
+    customConfig?: DynamicCustomConfig<CC, RC>,
     axiosConfig?: AxiosRequestConfig,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
   async request<T>(
     url: string,
     data: {} = {},
-    customConfig: CustomConfig = {},
+    customConfig = {} as any,
     axiosConfig: AxiosRequestConfig = {},
   ): Promise<any> {
     // 1、处理配置
     const config = this.handleConfig(url, axiosConfig);
+    customConfig = this.handleCustomConfig(customConfig);
     // 2、处理参数
     this.handleParams(data, config);
     try {
@@ -126,14 +136,12 @@ export class AxiosWrapper {
     }
   }
 
-  static methodFactory(method: Method, ins: AxiosWrapper) {
-    return function <T = never, RC extends boolean = false>(
+  methodFactory(method: Method) {
+    return <T = never, RC extends boolean = false>(
       url: string,
       data?: {},
-      customConfig?: CustomConfig<RC>,
+      customConfig?: DynamicCustomConfig<CC, RC>,
       axiosConfig?: AxiosRequestConfig,
-    ) {
-      return ins.request<T, RC>(url, data, customConfig, { ...axiosConfig, method });
-    };
+    ) => this.request<T, RC>(url, data, customConfig, { ...axiosConfig, method });
   }
 }

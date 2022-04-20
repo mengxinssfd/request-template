@@ -1,6 +1,6 @@
 {
   "name": "@mxssfd/axios-wrapper",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "description": "axios封装类库",
   "main": "dist/index.js",
   "typings": "./types/",

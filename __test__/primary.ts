@@ -8,8 +8,8 @@ const statusHandlers: StatusHandlers = {
 };
 export default class Primary extends AxiosWrapper {
   static readonly ins = new Primary();
-  static readonly get = AxiosWrapper.methodFactory('get', Primary.ins);
-  static readonly post = AxiosWrapper.methodFactory('post', Primary.ins);
+  static readonly get = Primary.ins.methodFactory('get');
+  static readonly post = Primary.ins.methodFactory('post');
 
   private constructor() {
     super({ baseURL: 'http://test.test' }, { statusHandlers });
