@@ -1,13 +1,16 @@
 import type { AxiosResponse } from 'axios';
 
-export type StatusHandler = (
+export type StatusHandler<CC extends CustomConfig> = (
   res: AxiosResponse<ResType<any>>,
   data: ResType<any>,
-  requestConfig: CustomConfig,
+  customConfig: CC,
 ) => any;
 
 // StatusHandlers
-export type StatusHandlers = Record<number, StatusHandler> & { default?: StatusHandler };
+export type StatusHandlers<CC extends CustomConfig = CustomConfig> = Record<
+  number,
+  StatusHandler<CC>
+> & { default?: StatusHandler<CC> };
 // CustomConfig
 export interface CustomConfig<T extends boolean = false> {
   returnRes?: T; // 返回res

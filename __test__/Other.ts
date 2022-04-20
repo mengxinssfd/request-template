@@ -1,15 +1,22 @@
-// 主域名请求
+// 其他域名请求
 import { StatusHandlers, AxiosWrapper } from '../src';
+import { CustomConfig } from '../types';
 
-const statusHandlers: StatusHandlers = {
+interface MyCustomConfig extends CustomConfig {
+  p1?: number;
+  p2?: string;
+}
+
+const statusHandlers: StatusHandlers<MyCustomConfig> = {
   200: (res, data, customConfig) => {
     return customConfig.returnRes ? res : data;
   },
 };
-export default class Primary extends AxiosWrapper {
-  static readonly ins = new Primary();
-  static readonly get = AxiosWrapper.methodFactory('get', Primary.ins);
-  static readonly post = AxiosWrapper.methodFactory('post', Primary.ins);
+
+export default class Other extends AxiosWrapper<MyCustomConfig> {
+  static readonly ins = new Other();
+  static readonly get = Other.ins.methodFactory('get');
+  static readonly post = Other.ins.methodFactory('post');
 
   private constructor() {
     super({ baseURL: 'http://test.test' }, { statusHandlers });

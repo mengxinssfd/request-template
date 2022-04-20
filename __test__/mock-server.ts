@@ -1,4 +1,5 @@
 import Qs from 'qs';
+import axios, { AxiosRequestConfig } from 'axios';
 
 function buildRes(res: { code: number; data?: any; msg: string }) {
   return Promise.resolve({ data: res, status: 200 });
@@ -22,9 +23,44 @@ export const routers = {
     if (d === 'returnRes=1') {
       return Promise.reject({ status: 404, response: { data: { code: 200 } } });
     }
+    if (d === 'returnRes=2') {
+      return Promise.reject({ status: 404, response: { data: { code: 300 } } });
+    }
     return Promise.reject('404');
   },
   '/nocode'() {
     return Promise.resolve({ status: 200, data: '1' });
   },
 };
+jest.mock('axios');
+export function useMockAxios(routers: any) {
+  const mockCreate = (config: AxiosRequestConfig) => {
+    type InterceptorCB = (config: AxiosRequestConfig) => AxiosRequestConfig | void;
+    const interceptors = {
+      request: [] as InterceptorCB[],
+    };
+    function AxiosIns({ url, data, params, method }) {
+      const cfg = interceptors.request.reduce((prev, cur) => {
+        return cur(config) || config;
+      }, config);
+      if (cfg) Object.assign(config, cfg);
+      return (routers[url] || routers['404'])(data || params, method);
+    }
+    AxiosIns.interceptors = {
+      request: {
+        use: (cb: InterceptorCB) => {
+          interceptors.request.push(cb);
+        },
+      },
+    };
+    return AxiosIns;
+  };
+
+  (axios as any).create.mockImplementation(mockCreate);
+  (axios.CancelToken.source as any).mockReturnValue({
+    token: '111',
+    cancel() {
+      return 0;
+    },
+  });
+}
