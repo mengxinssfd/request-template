@@ -17,6 +17,9 @@ describe('AxiosWrapper', () => {
     200: (res, data, customConfig) => {
       return customConfig.returnRes ? res : data;
     },
+    default: (res, data, customConfig) => {
+      return customConfig.returnRes ? res : data;
+    },
   };
   const req = new AxiosWrapper<CustomConfig>({ baseURL: '/' }, { statusHandlers });
   const get = req.methodFactory('get');
@@ -70,6 +73,8 @@ describe('AxiosWrapper', () => {
     }
     const res = await post('/test', { returnRes: 1 });
     expect(res).toEqual({ code: 200 });
+    const res2 = await post('/test', { returnRes: 2 });
+    expect(res2).toEqual({ code: 300 });
   });
   test('default constructor params', async () => {
     const req = new AxiosWrapper();
@@ -141,9 +146,9 @@ describe('AxiosWrapper', () => {
     }
   });
   test('global customConfig', async () => {
-    const req = new AxiosWrapper<CustomConfig<boolean>>({}, { returnRes: true, statusHandlers });
+    const req = new AxiosWrapper<CustomConfig<true>>({}, { returnRes: true, statusHandlers });
     const get = req.methodFactory('get');
-    const res = await get<{ username: string; id: number }>('/user', undefined);
+    const res = await get<{ username: string; id: number }, true>('/user', undefined);
     expect(res).toEqual({
       status: 200,
       data: { code: 200, data: { username: 'get', id: 1 }, msg: 'success' },

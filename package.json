@@ -15,7 +15,9 @@
     "compile": "tsc --build tsconfig.build.json",
     "babel": "babel dist --out-dir dist",
     "build": "run-p compile babel",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "pub": "npm publish",
+    "publish": "run-p compile pub"
   },
   "repository": {
     "type": "git",

@@ -1,6 +1,11 @@
 import axios, { AxiosRequestConfig } from 'axios';
-import { routers } from './mock-server';
-
+import { routers as r } from './mock-server';
+const routers = {
+  ...r,
+  '/create': () => {
+    return Promise.resolve({ status: 200, data: { code: 500, msg: 111 } });
+  },
+};
 jest.mock('axios');
 const mockCreate = (config: AxiosRequestConfig) => {
   type InterceptorCB = (config: AxiosRequestConfig) => AxiosRequestConfig | void;
@@ -25,21 +30,21 @@ const mockCreate = (config: AxiosRequestConfig) => {
 };
 
 (axios as any).create.mockImplementation(mockCreate);
-import Primary from './primary';
+import Other from './Other';
 
-describe('Primary', () => {
-  const { get, post } = Primary;
+describe('Other', () => {
+  const { get, post } = Other;
 
   test('base', async () => {
     const res = await get<{ username: string; id: number }, true>('/user');
     expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
 
-    const res2 = await get<{ username: string; id: number }, true>(
+    const res1 = await get<{ username: string; id: number }, true>(
       '/user',
       {},
       { returnRes: true },
     );
-    expect(res2).toEqual({
+    expect(res1).toEqual({
       status: 200,
       data: { code: 200, data: { username: 'get', id: 1 }, msg: 'success' },
     });
@@ -52,5 +57,10 @@ describe('Primary', () => {
     } catch (e) {
       expect(e).toEqual({ code: 0, msg: '账号或密码错误' });
     }
+
+    const res5 = await post('/create');
+    expect(res5).toEqual({ code: 500, msg: 111 });
+    const res6 = await post<any, true>('/create', undefined, { returnRes: true });
+    expect(res6).toEqual({ status: 200, data: { code: 500, msg: 111 } });
   });
 });
