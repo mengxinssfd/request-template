@@ -29,10 +29,10 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 转换缓存所用的key
-  protected transformCacheKey(config: AxiosRequestConfig): string {
-    const url = config.url;
-    const data = config.data || config.params;
-    const headers = config.headers;
+  protected transformCacheKey(requestConfig: AxiosRequestConfig): string {
+    const url = requestConfig.url;
+    const data = requestConfig.data || requestConfig.params;
+    const headers = requestConfig.headers;
     return JSON.stringify({ url, data, headers });
   }
 
@@ -55,8 +55,11 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     //   /* do something */
     // });
   }
-  // 处理axiosRequestConfig
-  protected handleAxiosRequestConfig(url: string, config: AxiosRequestConfig): AxiosRequestConfig {
+  // 处理requestConfig
+  protected handleRequestConfig(
+    url: string,
+    requestConfig: AxiosRequestConfig,
+  ): AxiosRequestConfig {
     // 缓存取消函数
     const { cancel, token } = axios.CancelToken.source();
     this.cancelerMap.set(token, cancel);
@@ -66,18 +69,18 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       this.cancelerMap.delete(token);
     };
 
-    const finalConfig: AxiosRequestConfig = { ...config, url, cancelToken: token };
+    const finalConfig: AxiosRequestConfig = { ...requestConfig, url, cancelToken: token };
     finalConfig.method = finalConfig.method || 'get';
     return finalConfig;
   }
   // 处理CustomConfig
-  protected handleCustomConfig(config: CC) {
-    return { ...this.globalCustomConfig, ...config };
+  protected handleCustomConfig(customConfig: CC) {
+    return { ...this.globalCustomConfig, ...customConfig };
   }
   // 处理请求的数据
-  protected handleParams(data: {}, config: AxiosRequestConfig) {
-    if (config.method === 'get') {
-      config.params = data;
+  protected handleRequestData(data: {}, requestConfig: AxiosRequestConfig) {
+    if (requestConfig.method === 'get') {
+      requestConfig.params = data;
       return;
     }
     if (!(data instanceof FormData)) {
@@ -86,11 +89,11 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       // 格式化模式有三种：indices、brackets、repeat
       data = Qs.stringify(data, { arrayFormat: 'repeat' });
     }
-    config.data = data;
+    requestConfig.data = data;
   }
   // 处理响应结果
   protected handleResponse<T>(
-    res: AxiosResponse<ResType<any>>,
+    response: AxiosResponse<ResType<any>>,
     data: ResType<any>,
     customConfig: CC,
   ): Promise<ResType<T>> {
@@ -102,10 +105,10 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
 
     const statusHandler = handlers[code] || handlers.default;
-    return statusHandler(res, data, customConfig as CustomConfig);
+    return statusHandler(response, data, customConfig as CustomConfig);
   }
 
-  // 请求，子类不可更改
+  // 请求
   protected async _request(requestConfig: AxiosRequestConfig, customConfig: CC) {
     // 使用缓存
     const useCache = customConfig.useCache;
@@ -140,10 +143,10 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     requestConfig: AxiosRequestConfig = {},
   ): Promise<any> {
     // 1、处理配置
-    requestConfig = this.handleAxiosRequestConfig(url, requestConfig);
+    requestConfig = this.handleRequestConfig(url, requestConfig);
     customConfig = this.handleCustomConfig(customConfig);
     // 2、处理参数
-    this.handleParams(data, requestConfig);
+    this.handleRequestData(data, requestConfig);
     try {
       // 3、请求
       const response: AxiosResponse = await this._request(requestConfig, customConfig);
