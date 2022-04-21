@@ -15,16 +15,14 @@ import { Cache } from './Cache';
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   // 为了提高子类的拓展性，子类可以访问并使用该实例，但如果没必要不要去访问该axios实例
   protected readonly axiosIns: AxiosInstance;
-  // 子类不可访问缓存
-  private readonly cache: Cache<AxiosRequestConfig, AxiosPromise>;
-
-  private readonly cancelerMap = new Map<CancelToken, Canceler>();
+  protected readonly cache: Cache<AxiosRequestConfig, AxiosPromise>;
+  protected readonly cancelerMap = new Map<CancelToken, Canceler>();
 
   cancelCurrentRequest!: Canceler;
 
-  constructor(config: AxiosRequestConfig = {}, private customConfig = {} as CC) {
+  constructor(globalRequestConfig: AxiosRequestConfig = {}, private globalCustomConfig = {} as CC) {
     // 1、保存基础配置
-    this.axiosIns = axios.create(config);
+    this.axiosIns = axios.create(globalRequestConfig);
     this.setInterceptors();
     // 2、缓存初始化
     this.cache = new Cache(this.transformCacheKey);
@@ -40,7 +38,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
   // 转换数据结构为ResType
   protected transformRes<T>(
-    axiosConfig: AxiosRequestConfig,
+    requestConfig: AxiosRequestConfig,
     customConfig: CC,
     response: AxiosResponse,
   ): ResType<T> {
@@ -74,7 +72,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
   // 处理CustomConfig
   protected handleCustomConfig(config: CC) {
-    return { ...this.customConfig, ...config };
+    return { ...this.globalCustomConfig, ...config };
   }
   // 处理请求的数据
   protected handleParams(data: {}, config: AxiosRequestConfig) {
@@ -99,7 +97,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     const code = data?.code ?? 'default';
     const handlers = {
       default: (res, data, customConfig) => (customConfig.returnRes ? res : data),
-      ...this.customConfig.statusHandlers,
+      ...this.globalCustomConfig.statusHandlers,
       ...customConfig.statusHandlers,
     };
 
@@ -108,20 +106,20 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 请求，子类不可更改
-  private async _request(axiosConfig: AxiosRequestConfig, customConfig: CC) {
+  protected async _request(requestConfig: AxiosRequestConfig, customConfig: CC) {
     // 使用缓存
     const useCache = customConfig.useCache;
     if (useCache) {
-      const c = this.cache.get(axiosConfig);
-      if (c) return c;
+      const cache = this.cache.get(requestConfig);
+      if (cache) return cache;
     }
 
     // 请求
-    const res = this.axiosIns(axiosConfig);
+    const res = this.axiosIns(requestConfig);
 
     // 缓存
     if (useCache) {
-      this.cache.set(axiosConfig, res, typeof useCache === 'object' ? useCache : undefined);
+      this.cache.set(requestConfig, res, typeof useCache === 'object' ? useCache : undefined);
     }
     return res;
   }
@@ -133,26 +131,26 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     url: string,
     data?: {},
     customConfig?: DynamicCustomConfig<CC, RC>,
-    axiosConfig?: AxiosRequestConfig,
+    requestConfig?: AxiosRequestConfig,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
   async request<T>(
     url: string,
     data: {} = {},
     customConfig = {} as CC,
-    axiosConfig: AxiosRequestConfig = {},
+    requestConfig: AxiosRequestConfig = {},
   ): Promise<any> {
     // 1、处理配置
-    axiosConfig = this.handleAxiosRequestConfig(url, axiosConfig);
+    requestConfig = this.handleAxiosRequestConfig(url, requestConfig);
     customConfig = this.handleCustomConfig(customConfig);
     // 2、处理参数
-    this.handleParams(data, axiosConfig);
+    this.handleParams(data, requestConfig);
     try {
       // 3、请求
-      const response: AxiosResponse = await this._request(axiosConfig, customConfig);
+      const response: AxiosResponse = await this._request(requestConfig, customConfig);
       // 移除cancel
       this.cancelCurrentRequest();
       // 4、请求结果数据结构处理
-      const data = this.transformRes<T>(axiosConfig, customConfig, response);
+      const data = this.transformRes<T>(requestConfig, customConfig, response);
       // 5、状态码处理，并返回结果
       return this.handleResponse<T>(response, data, customConfig);
     } catch (e: any) {
@@ -161,7 +159,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       // 错误处理
       const response: AxiosResponse<ResType<any>> = e.response;
       // 4、请求结果数据结构处理
-      const data = this.transformRes<T>(axiosConfig, customConfig, response);
+      const data = this.transformRes<T>(requestConfig, customConfig, response);
       if (data && data.code !== undefined) {
         // 5、状态码处理，并返回结果
         return this.handleResponse<T>(response, data, customConfig);
@@ -183,7 +181,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       url: string,
       data?: {},
       customConfig?: DynamicCustomConfig<CC, RC>,
-      axiosConfig?: AxiosRequestConfig,
-    ) => this.request<T, RC>(url, data, customConfig, { ...axiosConfig, method });
+      requestConfig?: AxiosRequestConfig,
+    ) => this.request<T, RC>(url, data, customConfig, { ...requestConfig, method });
   }
 }
