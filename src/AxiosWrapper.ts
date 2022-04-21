@@ -1,4 +1,4 @@
-import type { ResType, CustomConfig } from './types';
+import type { ResType, CustomConfig, DynamicCustomConfig } from './types';
 import axios, {
   AxiosInstance,
   AxiosPromise,
@@ -11,14 +11,8 @@ import axios, {
 import Qs from 'qs';
 import { Cache } from './Cache';
 
-type DynamicCustomConfig<CC extends CustomConfig<boolean>, RC extends boolean> = Omit<
-  CC,
-  'returnRes'
-> &
-  (RC extends false ? { returnRes?: RC } : { returnRes: true });
-
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
-export class AxiosWrapper<CC extends CustomConfig<boolean> = CustomConfig<boolean>> {
+export class AxiosWrapper<CC extends CustomConfig = CustomConfig> {
   // 为了提高子类的拓展性，子类可以访问并使用该实例，但如果没必要不要去访问该axios实例
   protected readonly axiosIns: AxiosInstance;
   // 子类不可访问缓存
@@ -166,8 +160,10 @@ export class AxiosWrapper<CC extends CustomConfig<boolean> = CustomConfig<boolea
       this.cancelCurrentRequest();
       // 错误处理
       const response: AxiosResponse<ResType<any>> = e.response;
+      // 4、请求结果数据结构处理
       const data = this.transformRes<T>(axiosConfig, customConfig, response);
       if (data && data.code !== undefined) {
+        // 5、状态码处理，并返回结果
         return this.handleResponse<T>(response, data, customConfig);
       }
       // 如未命中error处理 则再次抛出error

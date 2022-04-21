@@ -12,8 +12,8 @@ export type StatusHandlers<CC extends CustomConfig = CustomConfig> = Record<
   StatusHandler<CC>
 > & { default?: StatusHandler<CC> };
 // CustomConfig
-export interface CustomConfig<T extends boolean = false> {
-  returnRes?: T; // 返回res
+export interface CustomConfig {
+  returnRes?: boolean; // 返回res
   silent?: boolean; // 报错不弹窗
   statusHandlers?: StatusHandlers;
   useCache?: boolean | { timeout: number };
@@ -24,3 +24,9 @@ export interface ResType<T = never> {
   msg: string;
   data: T;
 }
+
+export type DynamicCustomConfig<CC extends CustomConfig, RC extends boolean> = Omit<
+  CC,
+  'returnRes'
+> &
+  (RC extends false ? { returnRes?: RC } : { returnRes: true });

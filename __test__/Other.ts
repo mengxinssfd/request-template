@@ -1,6 +1,5 @@
 // 其他域名请求
-import { StatusHandlers, AxiosWrapper } from '../src';
-import { CustomConfig } from '../types';
+import { StatusHandlers, AxiosWrapper, CustomConfig } from '../src';
 
 interface MyCustomConfig extends CustomConfig {
   p1?: number;

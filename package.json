@@ -14,10 +14,14 @@
     "cov": "jest --coverage",
     "compile": "tsc --build tsconfig.build.json",
     "babel": "babel dist --out-dir dist",
-    "build-b": "run-p compile babel pub",
-    "build": "run-p compile pub",
+    "build": "run-s compile babel pub",
     "type-check": "tsc --noEmit",
-    "pub": "npm publish"
+    "pub": "npm publish",
+    "compub": "run-s lint-check compile",
+    "eslint": "eslint",
+    "prettier-fix": "prettier src __test__ --write",
+    "prettier-check": "prettier src __test__ --check",
+    "lint-check": "run-p eslint prettier-check"
   },
   "repository": {
     "type": "git",
