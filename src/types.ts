@@ -17,6 +17,7 @@ export interface CustomConfig {
   silent?: boolean; // 报错不弹窗
   statusHandlers?: StatusHandlers;
   useCache?: boolean | { timeout: number };
+  tag?: string;
 }
 
 export interface ResType<T = never> {

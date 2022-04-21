@@ -199,4 +199,42 @@ describe('AxiosWrapper', () => {
       { status: 'rejected', reason: 'cancel3' },
     ]);
   });
+  test('cancel with tag', async () => {
+    const req = new AxiosRequestTemplate(undefined, { tag: 'cancellable' });
+    const get = req.methodFactory('get');
+    const res1 = get('/user', {}, { tag: 'irrevocable' });
+    const res2 = get('/user');
+    const res3 = get('/user');
+    req.cancelWithTag('cancellable', 'cancel with tag');
+
+    const res = await Promise.allSettled([res1, res2, res3]);
+
+    expect(res).toEqual([
+      {
+        status: 'fulfilled',
+        value: { code: 200, data: { id: 1, username: 'get' }, msg: 'success' },
+      },
+      { status: 'rejected', reason: 'cancel with tag' },
+      { status: 'rejected', reason: 'cancel with tag' },
+    ]);
+    req.cancelWithTag('default', 'cancel with tag');
+  });
+  test('mixin cancel', async () => {
+    const req = new AxiosRequestTemplate(undefined, { tag: 'cancellable' });
+    const get = req.methodFactory('get');
+    const res1 = get('/user');
+    req.cancelCurrentRequest('cancelCurrent');
+    const res2 = get('/user');
+    const res3 = get('/user');
+    req.cancelAll('cancelAll');
+    req.cancelWithTag('cancellable', 'cancel with tag');
+
+    const res = await Promise.allSettled([res1, res2, res3]);
+
+    expect(res).toEqual([
+      { status: 'rejected', reason: 'cancelCurrent' },
+      { status: 'rejected', reason: 'cancelAll' },
+      { status: 'rejected', reason: 'cancelAll' },
+    ]);
+  });
 });
