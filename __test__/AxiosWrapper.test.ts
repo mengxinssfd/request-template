@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { routers } from './mock-server';
-import { StatusHandlers, AxiosWrapper, CustomConfig } from '../src';
+import { StatusHandlers, AxiosRequestTemplate, CustomConfig } from '../src';
 
 jest.mock('axios');
 const map = new Map<string, Function>();
@@ -34,7 +34,7 @@ describe('AxiosWrapper', () => {
       return customConfig.returnRes ? res : data;
     },
   };
-  const req = new AxiosWrapper<CustomConfig>({ baseURL: '/' }, { statusHandlers });
+  const req = new AxiosRequestTemplate<CustomConfig>({ baseURL: '/' }, { statusHandlers });
   const get = req.methodFactory('get');
   const post = req.methodFactory('post');
 
@@ -90,7 +90,7 @@ describe('AxiosWrapper', () => {
     expect(res2).toEqual({ code: 300 });
   });
   test('default constructor params', async () => {
-    const req = new AxiosWrapper();
+    const req = new AxiosRequestTemplate();
     const get = req.methodFactory('get');
     const res = await get<{ username: string; id: number }>(
       '/user',
@@ -159,7 +159,7 @@ describe('AxiosWrapper', () => {
     }
   });
   test('global customConfig', async () => {
-    const req = new AxiosWrapper({}, { returnRes: true, statusHandlers });
+    const req = new AxiosRequestTemplate({}, { returnRes: true, statusHandlers });
     const get = req.methodFactory('get');
     const res = await get<{ username: string; id: number }, true>('/user', undefined);
     expect(res).toEqual({
@@ -168,7 +168,7 @@ describe('AxiosWrapper', () => {
     });
   });
   test('cancel all', async () => {
-    const req = new AxiosWrapper();
+    const req = new AxiosRequestTemplate();
     const get = req.methodFactory('get');
     const reqList = [get('/user'), get('/user'), get('/user')];
     req.cancelAll('test');
@@ -182,7 +182,7 @@ describe('AxiosWrapper', () => {
     ]);
   });
   test('cancel current', async () => {
-    const req = new AxiosWrapper();
+    const req = new AxiosRequestTemplate();
     const get = req.methodFactory('get');
     const res1 = get('/user');
     req.cancelCurrentRequest('cancel1');

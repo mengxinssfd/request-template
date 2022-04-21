@@ -1,4 +1,4 @@
-# axios-wrapper
+# request-template
 
 基于状态处理实现的 axios 请求封装
 
@@ -16,7 +16,7 @@
 ### 安装
 
 ```shell
-pnpm add @mxssfd/axios-wrapper
+pnpm add request-template
 ```
 
 ### 使用
@@ -24,7 +24,7 @@ pnpm add @mxssfd/axios-wrapper
 首先定义一个封装模板
 
 ```ts
-import { StatusHandlers, CustomConfig, HttpStatus, AxiosWrapper } from '@mxssfd/AxiosWrapper';
+import { StatusHandlers, CustomConfig, HttpStatus, AxiosRequestTemplate } from 'request-template';
 
 // 通用错误Handler
 const errorHandler: StatusHandler<CustomConfig> = (res, data, customConfig) => {
@@ -60,22 +60,22 @@ const statusHandlers: StatusHandlers = {
 };
 ```
 
-直接使用 AxiosWrapper
+直接使用 AxiosRequestTemplate
 
 ```ts
-const req = new AxiosWrapper<CustomConfig>({ baseURL: '/' }, { statusHandlers });
+const req = new AxiosRequestTemplate<CustomConfig>({ baseURL: '/' }, { statusHandlers });
 // 使用methodFactory生成请求方法
 const get = req.methodFactory('get');
 const post = req.methodFactory('post');
 ```
 
-或者继承 AxiosWrapper 作为一个固定模板(推荐)
+或者继承 AxiosRequestTemplate 作为一个固定模板(推荐)
 
 ```ts
 /**
  * 主域名请求类
  */
-export default class PrimaryRequest extends AxiosWrapper {
+export default class PrimaryRequest extends AxiosRequestTemplate {
   static readonly ins = new PrimaryRequest();
   static readonly get = PrimaryRequest.ins.methodFactory('get');
   static readonly post = PrimaryRequest.ins.methodFactory('post');

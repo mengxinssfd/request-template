@@ -12,7 +12,7 @@ import Qs from 'qs';
 import { Cache } from './Cache';
 
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
-export class AxiosWrapper<CC extends CustomConfig = CustomConfig> {
+export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   // 为了提高子类的拓展性，子类可以访问并使用该实例，但如果没必要不要去访问该axios实例
   protected readonly axiosIns: AxiosInstance;
   // 子类不可访问缓存

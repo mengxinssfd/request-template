@@ -1,5 +1,5 @@
 // 其他域名请求
-import { StatusHandlers, AxiosWrapper, CustomConfig } from '../src';
+import { StatusHandlers, AxiosRequestTemplate, CustomConfig } from '../src';
 
 interface MyCustomConfig extends CustomConfig {
   p1?: number;
@@ -12,7 +12,7 @@ const statusHandlers: StatusHandlers<MyCustomConfig> = {
   },
 };
 
-export default class Other extends AxiosWrapper<MyCustomConfig> {
+export default class Other extends AxiosRequestTemplate<MyCustomConfig> {
   static readonly ins = new Other();
   static readonly get = Other.ins.methodFactory('get');
   static readonly post = Other.ins.methodFactory('post');

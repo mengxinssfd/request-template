@@ -1,12 +1,12 @@
 // 主域名请求
-import { StatusHandlers, AxiosWrapper } from '../src';
+import { StatusHandlers, AxiosRequestTemplate } from '../src';
 
 const statusHandlers: StatusHandlers = {
   200: (res, data, customConfig) => {
     return customConfig.returnRes ? res : data;
   },
 };
-export default class Primary extends AxiosWrapper {
+export default class Primary extends AxiosRequestTemplate {
   static readonly ins = new Primary();
   static readonly get = Primary.ins.methodFactory('get');
   static readonly post = Primary.ins.methodFactory('post');
