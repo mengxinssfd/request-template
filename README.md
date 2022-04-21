@@ -1,6 +1,6 @@
 # request-template
 
-基于状态处理实现的 axios 请求封装
+基于状态处理实现的 axios 请求封装，使用模板模式封装，每一部分都可以被子类覆盖方便扩展
 
 ## 主要实现
 
@@ -74,9 +74,11 @@ const post = req.methodFactory('post');
 ```ts
 /**
  * 主域名请求类
+ * 单例模式
  */
 export default class PrimaryRequest extends AxiosRequestTemplate {
   static readonly ins = new PrimaryRequest();
+  // 把get，post挂到static上
   static readonly get = PrimaryRequest.ins.methodFactory('get');
   static readonly post = PrimaryRequest.ins.methodFactory('post');
 
@@ -141,8 +143,11 @@ export function login(data: { username: string; password: string }) {
 
 ### 取消请求
 
+获取取消函数的时机很重要，必须在request、get、post等请求方法执行后获取的取消函数才是有效的，而且必须使用对应的实例来取消请求
+
 ```ts
 const req = login({ username: 'test', password: 'test' });
+// 必须使用对应的实例来取消请求
 PrimaryRequest.ins.cancelCurrentRequest('test');
 // 或者
 PrimaryRequest.ins.cancelAll('test');
@@ -154,4 +159,11 @@ try {
 }
 ```
 
-### 全局配置
+### 全局配置与局部配置
+new一个模板时构造器接收的配置的为全局配置，get、post时传过去的为局部配置，请求时局部配置优先于全局配置，且不会污染全局配置
+
+### 转换响应数据结构
+
+如果你接口返回的数据结构不是`{code:number;msg:string;data:any}`这种格式的话就需要继承基础模板然后重写`transformRes`方法
+
+
