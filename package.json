@@ -1,7 +1,7 @@
 {
-  "name": "@mxssfd/axios-wrapper",
-  "version": "0.0.6",
-  "description": "axios封装类库",
+  "name": "request-template",
+  "version": "0.0.1",
+  "description": "请求模板封装",
   "main": "dist/index.js",
   "typings": "./types/",
   "sideEffects": false,
@@ -17,7 +17,7 @@
     "build": "run-s compile babel pub",
     "type-check": "tsc --noEmit",
     "pub": "npm publish",
-    "compub": "run-s lint-check compile",
+    "compub": "run-s lint-check compile pub",
     "eslint": "eslint",
     "prettier-fix": "prettier src __test__ --write",
     "prettier-check": "prettier src __test__ --check",
@@ -25,14 +25,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mengxinssfd/axios-wrapper.git"
+    "url": "git+https://github.com/mengxinssfd/request-template.git"
   },
   "author": "DYH",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mengxinssfd/axios-wrapper/issues"
+    "url": "https://github.com/mengxinssfd/request-template/issues"
   },
-  "homepage": "https://github.com/mengxinssfd/axios-wrapper#readme",
+  "homepage": "https://github.com/mengxinssfd/request-template#readme",
   "dependencies": {
     "axios": "^0.26.1",
     "qs": "^6.10.3"

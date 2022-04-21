@@ -1,4 +1,4 @@
-export * from './AxiosWrapper';
+export * from './AxiosRequestTemplate';
 export * from './Cache';
 export * from './HttpStatus';
 export * from './types';
