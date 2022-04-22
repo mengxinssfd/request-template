@@ -11,6 +11,8 @@ import axios, {
 import Qs from 'qs';
 import { Cache } from './Cache';
 
+const root = Function('return this')();
+
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   // 为了提高子类的拓展性，子类可以访问并使用该实例，但如果没必要不要去访问该axios实例
@@ -101,7 +103,8 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       requestConfig.params = data;
       return;
     }
-    if (!(data instanceof FormData)) {
+    // node里面没有FormData
+    if (!(root as typeof window).FormData || !(data instanceof FormData)) {
       // 使用Qs.stringify处理过的数据不会有{}包裹
       // 使用Qs.stringify其实就是转成url的参数形式：a=1&b=2&c=3
       // 格式化模式有三种：indices、brackets、repeat
@@ -123,7 +126,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
 
     const statusHandler = handlers[code] || handlers.default;
-    return statusHandler(response, data, customConfig as CustomConfig);
+    return statusHandler(response, data, customConfig);
   }
 
   // 请求
@@ -195,6 +198,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   cancelAll(msg?: string) {
     this.cancelerMap.forEach((canceler) => canceler(msg));
     this.cancelerMap.clear();
+    this.tagMap.clear();
   }
 
   // 根据tag标签取消请求
