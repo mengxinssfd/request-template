@@ -1,25 +1,38 @@
 # request-template
 
-基于状态处理实现的 axios 请求封装，使用模板模式封装，每一部分都可以被子类覆盖方便扩展
+基于状态处理实现的 `axios` 请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展
 
 ## 主要实现
 
 - [x] 多状态处理
 - [x] 接口缓存
-- [x] 全局配置(保持统一)
-- [x] 局部配置(支持个性{某些不按规范实现的接口})
-- [x] 取消单个请求
-- [x] 取消所有请求
+- [x] 配置
+  - [x] 全局配置(保持统一)
+  - [x] 局部配置(支持个性{某些不按规范实现的接口})
+- [x] 取消请求
+  - [x] 取消单个请求
+  - [x] 根据 tag 取消请求
+  - [x] 取消所有请求
 
-## 快速使用
-
-### 安装
+## 安装
 
 ```shell
 pnpm add request-template
 ```
 
-### 使用
+## 使用
+
+### 基础用法
+
+#### 使用默认模板
+
+```ts
+
+const req = new AxiosRequestTemplate();
+req.request('/test', { param1: 1, param2: 2 }).then((res) => {
+  console.log(res);;
+});
+```
 
 首先定义一个封装模板
 
@@ -119,9 +132,9 @@ export class User {
 
 ### 使用缓存
 
-缓存并不是取消上一次的请求，而是不执行这一次的请求直接使用上一次缓存的结果
+命中缓存时，该次请求结果会直接从缓存中拿，不会发起新的请求
 
-默认 5 秒内使用缓存
+#### 默认 5 秒内使用缓存
 
 ```ts
 const { post } = PrimaryRequest;
@@ -131,7 +144,7 @@ export function login(data: { username: string; password: string }) {
 }
 ```
 
-自定义过期时间
+#### 自定义过期时间
 
 ```ts
 const { post } = PrimaryRequest;
@@ -141,14 +154,52 @@ export function login(data: { username: string; password: string }) {
 }
 ```
 
+#### 自定义缓存命中策略
+
+默认缓存命中策略为`{url,headers,data}`三个合成的对象转为的字符串是一样的则会命中缓存
+
+现在在原有基础上添加一条：只要是`login`接口就命中缓存
+
+```ts
+export default class MyTemplate extends AxiosRequestTemplate {
+  private constructor() {
+    super({ baseURL: 'http://test.test' });
+  }
+
+  // 转换缓存所用的key
+  protected transformCacheKey(requestConfig: AxiosRequestConfig): string {
+    // 只要是登录接口就命中缓存
+    if (requestConfig.url.includes('login')) {
+      return 'login';
+    }
+    // 复用之前的逻辑
+    return super.transformCacheKey(requestConfig, AxiosRequestConfig);
+  }
+}
+```
+
 ### 取消请求
 
-获取取消函数的时机很重要，必须在request、get、post等请求方法执行后获取的取消函数才是有效的，而且必须使用对应的实例来取消请求
+#### 取消当前请求
+
+获取取消函数的时机很重要，必须在 request、get、post 等请求方法执行后获取的取消函数才是有效的，而且必须使用对应的实例来取消请求
 
 ```ts
 const req = login({ username: 'test', password: 'test' });
 // 必须使用对应的实例来取消请求
 PrimaryRequest.ins.cancelCurrentRequest('test');
+try {
+  await req;
+} catch (e: { message: string }) {
+  // 会捕获该报错
+  // message: "test"
+}
+```
+
+#### 取消所有请求
+
+```ts
+const req = login({ username: 'test', password: 'test' });
 // 或者
 PrimaryRequest.ins.cancelAll('test');
 try {
@@ -159,11 +210,32 @@ try {
 }
 ```
 
+#### 根据`tag`取消请求
+
+```ts
+const { post } = PrimaryRequest;
+export function login(data: { username: string; password: string }) {
+  // timeout单位为毫秒
+  return post<{ token: string }>('/user/login', data, { tag: 'cancelable' });
+}
+```
+
+```ts
+const req = login({ username: 'test', password: 'test' });
+// 或者
+PrimaryRequest.ins.cancelWithTag('cancelable', 'test');
+try {
+  await req;
+} catch (e: { message: string }) {
+  // 会捕获该报错
+  // message: "test"
+}
+```
+
 ### 全局配置与局部配置
-new一个模板时构造器接收的配置的为全局配置，get、post时传过去的为局部配置，请求时局部配置优先于全局配置，且不会污染全局配置
+
+new 一个模板时构造器接收的配置的为全局配置，get、post 时传过去的为局部配置，请求时局部配置优先于全局配置，且不会污染全局配置
 
 ### 转换响应数据结构
 
 如果你接口返回的数据结构不是`{code:number;msg:string;data:any}`这种格式的话就需要继承基础模板然后重写`transformRes`方法
-
-
