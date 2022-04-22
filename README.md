@@ -4,15 +4,15 @@
 
 ## 主要实现
 
-- [x] 多状态处理
-- [x] 接口缓存
-- [x] 配置
-  - [x] 全局配置(保持统一)
-  - [x] 局部配置(支持个性{某些不按规范实现的接口})
-- [x] 取消请求
-  - [x] 取消单个请求
-  - [x] 根据 tag 取消请求
-  - [x] 取消所有请求
+- [X]  多状态处理
+- [X]  接口缓存
+- [X]  配置
+  - [X]  全局配置(保持统一)
+  - [X]  局部配置(支持个性{某些不按规范实现的接口})
+- [X]  取消请求
+  - [X]  取消单个请求
+  - [X]  根据 tag 取消请求
+  - [X]  取消所有请求
 
 ## 安装
 
@@ -30,8 +30,38 @@ pnpm add request-template
 
 const req = new AxiosRequestTemplate();
 req.request('/test', { param1: 1, param2: 2 }).then((res) => {
-  console.log(res);;
+  console.log(res);
 });
+```
+
+### 进阶用法
+
+#### 创建你自己的模板
+
+该库使用模板方法模式实现，所以每个处理模块都可以用子类实现
+
+以下是可以继承重写的一些数据处理函数
+
+```ts
+// 缓存命中规则处理
+protected transformCacheKey(requestConfig: AxiosRequestConfig): string;
+// 请求结果数据结构转换
+protected transformRes<T>(requestConfig: AxiosRequestConfig, customConfig: CC, response: AxiosResponse): ResType<T>;
+// 设置拦截器
+protected setInterceptors(): void;
+// 处理取消函数
+protected handleCanceler(requestConfig: AxiosRequestConfig, customConfig: CustomConfig): void;
+// 处理请求配置
+protected handleRequestConfig(url: string, requestConfig: AxiosRequestConfig): AxiosRequestConfig;
+// 处理自定义配置
+protected handleCustomConfig(customConfig: CC): CC;
+// 处理请求用的数据
+protected handleRequestData(data: {}, requestConfig: AxiosRequestConfig): void;
+// 处理响应结果
+protected handleResponse<T>(response: AxiosResponse<ResType<any>>, data: ResType<any>, customConfig: CC): Promise<ResType<T>>;
+// 请求
+protected doRequest(requestConfig: AxiosRequestConfig, customConfig: CC): Promise<AxiosResponse<any, any>>;
+
 ```
 
 首先定义一个封装模板
