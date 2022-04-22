@@ -12,8 +12,15 @@ export const routers = {
     }
     return buildRes({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
   },
-  '/login'(data: string) {
-    const d: any = Qs.parse(data);
+  '/login'(data: any) {
+    const d: any = typeof data === 'string' ? Qs.parse(data) : data;
+    if (
+      data instanceof FormData &&
+      data.get('username') === 'foo' &&
+      data.get('password') === 'bar'
+    ) {
+      return buildRes({ code: 200, msg: 'success' });
+    }
     if (d.username === 'foo' && d.password === 'bar') {
       return buildRes({ code: 200, msg: 'success' });
     }

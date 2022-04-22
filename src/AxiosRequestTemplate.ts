@@ -11,12 +11,15 @@ import axios, {
 import Qs from 'qs';
 import { Cache } from './Cache';
 
+const root = Function('return this')();
+
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   // 为了提高子类的拓展性，子类可以访问并使用该实例，但如果没必要不要去访问该axios实例
   protected readonly axiosIns: AxiosInstance;
   protected readonly cache: Cache<AxiosRequestConfig, AxiosPromise>;
   protected readonly cancelerMap = new Map<CancelToken, Canceler>();
+  protected readonly tagMap = new Map<string, CancelToken[]>();
 
   cancelCurrentRequest!: Canceler;
 
@@ -29,10 +32,10 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 转换缓存所用的key
-  protected transformCacheKey(config: AxiosRequestConfig): string {
-    const url = config.url;
-    const data = config.data || config.params;
-    const headers = config.headers;
+  protected transformCacheKey(requestConfig: AxiosRequestConfig): string {
+    const url = requestConfig.url;
+    const data = requestConfig.data || requestConfig.params;
+    const headers = requestConfig.headers;
     return JSON.stringify({ url, data, headers });
   }
 
@@ -55,42 +58,63 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     //   /* do something */
     // });
   }
-  // 处理axiosRequestConfig
-  protected handleAxiosRequestConfig(url: string, config: AxiosRequestConfig): AxiosRequestConfig {
-    // 缓存取消函数
+
+  protected handleCanceler(requestConfig: AxiosRequestConfig, customConfig: CustomConfig) {
     const { cancel, token } = axios.CancelToken.source();
+    const tag = customConfig.tag;
+
+    // 缓存取消函数
+    if (tag) {
+      if (!this.tagMap.has(tag)) {
+        this.tagMap.set(tag, []);
+      }
+      (this.tagMap.get(tag) as CancelToken[]).push(token);
+    }
+
     this.cancelerMap.set(token, cancel);
     this.cancelCurrentRequest = (msg) => {
       cancel(msg);
       // 请求成功后去除取消函数
       this.cancelerMap.delete(token);
+      if (!tag) return;
+      const tokens = this.tagMap.get(tag);
+      if (!tokens) return;
+      const index = tokens.indexOf(token);
+      tokens.splice(index, 1);
     };
-
-    const finalConfig: AxiosRequestConfig = { ...config, url, cancelToken: token };
+    requestConfig.cancelToken = token;
+  }
+  // 处理requestConfig
+  protected handleRequestConfig(
+    url: string,
+    requestConfig: AxiosRequestConfig,
+  ): AxiosRequestConfig {
+    const finalConfig: AxiosRequestConfig = { ...requestConfig, url };
     finalConfig.method = finalConfig.method || 'get';
     return finalConfig;
   }
   // 处理CustomConfig
-  protected handleCustomConfig(config: CC) {
-    return { ...this.globalCustomConfig, ...config };
+  protected handleCustomConfig(customConfig: CC) {
+    return { ...this.globalCustomConfig, ...customConfig };
   }
   // 处理请求的数据
-  protected handleParams(data: {}, config: AxiosRequestConfig) {
-    if (config.method === 'get') {
-      config.params = data;
+  protected handleRequestData(data: {}, requestConfig: AxiosRequestConfig) {
+    if (requestConfig.method === 'get') {
+      requestConfig.params = data;
       return;
     }
-    if (!(data instanceof FormData)) {
+    // node里面没有FormData
+    if (!(root as typeof window).FormData || !(data instanceof FormData)) {
       // 使用Qs.stringify处理过的数据不会有{}包裹
       // 使用Qs.stringify其实就是转成url的参数形式：a=1&b=2&c=3
       // 格式化模式有三种：indices、brackets、repeat
       data = Qs.stringify(data, { arrayFormat: 'repeat' });
     }
-    config.data = data;
+    requestConfig.data = data;
   }
   // 处理响应结果
   protected handleResponse<T>(
-    res: AxiosResponse<ResType<any>>,
+    response: AxiosResponse<ResType<any>>,
     data: ResType<any>,
     customConfig: CC,
   ): Promise<ResType<T>> {
@@ -102,11 +126,11 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
 
     const statusHandler = handlers[code] || handlers.default;
-    return statusHandler(res, data, customConfig as CustomConfig);
+    return statusHandler(response, data, customConfig);
   }
 
-  // 请求，子类不可更改
-  protected async _request(requestConfig: AxiosRequestConfig, customConfig: CC) {
+  // 请求
+  protected async doRequest(requestConfig: AxiosRequestConfig, customConfig: CC) {
     // 使用缓存
     const useCache = customConfig.useCache;
     if (useCache) {
@@ -140,13 +164,14 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     requestConfig: AxiosRequestConfig = {},
   ): Promise<any> {
     // 1、处理配置
-    requestConfig = this.handleAxiosRequestConfig(url, requestConfig);
+    requestConfig = this.handleRequestConfig(url, requestConfig);
     customConfig = this.handleCustomConfig(customConfig);
+    this.handleCanceler(requestConfig, customConfig);
     // 2、处理参数
-    this.handleParams(data, requestConfig);
+    this.handleRequestData(data, requestConfig);
     try {
       // 3、请求
-      const response: AxiosResponse = await this._request(requestConfig, customConfig);
+      const response: AxiosResponse = await this.doRequest(requestConfig, customConfig);
       // 移除cancel
       this.cancelCurrentRequest();
       // 4、请求结果数据结构处理
@@ -169,10 +194,22 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }
   }
 
-  // 取消请求
+  // 取消所有请求
   cancelAll(msg?: string) {
     this.cancelerMap.forEach((canceler) => canceler(msg));
     this.cancelerMap.clear();
+    this.tagMap.clear();
+  }
+
+  // 根据tag标签取消请求
+  cancelWithTag(tag: string, msg?: string) {
+    const tokens = this.tagMap.get(tag);
+    if (!tokens) return;
+    tokens.forEach((token) => {
+      this.cancelerMap.get(token)?.(msg);
+      this.cancelerMap.delete(token);
+    });
+    this.tagMap.delete(tag);
   }
 
   // 简单工厂：生成get post delete等method
