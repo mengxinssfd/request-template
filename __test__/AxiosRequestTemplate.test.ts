@@ -65,22 +65,65 @@ describe('AxiosWrapper', () => {
       expect(e).toEqual({ code: 0, msg: '账号或密码错误' });
     }
   });
-  test('no cache', async () => {
-    const res = await get<{ username: string; id: number }>('/user');
-    expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
-    const res2 = await get<{ username: string; id: number }>('/user');
-    expect(res2).toEqual(res);
-    expect(res2).not.toBe(res);
-  });
-  test('cache', async () => {
-    const res = await get<{ username: string; id: number }>('/user', undefined, { useCache: true });
-    expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
-    const res2 = await get<{ username: string; id: number }>('/user', undefined, {
-      useCache: { timeout: 1000 },
+
+  describe('AxiosWrapper Cache', () => {
+    test('no cache', async () => {
+      const res = await get<{ username: string; id: number }>('/user');
+      expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+      const res2 = await get<{ username: string; id: number }>('/user');
+      expect(res2).toEqual(res);
+      expect(res2).not.toBe(res);
     });
-    expect(res2).toEqual(res);
-    expect(res2).toBe(res);
+    test('cache', async () => {
+      const res = await get<{ username: string; id: number }>('/user', undefined, { cache: true });
+      expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+      const res2 = await get<{ username: string; id: number }>('/user', undefined, {
+        cache: { timeout: 1000 },
+      });
+      expect(res2).toEqual(res);
+      expect(res2).toBe(res);
+    });
+    test('global cache object', async () => {
+      const req = new AxiosRequestTemplate({}, { cache: {} });
+      const get = req.methodFactory('get');
+      const res = await get<{ username: string; id: number }>('/user');
+      expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+      const res2 = await get<{ username: string; id: number }>('/user');
+      expect(res2).toEqual(res);
+      expect(res2).toBe(res);
+    });
+    test('global cache empty object', async () => {
+      const req = new AxiosRequestTemplate<CustomConfig>({}, { cache: true });
+      const get = req.methodFactory('get');
+      const res = await get<{ username: string; id: number }>('/user');
+      expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+      const res2 = await get<{ username: string; id: number }>('/user');
+      expect(res2).toEqual(res);
+      expect(res2).toBe(res);
+
+      const res3 = await get<{ username: string; id: number }>('/user', {}, { cache: false });
+      expect(res3).toEqual(res);
+      expect(res3).not.toBe(res);
+    });
+    test('global cache empty object', async () => {
+      const req = new AxiosRequestTemplate<CustomConfig>(
+        {},
+        { cache: { enable: false, timeout: 1000 * 60 } },
+      );
+      const get = req.methodFactory('get');
+      const res = await get<{ username: string; id: number }>('/user');
+      expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+      const res2 = await get<{ username: string; id: number }>('/user', {}, { cache: true });
+      expect(res2).toEqual(res);
+      expect(res2).not.toBe(res);
+
+      const res3 = await get<{ username: string; id: number }>('/user', {}, { cache: true });
+      expect(res3).toEqual(res);
+      expect(res3).not.toBe(res);
+      expect(res3).toBe(res2);
+    });
   });
+
   test('serve 404', async () => {
     try {
       await get('/test');
