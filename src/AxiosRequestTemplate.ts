@@ -16,17 +16,25 @@ const root = Function('return this')();
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   // 为了提高子类的拓展性，子类可以访问并使用该实例，但如果没必要不要去访问该axios实例
-  protected readonly axiosIns: AxiosInstance;
-  protected readonly cache: Cache<AxiosRequestConfig, AxiosPromise>;
+  protected axiosIns!: AxiosInstance;
+  protected cache!: Cache<AxiosRequestConfig, AxiosPromise>;
   protected readonly cancelerMap = new Map<CancelToken, Canceler>();
   protected readonly tagMap = new Map<string, CancelToken[]>();
 
-  cancelCurrentRequest!: Canceler;
+  cancelCurrentRequest?: Canceler;
+  protected clearCurrentRequestCB?: Function;
 
-  constructor(globalRequestConfig: AxiosRequestConfig = {}, private globalCustomConfig = {} as CC) {
-    // 1、保存基础配置
-    this.axiosIns = axios.create(globalRequestConfig);
+  constructor(
+    private globalRequestConfig: AxiosRequestConfig = {},
+    private globalCustomConfig = {} as CC,
+  ) {
+    this.init();
     this.setInterceptors();
+  }
+
+  protected init() {
+    // 1、保存基础配置
+    this.axiosIns = axios.create(this.globalRequestConfig);
     // 2、缓存初始化
     this.cache = new Cache(this.transformCacheKey);
   }
@@ -72,15 +80,18 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }
 
     this.cancelerMap.set(token, cancel);
-    this.cancelCurrentRequest = (msg) => {
-      cancel(msg);
-      // 请求成功后去除取消函数
+    // 请求成功后去除取消函数
+    this.clearCurrentRequestCB = () => {
       this.cancelerMap.delete(token);
       if (!tag) return;
       const tokens = this.tagMap.get(tag);
-      if (!tokens) return;
+      if (!tokens || !tokens.length) return;
       const index = tokens.indexOf(token);
       tokens.splice(index, 1);
+    };
+    this.cancelCurrentRequest = (msg) => {
+      cancel(msg);
+      this.clearCurrentRequestCB?.();
     };
     requestConfig.cancelToken = token;
   }
@@ -172,15 +183,15 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     try {
       // 3、请求
       const response: AxiosResponse = await this.doRequest(requestConfig, customConfig);
-      // 移除cancel
-      this.cancelCurrentRequest();
+      // 清理cancel
+      this.clearCurrentRequestCB?.();
       // 4、请求结果数据结构处理
       const data = this.transformRes<T>(requestConfig, customConfig, response);
       // 5、状态码处理，并返回结果
       return this.handleResponse<T>(response, data, customConfig);
     } catch (e: any) {
-      // 移除cancel
-      this.cancelCurrentRequest();
+      // 清理cancel
+      this.clearCurrentRequestCB?.();
       // 错误处理
       const response: AxiosResponse<ResType<any>> = e.response;
       // 4、请求结果数据结构处理

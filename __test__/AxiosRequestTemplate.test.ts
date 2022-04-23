@@ -188,11 +188,11 @@ describe('AxiosWrapper', () => {
     const req = new AxiosRequestTemplate();
     const get = req.methodFactory('get');
     const res1 = get('/user');
-    req.cancelCurrentRequest('cancel1');
+    req.cancelCurrentRequest?.('cancel1');
     const res2 = get('/user');
-    req.cancelCurrentRequest('cancel2');
+    req.cancelCurrentRequest?.('cancel2');
     const res3 = get('/user');
-    req.cancelCurrentRequest('cancel3');
+    req.cancelCurrentRequest?.('cancel3');
 
     const res = await Promise.allSettled([res1, res2, res3]);
 
@@ -226,7 +226,7 @@ describe('AxiosWrapper', () => {
     const req = new AxiosRequestTemplate(undefined, { tag: 'cancellable' });
     const get = req.methodFactory('get');
     const res1 = get('/user');
-    req.cancelCurrentRequest('cancelCurrent');
+    req.cancelCurrentRequest?.('cancelCurrent');
     const res2 = get('/user');
     const res3 = get('/user');
     req.cancelAll('cancelAll');

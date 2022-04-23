@@ -1,12 +1,10 @@
 type KeyHandler<K> = (k: K) => string;
 
 export class Cache<K, V> {
-  private readonly cache = new Map<string, { value: V; expires: number }>();
-  private readonly keyHandler: KeyHandler<K>;
-
-  constructor(keyHandler?: KeyHandler<K>) {
-    this.keyHandler = keyHandler || ((k) => JSON.stringify(k));
-  }
+  constructor(
+    private readonly keyHandler: KeyHandler<K> = (k) => JSON.stringify(k),
+    private readonly cache = new Map<string, { value: V; expires: number }>(),
+  ) {}
 
   clearDeadCache() {
     const now = Date.now();
