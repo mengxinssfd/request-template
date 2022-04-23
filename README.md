@@ -2,7 +2,63 @@
 
 基于状态处理实现的 `axios` 请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展
 
-## 主要特性
+## 流程
+
+
+```mermaid
+classDiagram
+      direction LR
+      class AxiosRequestTemplate{
+          #cache : Cache
+          +cancelAll()
+          +cancelCurrentRequest()
+          +cancelWithTag()
+          +methodFactory()
+      }
+      AxiosRequestTemplate "1" --o "1" Cache: cache
+      class Cache{
+          -keyHandler:Function
+          -cache: Map
+          +clearDeadCache()
+          +get(key:string)
+          +set(key: string, value:Promse<any>)
+      }
+   
+```
+
+```mermaid
+flowchart 
+MergeConfig[fa:fa-spinner 合并配置]
+CreateTemplate[fa:fa-spinner 创建模板new AxiosRequestTemplate]
+GlobalRequestConfig[全局请求配置]
+GlobalCustomConfig[全局自定义配置]
+
+
+CreateTemplate --> GlobalRequestConfig --> template实例 
+CreateTemplate --> GlobalCustomConfig --> template实例
+
+
+template实例 --> request
+
+
+request --> MergeConfig --> 生成Canceler --> 是否使用缓存
+
+生成Canceler --> 这一步后才可以执行取消handler
+
+是否使用缓存 --> |是| 是否命中缓存  
+是否命中缓存  --> |是| 使用缓存 --> 清理canceler
+是否命中缓存  --> |否| 请求
+是否使用缓存 --> |否| 请求 --> 缓存请求 --> 清理canceler
+
+清理canceler --> 处理请求结果 --> 处理状态 --> 请求完成
+
+
+
+
+
+```
+
+## 主要实现
 
 - [X]  非侵入式封装
 - [X]  模板方法模式实现
