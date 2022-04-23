@@ -11,12 +11,18 @@ export type StatusHandlers<CC extends CustomConfig = CustomConfig> = Record<
   number,
   StatusHandler<CC>
 > & { default?: StatusHandler<CC> };
+
+export interface CustomCacheConfig {
+  enable?: boolean;
+  timeout?: number;
+}
+
 // CustomConfig
 export interface CustomConfig {
   returnRes?: boolean; // 返回res
   silent?: boolean; // 报错不弹窗
   statusHandlers?: StatusHandlers;
-  useCache?: boolean | { timeout: number };
+  cache?: boolean | CustomCacheConfig;
   tag?: string;
 }
 
