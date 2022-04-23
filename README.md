@@ -2,12 +2,17 @@
 
 基于状态处理实现的 `axios` 请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展
 
-## 主要实现
+## 主要特性
 
+- [X]  非侵入式封装
+- [X]  模板方法模式实现
+  - [X]  可实现自定义模板，可复用基础模板
+- [X]  ts类型提示支持
 - [X]  多状态处理
 - [X]  接口缓存
+  - [X]  自定义缓存命中
 - [X]  配置
-  - [X]  全局配置(保持统一)
+  - [X]  全局配置(保持统一，复用配置)
   - [X]  局部配置(支持个性{某些不按规范实现的接口})
 - [X]  取消请求
   - [X]  取消单个请求
@@ -27,16 +32,39 @@ pnpm add request-template
 #### 使用默认模板
 
 ```ts
-
+// new一个实例
 const req = new AxiosRequestTemplate();
+// request(url: string, data?: {}, customConfig?: DynamicCustomConfig<CC, RC>, requestConfig?: AxiosRequestConfig)
+// `request`支持4个参数分别是必填的`url`，和选填的请求数据`data`，自定义设置的`customConfig`,以及`axios`的请求设置`requestConfig`
+// `requestConfig`为`axios`原设置，没有任何增删
+// `request`默认为`get`请求
 req.request('/test', { param1: 1, param2: 2 }).then((res) => {
+  console.log(res);
+});
+// `post`请求，`delete` `patch`也是以此类推
+req.request('/test', { param1: 1, param2: 2 }, {}, { method: 'post' }).then((res) => {
   console.log(res);
 });
 ```
 
+这样使用每次都要设置`method`有些麻烦了，可以用`methodFactory`函数生成一个`method`函数简化一下
+
+```ts
+// 'post','get','patch'...
+const post = req.methodFactory('post');
+post('/test', { param1: 1, param2: 2 }).then((res) => {
+  console.log(res);
+});
+post('/test', { param1: 1, param2: 2 }).then((res) => {
+  console.log(res);
+});
+```
+
+`methodFactory`生成的`method`函数与`request`参数返回值一致，且`requestConfig`里的`method`属性不再起作用
+
 ### 进阶用法
 
-#### 创建你自己的模板
+#### 创建自定义模板
 
 该库使用模板方法模式实现，所以每个处理模块都可以用子类实现
 
