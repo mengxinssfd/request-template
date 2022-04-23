@@ -4,7 +4,6 @@
 
 ## 流程
 
-
 ```mermaid
 classDiagram
       direction LR
@@ -12,16 +11,17 @@ classDiagram
           #cache : Cache
           +cancelAll()
           +cancelCurrentRequest()
-          +cancelWithTag()
-          +methodFactory()
+          +cancelWithTag(tag)
+          +methodFactory(method)
+          +request(url,data,customConfig,requestConfig)
       }
       AxiosRequestTemplate "1" --o "1" Cache: cache
       class Cache{
           -keyHandler:Function
           -cache: Map
           +clearDeadCache()
-          +get(key:string)
-          +set(key: string, value:Promse<any>)
+          +get(key)
+          +set(key, value)
       }
    
 ```
