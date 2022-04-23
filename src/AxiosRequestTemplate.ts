@@ -16,18 +16,25 @@ const root = Function('return this')();
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   // 为了提高子类的拓展性，子类可以访问并使用该实例，但如果没必要不要去访问该axios实例
-  protected readonly axiosIns: AxiosInstance;
-  protected readonly cache: Cache<AxiosRequestConfig, AxiosPromise>;
+  protected axiosIns!: AxiosInstance;
+  protected cache!: Cache<AxiosRequestConfig, AxiosPromise>;
   protected readonly cancelerMap = new Map<CancelToken, Canceler>();
   protected readonly tagMap = new Map<string, CancelToken[]>();
 
   cancelCurrentRequest?: Canceler;
   protected clearCurrentRequestCB?: Function;
 
-  constructor(globalRequestConfig: AxiosRequestConfig = {}, private globalCustomConfig = {} as CC) {
-    // 1、保存基础配置
-    this.axiosIns = axios.create(globalRequestConfig);
+  constructor(
+    private globalRequestConfig: AxiosRequestConfig = {},
+    private globalCustomConfig = {} as CC,
+  ) {
+    this.init();
     this.setInterceptors();
+  }
+
+  protected init() {
+    // 1、保存基础配置
+    this.axiosIns = axios.create(this.globalRequestConfig);
     // 2、缓存初始化
     this.cache = new Cache(this.transformCacheKey);
   }
