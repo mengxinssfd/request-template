@@ -41,11 +41,10 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 根据配置生成key
-  protected generateKey(requestConfig: AxiosRequestConfig): string {
-    const url = requestConfig.url;
+  protected generateRequestKey(requestConfig: AxiosRequestConfig): string {
     const data = requestConfig.data || requestConfig.params;
-    const headers = requestConfig.headers;
-    return JSON.stringify({ url, data, headers });
+    const { url, headers, method } = requestConfig;
+    return JSON.stringify({ url, data, headers, method });
   }
 
   // 转换数据结构为ResType
@@ -173,7 +172,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     // 使用缓存
     const cacheConfig = customConfig.cache as CustomCacheConfig;
     const useCache = cacheConfig.enable;
-    const key = this.generateKey(requestConfig);
+    const key = this.generateRequestKey(requestConfig);
     if (useCache) {
       const cache = this.cache.get(key);
       if (cache) return cache;

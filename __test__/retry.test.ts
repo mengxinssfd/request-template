@@ -37,7 +37,7 @@ describe('retry', () => {
     ): any {
       if (customConfig.retry === undefined)
         return super.handleError(requestConfig, customConfig as CC, e);
-      const key = this.generateKey(requestConfig);
+      const key = this.generateRequestKey(requestConfig);
       const value = this.retryMap.get(key) || 0;
       if (value && value >= customConfig.retry) {
         this.retryMap.delete(key);
