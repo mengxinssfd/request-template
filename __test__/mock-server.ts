@@ -1,4 +1,3 @@
-import Qs from 'qs';
 import axios, { AxiosRequestConfig } from 'axios';
 
 function buildRes(res: { code: number; data?: any; msg: string }) {
@@ -13,7 +12,6 @@ export const routers = {
     return buildRes({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
   },
   '/login'(data: any) {
-    const d: any = typeof data === 'string' ? Qs.parse(data) : data;
     if (
       data instanceof FormData &&
       data.get('username') === 'foo' &&
@@ -21,16 +19,16 @@ export const routers = {
     ) {
       return buildRes({ code: 200, msg: 'success' });
     }
-    if (d.username === 'foo' && d.password === 'bar') {
+    if (data.username === 'foo' && data.password === 'bar') {
       return buildRes({ code: 200, msg: 'success' });
     }
     return Promise.reject({ code: 0, msg: '账号或密码错误' });
   },
-  '404'(d: string) {
-    if (d === 'returnRes=1') {
+  '404'(d: any) {
+    if (d.returnRes === 1) {
       return Promise.reject({ status: 404, response: { data: { code: 200 } } });
     }
-    if (d === 'returnRes=2') {
+    if (d.returnRes === 2) {
       return Promise.reject({ status: 404, response: { data: { code: 300 } } });
     }
     return Promise.reject('404');

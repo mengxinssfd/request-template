@@ -9,11 +9,8 @@ import axios, {
   CancelToken,
   AxiosError,
 } from 'axios';
-import Qs from 'qs';
 import { Cache } from './Cache';
 import { CustomCacheConfig } from './types';
-
-const root = Function('return this')();
 
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
@@ -140,13 +137,6 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     if (String(requestConfig.method).toLowerCase() === 'get') {
       requestConfig.params = data;
       return;
-    }
-    // node里面没有FormData
-    if (!(root as typeof window).FormData || !(data instanceof FormData)) {
-      // 使用Qs.stringify处理过的数据不会有{}包裹
-      // 使用Qs.stringify其实就是转成url的参数形式：a=1&b=2&c=3
-      // 格式化模式有三种：indices、brackets、repeat
-      data = Qs.stringify(data, { arrayFormat: 'repeat' });
     }
     requestConfig.data = data;
   }

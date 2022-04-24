@@ -15,6 +15,10 @@ export default class Primary extends AxiosRequestTemplate {
     super({ baseURL: 'http://test.test' }, { statusHandlers });
   }
 
+  protected handleRequestData(data: {}, requestConfig) {
+    super.handleRequestData({ ...data, token: 123 }, requestConfig);
+  }
+
   protected setInterceptors() {
     this.interceptors.request.use((config) => {
       if (!config.headers) config.headers = {};
