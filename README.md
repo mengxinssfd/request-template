@@ -1,6 +1,8 @@
 # request-template
 
-基于状态处理实现的 `axios` 请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展
+基于状态处理实现的 `axios` 请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展。
+
+这不是一个一劳永逸的方案，不是说用了这个库就能什么都不用写了，但它能极大减少你的代码复杂度，提高代码的复用性。
 
 ## 流程
 
@@ -66,10 +68,10 @@ request --> MergeConfig --> 生成Canceler --> 是否使用缓存
 - [X]  ts类型提示支持
 - [X]  多状态处理
 - [X]  接口缓存
-  - [X]  自定义缓存命中
+  - [X]  自定义缓存命中规则
 - [X]  配置
   - [X]  全局配置(保持统一，复用配置)
-  - [X]  局部配置(支持个性{某些不按规范实现的接口})
+  - [X]  局部配置(支持个性化配置{某些不按规范实现的接口})
 - [X]  取消请求
   - [X]  取消单个请求
   - [X]  根据 tag 取消请求
@@ -254,7 +256,7 @@ export class User {
 const { post } = PrimaryRequest;
 export function login(data: { username: string; password: string }) {
   // 5秒内都会是同样的数据
-  return post<{ token: string }>('/user/login', data, { useCache: true });
+  return post<{ token: string }>('/user/login', data, { cache: true });
 }
 ```
 
@@ -264,7 +266,7 @@ export function login(data: { username: string; password: string }) {
 const { post } = PrimaryRequest;
 export function login(data: { username: string; password: string }) {
   // timeout单位为毫秒
-  return post<{ token: string }>('/user/login', data, { useCache: { timeout: 30 * 60 * 1000 } });
+  return post<{ token: string }>('/user/login', data, { cache: { timeout: 30 * 60 * 1000 } });
 }
 ```
 
@@ -296,7 +298,7 @@ export default class MyTemplate extends AxiosRequestTemplate {
 
 #### 取消当前请求
 
-获取取消函数的时机很重要，必须在 request、get、post 等请求方法执行后获取的取消函数才是有效的，而且必须使用对应的实例来取消请求
+取消函数的时机很重要，必须在 request、get、post 等请求方法执行后获取的取消函数才是有效的，而且必须使用对应的实例来取消请求
 
 ```ts
 const req = login({ username: 'test', password: 'test' });
