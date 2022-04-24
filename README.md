@@ -4,6 +4,10 @@
 
 这不是一个一劳永逸的方案，不是说用了这个库就能什么都不用写了，但它能极大减少你的代码复杂度，提高代码的复用性。
 
+面向继承开放，面向使用关闭
+
+封了，又没有封
+
 ## 流程
 
 ```mermaid
@@ -62,20 +66,25 @@ request --> MergeConfig --> 生成Canceler --> 是否使用缓存
 
 ## 主要实现
 
-- [X]  非侵入式封装
-- [X]  模板方法模式实现
-  - [X]  可实现自定义模板，可复用基础模板
-- [X]  ts类型提示支持
-- [X]  多状态处理
-- [X]  接口缓存
-  - [X]  自定义缓存命中规则
-- [X]  配置
-  - [X]  全局配置(保持统一，复用配置)
-  - [X]  局部配置(支持个性化配置{某些不按规范实现的接口})
-- [X]  取消请求
-  - [X]  取消单个请求
-  - [X]  根据 tag 取消请求
-  - [X]  取消所有请求
+- [X] 非侵入开放式封装
+  - [X] 对于继承扩展开放
+  - [X] 对于使用时少量开放
+- [X] 模板方法模式实现
+  - [X] 可实现自定义模板
+  - [X] 可复用基础模板
+- [X] ts类型支持
+  - [X] 范型支持
+  - [X] 原axios类型支持
+- [X] 多状态处理
+- [X] 接口缓存
+  - [X] 自定义缓存命中规则
+- [X] 配置
+  - [X] 全局配置(保持统一，复用配置)
+  - [X] 局部配置(支持个性化配置{某些不按规范实现的接口})
+- [X] 取消请求
+  - [X] 取消单个请求
+  - [X] 根据 tag 取消请求
+  - [X] 取消所有请求
 
 ## 安装
 
@@ -105,7 +114,7 @@ req.request('/test', { param1: 1, param2: 2 }, {}, { method: 'post' }).then((res
 });
 ```
 
-这样使用每次都要设置`method`有些麻烦了，可以用`methodFactory`函数生成一个`method`函数简化一下
+这样使用每次都要设置 `method`有些麻烦了，可以用 `methodFactory`函数生成一个 `method`函数简化一下
 
 ```ts
 // 'post','get','patch'...
@@ -118,7 +127,7 @@ post('/test', { param1: 1, param2: 2 }).then((res) => {
 });
 ```
 
-`methodFactory`生成的`method`函数与`request`参数返回值一致，且`requestConfig`里的`method`属性不再起作用
+`methodFactory`生成的 `method`函数与 `request`参数返回值一致，且 `requestConfig`里的 `method`属性不再起作用
 
 ### 进阶用法
 
@@ -272,9 +281,9 @@ export function login(data: { username: string; password: string }) {
 
 #### 自定义缓存命中策略
 
-默认缓存命中策略为`{url,headers,data}`三个合成的对象转为的字符串是一样的则会命中缓存
+默认缓存命中策略为 `{url,headers,data}`三个合成的对象转为的字符串是一样的则会命中缓存
 
-现在在原有基础上添加一条：只要是`login`接口就命中缓存
+现在在原有基础上添加一条：只要是 `login`接口就命中缓存
 
 ```ts
 export default class MyTemplate extends AxiosRequestTemplate {
@@ -326,7 +335,7 @@ try {
 }
 ```
 
-#### 根据`tag`取消请求
+#### 根据 `tag`取消请求
 
 ```ts
 const { post } = PrimaryRequest;
@@ -354,4 +363,4 @@ new 一个模板时构造器接收的配置的为全局配置，get、post 时�
 
 ### 转换响应数据结构
 
-如果你接口返回的数据结构不是`{code:number;msg:string;data:any}`这种格式的话就需要继承基础模板然后重写`transformRes`方法
+如果你接口返回的数据结构不是 `{code:number;msg:string;data:any}`这种格式的话就需要继承基础模板然后重写 `transformRes`方法
