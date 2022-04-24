@@ -39,5 +39,11 @@ describe('Other', () => {
     expect(res5).toEqual({ code: 500, msg: 111 });
     const res6 = await post<any, true>('/create', undefined, { returnRes: true });
     expect(res6).toEqual({ status: 200, data: { code: 500, msg: 111 } });
+
+    try {
+      await post('/login2', { username: 'foo' });
+    } catch (e) {
+      expect(e).toBe('404');
+    }
   });
 });

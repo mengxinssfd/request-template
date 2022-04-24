@@ -17,22 +17,45 @@ describe('Cache', () => {
     expect(cache.get(key)).toEqual(null);
     expect(cache.has(key)).toBeFalsy();
   });
-  jest.setTimeout(7000);
+  // jest.setTimeout(7000);
   test('default timeout', async () => {
+    const cache = new Cache<string, object>();
+    const key = 'a';
+    cache.set(key, { a: 123 }, { timeout: 20 });
+
+    expect(cache.get(key)).toEqual({ a: 123 });
+    expect(cache.has(key)).toBeTruthy();
+
+    await sleep(10);
+    expect(cache.get(key)).toEqual({ a: 123 });
+    expect(cache.has(key)).toBeTruthy();
+
+    await sleep(20);
+    expect(cache.get(key)).toEqual(null);
+    expect(cache.has(key)).toBeFalsy();
+  });
+  test('test map value', () => {
     const cache = new Cache<string, object>();
     const key = 'a';
     cache.set(key, { a: 123 });
 
-    expect(cache.get(key)).toEqual({ a: 123 });
-    expect(cache.has(key)).toBeTruthy();
+    const now = Date.now();
+    const map = (<any>cache).cache as Map<string, { expires: number; value: any }>;
+    expect(map.size).toBe(1);
+    expect(map.get(JSON.stringify(key))).toEqual({ expires: now + 5000, value: { a: 123 } });
 
-    await sleep(2000);
-    expect(cache.get(key)).toEqual({ a: 123 });
-    expect(cache.has(key)).toBeTruthy();
+    cache.set(key, { b: 123 }, { timeout: 9000 });
+    expect(map.size).toBe(1);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const v = map.get(JSON.stringify(key))!;
+    // expires会波动几秒，在时间范围内即可
+    expect(v.expires).toBeGreaterThanOrEqual(now + 9000);
+    expect(v.expires).toBeLessThanOrEqual(now + 9010);
+    expect(v.value).toEqual({ b: 123 });
 
-    await sleep(4000);
-    expect(cache.get(key)).toEqual(null);
-    expect(cache.has(key)).toBeFalsy();
+    cache.set(key, {}, { timeout: -1 });
+    expect(map.size).toBe(0);
+    expect(map.get(JSON.stringify(key))).toBeUndefined();
   });
   test('object as key', async () => {
     const cache = new Cache<object, object>();

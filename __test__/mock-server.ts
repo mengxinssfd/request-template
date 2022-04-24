@@ -64,10 +64,5 @@ export function useMockAxios(routers: any) {
   };
 
   (axios as any).create.mockImplementation(mockCreate);
-  (axios.CancelToken.source as any).mockReturnValue({
-    token: '111',
-    cancel() {
-      return 0;
-    },
-  });
+  (axios.CancelToken.source as any).mockReturnValue({});
 }

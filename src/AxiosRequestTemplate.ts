@@ -168,7 +168,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 请求
-  protected doRequest(requestConfig: AxiosRequestConfig, customConfig: CC) {
+  protected execRequest(requestConfig: AxiosRequestConfig, customConfig: CC) {
     // 使用缓存
     const cacheConfig = customConfig.cache as CustomCacheConfig;
     const useCache = cacheConfig.enable;
@@ -182,7 +182,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
     // 缓存
     if (useCache) {
-      this.cache.set(requestConfig, res, typeof useCache === 'object' ? useCache : undefined);
+      this.cache.set(requestConfig, res, cacheConfig);
     }
     return res;
   }
@@ -210,7 +210,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     this.handleRequestData(data, requestConfig);
     try {
       // 3、请求
-      const response: AxiosResponse = await this.doRequest(requestConfig, customConfig);
+      const response: AxiosResponse = await this.execRequest(requestConfig, customConfig);
       // 清理cancel
       clearCanceler();
       // 4、请求结果数据结构处理
