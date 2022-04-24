@@ -39,6 +39,7 @@ describe('AxiosWrapper', () => {
   const post = req.methodFactory('post');
 
   test('base', async () => {
+    expect.assertions(4);
     // console.log((axios.create({ url: 'test' }) as any)(1, 2, 3), Req);
     const res = await get<{ username: string; id: number }>('/user');
     expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
@@ -125,6 +126,7 @@ describe('AxiosWrapper', () => {
   });
 
   test('serve 404', async () => {
+    expect.assertions(3);
     try {
       await get('/test');
     } catch (e) {
@@ -193,16 +195,11 @@ describe('AxiosWrapper', () => {
     });
   });
   test('nocode', async () => {
-    try {
-      await get('/nocode');
-    } catch (e) {
-      expect(e).toBe('1');
-    }
-    try {
-      await get('/nocode', {}, { returnRes: true });
-    } catch (e) {
-      expect(e).toEqual({ data: '1', status: 200 });
-    }
+    expect.assertions(2);
+    const res = await get('/nocode');
+    expect(res).toBe('1');
+    const res2 = await get('/nocode', {}, { returnRes: true });
+    expect(res2).toEqual({ data: '1', status: 200 });
   });
   test('global customConfig', async () => {
     const req = new AxiosRequestTemplate({}, { returnRes: true, statusHandlers });

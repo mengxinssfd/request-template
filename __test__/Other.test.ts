@@ -13,6 +13,7 @@ describe('Other', () => {
   const { get, post } = Other;
 
   test('base', async () => {
+    expect.assertions(7);
     const res = await get<{ username: string; id: number }, true>('/user');
     expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
 
