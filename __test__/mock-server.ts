@@ -24,7 +24,7 @@ export const routers = {
     if (d.username === 'foo' && d.password === 'bar') {
       return buildRes({ code: 200, msg: 'success' });
     }
-    return buildRes({ code: 0, msg: '账号或密码错误' });
+    return Promise.reject({ code: 0, msg: '账号或密码错误' });
   },
   '404'(d: string) {
     if (d === 'returnRes=1') {
