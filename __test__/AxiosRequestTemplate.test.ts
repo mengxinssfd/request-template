@@ -25,13 +25,13 @@ const mockCreate = (/*config: AxiosRequestConfig*/) => {
 
 (axios as any).create.mockImplementation(mockCreate);
 
-describe('AxiosWrapper', () => {
+describe('AxiosRequestTemplate', () => {
   const statusHandlers: StatusHandlers = {
-    200: (res, data, customConfig) => {
-      return customConfig.returnRes ? res : data;
+    200: (ctx, res, data) => {
+      return ctx.customConfig.returnRes ? res : data;
     },
-    default: (res, data, customConfig) => {
-      return customConfig.returnRes ? res : data;
+    default: (ctx, res, data) => {
+      return ctx.customConfig.returnRes ? res : data;
     },
   };
   const req = new AxiosRequestTemplate<CustomConfig>({ baseURL: '/' }, { statusHandlers });
@@ -144,7 +144,7 @@ describe('AxiosWrapper', () => {
       '/user',
       {},
       {
-        statusHandlers: { '200': (res) => res },
+        statusHandlers: { '200': (ctx, res) => res },
       },
     );
     expect(res).toEqual({
@@ -157,7 +157,7 @@ describe('AxiosWrapper', () => {
       '/user',
       {},
       {
-        statusHandlers: { '200': (res) => res },
+        statusHandlers: { '200': (_, res) => res },
       },
       // 改为post，无效；
       // methodFactory的method优先级更高，除了method，url，data其他的axios配置优先级都是这里的高
@@ -173,7 +173,7 @@ describe('AxiosWrapper', () => {
       '/user',
       {},
       {
-        statusHandlers: { '200': (res) => res },
+        statusHandlers: { '200': (_, res) => res },
       },
     );
     expect(res2).toEqual({
@@ -185,7 +185,7 @@ describe('AxiosWrapper', () => {
       '/user',
       {},
       {
-        statusHandlers: { '200': (res) => res },
+        statusHandlers: { '200': (_, res) => res },
       },
       { method: 'post' },
     );
@@ -278,6 +278,64 @@ describe('AxiosWrapper', () => {
       { status: 'rejected', reason: 'cancelCurrent' },
       { status: 'rejected', reason: 'cancelAll' },
       { status: 'rejected', reason: 'cancelAll' },
+    ]);
+  });
+  test('test config', async () => {
+    const req = new AxiosRequestTemplate<CustomConfig>(undefined, {
+      statusHandlers: {
+        1000: ({ customConfig, requestConfig }, res) => {
+          customConfig = { ...customConfig };
+          requestConfig = { ...requestConfig };
+          delete customConfig.statusHandlers;
+          delete requestConfig.cancelToken;
+          return customConfig.returnRes ? res : { requestConfig, customConfig };
+        },
+      },
+    });
+    const get = req.methodFactory('get');
+    const post = req.methodFactory('post');
+    const res1 = get('/config', {}, { cache: true });
+    const res2 = get('/config', {}, {}, { headers: { test: 1 } });
+    const res3 = post('/config');
+
+    const res = await Promise.all([res1, res2, res3]);
+
+    expect(res).toEqual([
+      {
+        customConfig: {
+          cache: {
+            enable: true,
+          },
+        },
+        requestConfig: {
+          method: 'get',
+          params: {},
+          url: '/config',
+        },
+      },
+      {
+        customConfig: {
+          cache: {},
+        },
+        requestConfig: {
+          headers: {
+            test: 1,
+          },
+          method: 'get',
+          params: {},
+          url: '/config',
+        },
+      },
+      {
+        customConfig: {
+          cache: {},
+        },
+        requestConfig: {
+          data: {},
+          method: 'post',
+          url: '/config',
+        },
+      },
     ]);
   });
 });
