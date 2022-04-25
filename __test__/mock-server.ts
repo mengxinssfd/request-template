@@ -5,6 +5,9 @@ function buildRes(res: { code: number; data?: any; msg: string }) {
 }
 
 export const routers = {
+  '/config'() {
+    return buildRes({ code: 1000, data: '', msg: 'success' });
+  },
   '/user'(data: any, method: string) {
     if (method === 'post') {
       return buildRes({ code: 200, data: { username: 'post', id: 2 }, msg: 'success' });

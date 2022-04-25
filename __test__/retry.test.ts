@@ -1,5 +1,5 @@
-import axios, { AxiosError } from 'axios';
-import { AxiosRequestTemplate, CustomConfig, ResType } from '../src';
+import axios from 'axios';
+import { AxiosRequestTemplate, Context, CustomConfig } from '../src';
 
 jest.mock('axios');
 const map = new Map<string, Function>();
@@ -27,25 +27,43 @@ describe('retry', () => {
   interface RetryConfig extends CustomConfig {
     retry?: number;
   }
-  class RetryTemp<CC extends RetryConfig> extends AxiosRequestTemplate<CC> {
-    private retryMap = new Map<string, number>();
+  class RetryTemp<CC extends RetryConfig = RetryConfig> extends AxiosRequestTemplate<CC> {
+    protected retryMap = new Map<any, Function>();
+    // protected handleCanceler(config): Function {
+    //   return () => {
+    //     config.customConfig.retry = undefined;
+    //     return super.handleCanceler(config)();
+    //   };
+    // }
 
-    protected handleError(e: AxiosError<ResType<any>>): any {
-      const { requestConfig, customConfig } = this;
-      if (customConfig.retry === undefined) return super.handleError(e);
-      const key = this.generateRequestKey(requestConfig);
-      const value = this.retryMap.get(key) || 0;
-      if (value && value >= customConfig.retry) {
-        this.retryMap.delete(key);
-        return Promise.reject('times * ' + value);
+    protected handleError(ctx: Context<CC>, e): any {
+      const { requestConfig, customConfig, requestKey } = ctx;
+      if (customConfig.retry === undefined) return super.handleError(ctx, e);
+      const maxTimex = customConfig.retry;
+      let status: 'running' | 'stop' = 'running';
+      let times = 0;
+      this.retryMap.set(requestKey, () => (status = 'stop'));
+      this.cancelAll = (msg) => {
+        this.retryMap.delete(requestKey);
+        super.cancelAll(msg);
+      };
+      async function retry() {
+        times++;
+        try {
+          return await this.request(
+            requestConfig.url as string,
+            requestConfig.data || requestConfig.params,
+            { ...customConfig, retry: undefined },
+            requestConfig,
+          );
+        } catch (e) {
+          if (times >= maxTimex || status === 'stop') {
+            return Promise.reject('times * ' + times);
+          }
+          return retry();
+        }
       }
-      this.retryMap.set(key, value + 1);
-      return this.request(
-        requestConfig.url as string,
-        requestConfig.data || requestConfig.params,
-        customConfig,
-        requestConfig,
-      );
+      return retry();
     }
   }
 
@@ -68,4 +86,21 @@ describe('retry', () => {
       expect(e).toBe('times * 10');
     }
   });
+  /*test('cancel', async () => {
+    expect.assertions(2);
+    const req = new RetryTemp();
+    const get = req.methodFactory('get');
+    try {
+      const p = get<{ username: string; id: number }>('/user', {}, { retry: 2 });
+      req.cancelAll('cancel');
+      await p;
+    } catch (e) {
+      expect(e).toBe('404');
+    }
+    try {
+      await get<{ username: string; id: number }>('/user', {}, { retry: 10 });
+    } catch (e) {
+      expect(e).toBe('times * 10');
+    }
+  });*/
 });

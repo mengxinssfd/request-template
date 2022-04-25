@@ -1,10 +1,9 @@
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 export type StatusHandler<CC extends CustomConfig> = (
+  config: Context<CC>,
   res: AxiosResponse<ResType<any>>,
   data: ResType<any>,
-  customConfig: CC,
-  requestConfig: AxiosRequestConfig,
 ) => any;
 
 // StatusHandlers
@@ -38,3 +37,9 @@ export type DynamicCustomConfig<CC extends CustomConfig, RC extends boolean> = O
   'returnRes'
 > &
   (RC extends false ? { returnRes?: RC } : { returnRes: true });
+
+export interface Context<CC> {
+  customConfig: CC;
+  requestKey: string;
+  requestConfig: AxiosRequestConfig;
+}
