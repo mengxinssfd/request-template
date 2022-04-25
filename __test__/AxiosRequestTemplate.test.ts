@@ -160,8 +160,8 @@ describe('AxiosWrapper', () => {
         statusHandlers: { '200': (res) => res },
       },
       // 改为post，无效；
-      // methodFactory优先级更高，除了method，url，data其他的axios配置优先级都是这里的高
-      { method: 'post' },
+      // methodFactory的method优先级更高，除了method，url，data其他的axios配置优先级都是这里的高
+      { method: 'post' } as any,
     );
     expect(res1).toEqual({
       data: { code: 200, data: { username: 'get', id: 1 }, msg: 'success' },
