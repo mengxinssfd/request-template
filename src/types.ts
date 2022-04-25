@@ -1,9 +1,10 @@
-import type { AxiosResponse } from 'axios';
+import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 export type StatusHandler<CC extends CustomConfig> = (
   res: AxiosResponse<ResType<any>>,
   data: ResType<any>,
   customConfig: CC,
+  requestConfig: AxiosRequestConfig,
 ) => any;
 
 // StatusHandlers

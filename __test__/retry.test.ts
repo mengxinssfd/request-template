@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { AxiosRequestTemplate, CustomConfig, ResType } from '../src';
 
 jest.mock('axios');
@@ -30,13 +30,9 @@ describe('retry', () => {
   class RetryTemp<CC extends RetryConfig> extends AxiosRequestTemplate<CC> {
     private retryMap = new Map<string, number>();
 
-    protected handleError(
-      requestConfig: AxiosRequestConfig,
-      customConfig: RetryConfig,
-      e: AxiosError<ResType<any>>,
-    ): any {
-      if (customConfig.retry === undefined)
-        return super.handleError(requestConfig, customConfig as CC, e);
+    protected handleError(e: AxiosError<ResType<any>>): any {
+      const { requestConfig, customConfig } = this;
+      if (customConfig.retry === undefined) return super.handleError(e);
       const key = this.generateRequestKey(requestConfig);
       const value = this.retryMap.get(key) || 0;
       if (value && value >= customConfig.retry) {
