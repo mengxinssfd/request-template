@@ -6,7 +6,6 @@ import axios, {
   AxiosResponse,
   Method,
   Canceler,
-  CancelToken,
   AxiosError,
 } from 'axios';
 import { Cache } from './Cache';
@@ -19,8 +18,8 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   protected cache!: Cache<AxiosPromise>;
 
   // cancel函数缓存
-  protected readonly cancelerMap = new Map<CancelToken, Canceler>();
-  protected readonly tagCancelMap = new Map<string, CancelToken[]>();
+  protected readonly cancelerSet = new Set<Canceler>();
+  protected readonly tagCancelMap = new Map<string, Canceler[]>();
 
   cancelCurrentRequest?: Canceler;
 
@@ -65,8 +64,8 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 设置取消handler
-  protected handleCanceler(ctx: Context<CC>): Function {
-    const { requestConfig, customConfig } = ctx;
+  protected handleCanceler(ctx: Context<CC>) {
+    const { requestConfig, customConfig, clearSet } = ctx;
     const { cancel, token } = axios.CancelToken.source();
     requestConfig.cancelToken = token;
     const tag = customConfig.tag;
@@ -76,26 +75,27 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       if (!this.tagCancelMap.has(tag)) {
         this.tagCancelMap.set(tag, []);
       }
-      (this.tagCancelMap.get(tag) as CancelToken[]).push(token);
+      (this.tagCancelMap.get(tag) as Canceler[]).push(cancel);
+      clearSet.add(() => {
+        const cancelers = this.tagCancelMap.get(tag);
+        if (!cancelers || !cancelers.length) return;
+        const index = cancelers.indexOf(cancel);
+        cancelers.splice(index, 1);
+      });
     }
 
     // 缓存取消
-    this.cancelerMap.set(token, cancel);
+    this.cancelerSet.add(cancel);
     // 清理取消
     const clearCanceler = () => {
-      this.cancelerMap.delete(token);
-      if (!tag) return;
-      const tokens = this.tagCancelMap.get(tag);
-      if (!tokens || !tokens.length) return;
-      const index = tokens.indexOf(token);
-      tokens.splice(index, 1);
+      this.cancelerSet.delete(cancel);
     };
+    clearSet.add(clearCanceler);
     // 取消
     this.cancelCurrentRequest = (msg) => {
       cancel(msg);
       clearCanceler();
     };
-    return clearCanceler;
   }
   // 处理requestConfig
   protected handleRequestConfig(
@@ -182,6 +182,11 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     return res;
   }
 
+  protected afterRequest(ctx: Context<CC>) {
+    ctx.clearSet.forEach((clear) => clear());
+    ctx.clearSet.clear();
+  }
+
   // 模板方法，最终请求所使用的方法。
   // 可子类覆盖，如非必要不建议子类覆盖
   request<T = never, RC extends boolean = false>(
@@ -203,25 +208,21 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       requestConfig,
       customConfig,
       requestKey: '',
+      clearSet: new Set(),
     };
     ctx.requestKey = this.generateRequestKey(ctx);
     this.handleRequestData(ctx, data);
-
     // 2、处理cancel handler
-    const clearCanceler = this.handleCanceler(ctx);
+    this.handleCanceler(ctx);
     try {
       // 3、请求
       const response: AxiosResponse = await this.execRequest(ctx);
-      // 清理cancel
-      clearCanceler();
       // 4、请求结果数据结构处理
       const data = this.handleResponse<T>(ctx, response);
       // 5、状态码处理，并返回结果
       return this.handleStatus<T>(ctx, response, data);
     } catch (error: any) {
       const e = error as AxiosError<ResType<any>>;
-      // 清理cancel
-      clearCanceler();
       // 错误处理
       const response = e.response as AxiosResponse<ResType<any>>;
       // 4、请求结果数据结构处理
@@ -231,7 +232,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
         return this.handleStatus<T>(ctx, response, data);
       }
       // 如未命中error处理 则再次抛出error
-      return this.handleError(ctx, e);
+      return await this.handleError(ctx, e);
+    } finally {
+      this.afterRequest(ctx);
     }
   }
 
@@ -241,19 +244,22 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
   // 取消所有请求
   cancelAll(msg?: string) {
-    this.cancelerMap.forEach((canceler) => canceler(msg));
-    this.cancelerMap.clear();
+    this.cancelerSet.forEach((canceler) => {
+      canceler(msg);
+    });
+    this.cancelerSet.clear();
     this.tagCancelMap.clear();
   }
 
   // 根据tag标签取消请求
   cancelWithTag(tag: string, msg?: string) {
-    const tokens = this.tagCancelMap.get(tag);
-    if (!tokens) return;
-    tokens.forEach((token) => {
-      this.cancelerMap.get(token)?.(msg);
-      this.cancelerMap.delete(token);
+    const cancelers = this.tagCancelMap.get(tag);
+    if (!cancelers) return;
+    cancelers.forEach((canceler) => {
+      canceler(msg);
+      this.cancelerSet.delete(canceler);
     });
+
     this.tagCancelMap.delete(tag);
   }
 

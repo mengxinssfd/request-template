@@ -42,4 +42,5 @@ export interface Context<CC> {
   customConfig: CC;
   requestKey: string;
   requestConfig: AxiosRequestConfig;
+  clearSet: Set<Function>;
 }

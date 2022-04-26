@@ -6,8 +6,12 @@ const map = new Map<string, Function>();
 const mockCreate = () => {
   return function ({ cancelToken }) {
     return new Promise((res, rej) => {
-      map.set(cancelToken, rej);
-      rej('404');
+      map.set(cancelToken, (msg?: string) => {
+        rej({ message: msg });
+      });
+      setTimeout(() => {
+        rej('404');
+      });
     });
   };
 };
@@ -22,59 +26,95 @@ const mockCreate = () => {
 });
 
 (axios as any).create.mockImplementation(mockCreate);
+(axios as any).isCancel = (value: any) => typeof value === 'object' && 'message' in value;
+
+interface Ctx<CC> extends Context<CC> {
+  retry?: Function;
+}
 
 describe('retry', () => {
   interface RetryConfig extends CustomConfig {
     retry?: number;
   }
   class RetryTemp<CC extends RetryConfig = RetryConfig> extends AxiosRequestTemplate<CC> {
-    protected retryMap = new Map<any, Function>();
-    // protected handleCanceler(config): Function {
-    //   return () => {
-    //     config.customConfig.retry = undefined;
-    //     return super.handleCanceler(config)();
-    //   };
-    // }
-
-    protected handleError(ctx: Context<CC>, e): any {
-      const { requestConfig, customConfig, requestKey } = ctx;
-      if (customConfig.retry === undefined) return super.handleError(ctx, e);
+    protected handleRetry(ctx: Ctx<CC>) {
+      const { customConfig, clearSet } = ctx;
+      if (customConfig.retry === undefined || customConfig.retry < 1) return;
       const maxTimex = customConfig.retry;
       let status: 'running' | 'stop' = 'running';
       let times = 0;
-      this.retryMap.set(requestKey, () => (status = 'stop'));
-      this.cancelAll = (msg) => {
-        this.retryMap.delete(requestKey);
-        super.cancelAll(msg);
+      const clear = () => {
+        status = 'stop';
       };
-      async function retry() {
-        times++;
-        try {
-          return await this.request(
-            requestConfig.url as string,
-            requestConfig.data || requestConfig.params,
-            { ...customConfig, retry: undefined },
-            requestConfig,
-          );
-        } catch (e) {
-          if (times >= maxTimex || status === 'stop') {
-            return Promise.reject('times * ' + times);
-          }
-          return retry();
-        }
+      if (customConfig.tag) {
+        this.tagCancelMap.get(customConfig.tag)?.push(clear);
       }
-      return retry();
+      this.cancelerSet.add(clear);
+      clearSet.add(clear);
+      ctx.retry = () => {
+        return new Promise((res, rej) => {
+          const handle = () => {
+            if (times >= maxTimex || status === 'stop') {
+              return rej('times * ' + times);
+            }
+            times++;
+            this.execRequest({ ...ctx }).then(
+              (data) => {
+                res(data);
+              },
+              () => {
+                handle();
+              },
+            );
+          };
+          handle();
+        });
+      };
+    }
+
+    protected handleCanceler(ctx) {
+      super.handleCanceler(ctx);
+      this.handleRetry(ctx);
+    }
+
+    protected handleError(ctx: Ctx<CC>, e): any {
+      const { customConfig } = ctx;
+      if (customConfig.retry === undefined || axios.isCancel(e)) return super.handleError(ctx, e);
+      return ctx.retry?.();
     }
   }
 
   test('base', async () => {
-    expect.assertions(3);
+    expect.assertions(4);
     const get = new RetryTemp().methodFactory('get');
+
+    const list = [
+      get<{ username: string; id: number }>('/user'),
+      get<{ username: string; id: number }>('/user', {}, { retry: 2 }),
+      get<{ username: string; id: number }>('/user', {}, { retry: 10 }),
+    ];
+    const res = await Promise.allSettled(list);
+    expect(res).toEqual([
+      {
+        reason: '404',
+        status: 'rejected',
+      },
+      {
+        reason: 'times * 2',
+        status: 'rejected',
+      },
+      {
+        reason: 'times * 10',
+        status: 'rejected',
+      },
+    ]);
+
     try {
       await get<{ username: string; id: number }>('/user');
     } catch (e) {
       expect(e).toBe('404');
     }
+
     try {
       await get<{ username: string; id: number }>('/user', {}, { retry: 2 });
     } catch (e) {
@@ -86,21 +126,38 @@ describe('retry', () => {
       expect(e).toBe('times * 10');
     }
   });
-  /*test('cancel', async () => {
-    expect.assertions(2);
+  describe('cancel', () => {
     const req = new RetryTemp();
     const get = req.methodFactory('get');
-    try {
-      const p = get<{ username: string; id: number }>('/user', {}, { retry: 2 });
-      req.cancelAll('cancel');
-      await p;
-    } catch (e) {
-      expect(e).toBe('404');
-    }
-    try {
-      await get<{ username: string; id: number }>('/user', {}, { retry: 10 });
-    } catch (e) {
-      expect(e).toBe('times * 10');
-    }
-  });*/
+    test('cancelAll', async () => {
+      expect.assertions(1);
+      try {
+        const p = get<{ username: string; id: number }>('/user', {}, { retry: 2 });
+        req.cancelAll('cancel');
+        await p;
+      } catch (e) {
+        expect(e).toEqual({ message: 'cancel' });
+      }
+    });
+    test('cancelWithTag', async () => {
+      expect.assertions(1);
+      try {
+        const p = get<{ username: string; id: number }>('/user', {}, { tag: 'cancel', retry: 2 });
+        req.cancelWithTag('cancel', 'with tag');
+        await p;
+      } catch (e) {
+        expect(e).toEqual({ message: 'with tag' });
+      }
+    });
+    test('cancelCurrentRequest', async () => {
+      expect.assertions(1);
+      try {
+        const p = get<{ username: string; id: number }>('/user', {}, { tag: 'cancel', retry: 2 });
+        req.cancelCurrentRequest?.('cancel');
+        await p;
+      } catch (e) {
+        expect(e).toEqual({ message: 'cancel' });
+      }
+    });
+  });
 });
