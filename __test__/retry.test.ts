@@ -83,8 +83,8 @@ describe('retry', () => {
       };
     }
 
-    protected handleCanceler(ctx) {
-      super.handleCanceler(ctx);
+    protected beforeRequest(ctx) {
+      super.beforeRequest(ctx);
       this.handleRetry(ctx);
     }
 

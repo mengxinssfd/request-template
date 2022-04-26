@@ -162,7 +162,8 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
   // 请求
   protected execRequest(ctx: Context<CC>) {
-    const { requestConfig, customConfig, requestKey } = ctx;
+    const { requestConfig, customConfig } = ctx;
+    const requestKey = this.generateRequestKey(ctx);
     // 使用缓存
     const cacheConfig = customConfig.cache as CustomCacheConfig;
     const useCache = cacheConfig.enable;
@@ -180,6 +181,10 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       this.cache.set(requestKey, res, cacheConfig);
     }
     return res;
+  }
+
+  protected beforeRequest(ctx: Context<CC>) {
+    this.handleCanceler(ctx);
   }
 
   protected afterRequest(ctx: Context<CC>) {
@@ -207,13 +212,11 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     const ctx: Context<CC> = {
       requestConfig,
       customConfig,
-      requestKey: '',
       clearSet: new Set(),
     };
-    ctx.requestKey = this.generateRequestKey(ctx);
     this.handleRequestData(ctx, data);
-    // 2、处理cancel handler
-    this.handleCanceler(ctx);
+    // 2、处理cancel handler等等
+    this.beforeRequest(ctx);
     try {
       // 3、请求
       const response: AxiosResponse = await this.execRequest(ctx);
@@ -234,6 +237,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       // 如未命中error处理 则再次抛出error
       return await this.handleError(ctx, e);
     } finally {
+      // 6、处理清理canceler等操作
       this.afterRequest(ctx);
     }
   }
