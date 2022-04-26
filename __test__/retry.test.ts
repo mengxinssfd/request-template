@@ -3,12 +3,23 @@ import { AxiosRequestTemplate, Context, CustomConfig } from '../src';
 
 jest.mock('axios');
 const map = new Map<string, Function>();
+let times = 0;
 const mockCreate = () => {
-  return function ({ cancelToken }) {
+  return function ({ cancelToken, url }) {
     return new Promise((res, rej) => {
       map.set(cancelToken, (msg?: string) => {
         rej({ message: msg });
       });
+      if (url === '3') {
+        if (times === 3) {
+          setTimeout(() => {
+            res({ code: 200, data: {}, msg: 'success' });
+          });
+          return;
+        } else {
+          times++;
+        }
+      }
       setTimeout(() => {
         rej('404');
       });
@@ -83,11 +94,9 @@ describe('retry', () => {
       return ctx.retry?.();
     }
   }
-
+  const get = new RetryTemp().methodFactory('get');
   test('base', async () => {
     expect.assertions(4);
-    const get = new RetryTemp().methodFactory('get');
-
     const list = [
       get<{ username: string; id: number }>('/user'),
       get<{ username: string; id: number }>('/user', {}, { retry: 2 }),
@@ -126,6 +135,22 @@ describe('retry', () => {
       expect(e).toBe('times * 10');
     }
   });
+  test('第3次成功', async () => {
+    expect.assertions(2);
+    try {
+      await get<{ username: string; id: number }>(
+        '3',
+        { code: 200, data: {}, msg: 'success' },
+        { tag: 'cancel', retry: 2 },
+      );
+    } catch (e) {
+      expect(e).toBe('times * 2');
+    }
+    times = 0;
+    const res = await get<{ username: string; id: number }>('3', {}, { tag: 'cancel', retry: 3 });
+    expect(res).toEqual({ code: 200, data: {}, msg: 'success' });
+  });
+
   describe('cancel', () => {
     const req = new RetryTemp();
     const get = req.methodFactory('get');
