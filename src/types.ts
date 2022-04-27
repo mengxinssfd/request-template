@@ -40,6 +40,6 @@ export type DynamicCustomConfig<CC extends CustomConfig, RC extends boolean> = O
 
 export interface Context<CC> {
   customConfig: CC;
-  requestKey: string;
   requestConfig: AxiosRequestConfig;
+  clearSet: Set<Function>;
 }

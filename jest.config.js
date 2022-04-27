@@ -1,6 +1,6 @@
 module.exports = {
   // 默认为node
-  testEnvironment: 'jsdom',
+  // testEnvironment: 'jsdom',
   coverageThreshold: {
     global: {
       branches: 50,

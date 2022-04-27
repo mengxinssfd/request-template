@@ -15,13 +15,6 @@ export const routers = {
     return buildRes({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
   },
   '/login'(data: any) {
-    if (
-      data instanceof FormData &&
-      data.get('username') === 'foo' &&
-      data.get('password') === 'bar'
-    ) {
-      return buildRes({ code: 200, msg: 'success' });
-    }
     if (data.username === 'foo' && data.password === 'bar') {
       return buildRes({ code: 200, msg: 'success' });
     }

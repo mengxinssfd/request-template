@@ -54,10 +54,7 @@ describe('AxiosRequestTemplate', () => {
       data: { code: 200, data: { username: 'get', id: 1 }, msg: 'success' },
     });
 
-    const fd = new FormData();
-    fd.append('username', 'foo');
-    fd.append('password', 'bar');
-    const res3 = await post('/login', fd);
+    const res3 = await post('/login', { username: 'foo', password: 'bar' });
     expect(res3).toEqual({ code: 200, msg: 'success' });
 
     try {
