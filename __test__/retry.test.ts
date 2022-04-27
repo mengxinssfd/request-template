@@ -177,6 +177,5 @@ describe('retry', () => {
         expect(e).toEqual({ message: 'cancel' });
       }
     });
-
   });
 });
