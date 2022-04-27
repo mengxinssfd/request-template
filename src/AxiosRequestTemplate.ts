@@ -161,30 +161,65 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 请求
-  protected execRequest(ctx: Context<CC>) {
-    const { requestConfig, customConfig } = ctx;
-    const requestKey = this.generateRequestKey(ctx);
+  protected execRequest(ctx: Context<CC> & { isRetry?: boolean }) {
+    const { requestConfig, customConfig, requestKey } = ctx;
     // 使用缓存
     const cacheConfig = customConfig.cache as CustomCacheConfig;
-    const useCache = cacheConfig.enable;
-
-    if (useCache) {
-      const cache = this.cache.get(requestKey);
-      if (cache) return cache;
-    }
-
-    // 请求
-    const res = this.axiosIns(requestConfig);
 
     // 缓存
-    if (useCache) {
+    if (cacheConfig.enable) {
+      if (!ctx.isRetry) {
+        const cache = this.cache.get(requestKey);
+        if (cache) return cache;
+      }
+      // 请求
+      const res = this.axiosIns(requestConfig);
+      // 存储缓存
       this.cache.set(requestKey, res, cacheConfig);
+      return res;
     }
-    return res;
+    // 请求
+    return this.axiosIns(requestConfig);
+  }
+
+  protected handleRetry(ctx: Context<CC>) {
+    const { customConfig, clearSet } = ctx;
+    if (customConfig.retry === undefined || customConfig.retry < 1) return;
+    const maxTimex = customConfig.retry;
+    let status: 'running' | 'stop' = 'running';
+    let times = 0;
+    const clear = () => {
+      status = 'stop';
+    };
+    if (customConfig.tag) {
+      this.tagCancelMap.get(customConfig.tag)?.push(clear);
+    }
+    this.cancelerSet.add(clear);
+    clearSet.add(clear);
+    ctx.retry = (e: AxiosError<ResType<any>>) => {
+      return new Promise((res, rej) => {
+        const handle = (e) => {
+          if (times >= maxTimex || status === 'stop') {
+            return rej(e);
+          }
+          times++;
+          this.execRequest({ ...ctx, isRetry: true }).then(
+            (data) => {
+              res(data);
+            },
+            (e) => {
+              handle(e);
+            },
+          );
+        };
+        handle(e);
+      });
+    };
   }
 
   protected beforeRequest(ctx: Context<CC>) {
     this.handleCanceler(ctx);
+    this.handleRetry(ctx);
   }
 
   protected afterRequest(ctx: Context<CC>) {
@@ -198,7 +233,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     url: string,
     data?: {},
     customConfig?: DynamicCustomConfig<CC, RC>,
-    requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params'>,
+    requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'cancelToken'>,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
   async request<T>(
     url: string,
@@ -212,8 +247,10 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     const ctx: Context<CC> = {
       requestConfig,
       customConfig,
+      requestKey: '',
       clearSet: new Set(),
     };
+    ctx.requestKey = this.generateRequestKey(ctx);
     this.handleRequestData(ctx, data);
     // 2、处理cancel handler等等
     this.beforeRequest(ctx);
@@ -243,7 +280,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   protected handleError(ctx: Context<CC>, e: AxiosError<ResType<any>>): any {
-    throw e;
+    const { customConfig } = ctx;
+    if (customConfig.retry === undefined || axios.isCancel(e)) throw e;
+    return ctx.retry?.(e);
   }
 
   // 取消所有请求
@@ -273,7 +312,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       url: string,
       data?: {},
       customConfig?: DynamicCustomConfig<CC, RC>,
-      requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'method'>,
+      requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'method' | 'cancelToken'>,
     ) => this.request<T, RC>(url, data, customConfig, { ...requestConfig, method });
   }
 }

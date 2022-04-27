@@ -1,4 +1,5 @@
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { AxiosError } from 'axios';
 
 export type StatusHandler<CC extends CustomConfig> = (
   config: Context<CC>,
@@ -24,6 +25,7 @@ export interface CustomConfig {
   statusHandlers?: StatusHandlers;
   cache?: boolean | CustomCacheConfig;
   tag?: string;
+  retry?: number;
 }
 
 export interface ResType<T = never> {
@@ -42,4 +44,6 @@ export interface Context<CC> {
   customConfig: CC;
   requestConfig: AxiosRequestConfig;
   clearSet: Set<Function>;
+  requestKey: string;
+  retry?: (e: AxiosError<ResType<any>>) => Promise<any>;
 }
