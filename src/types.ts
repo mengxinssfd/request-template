@@ -17,6 +17,11 @@ export interface CustomCacheConfig {
   enable?: boolean;
   timeout?: number;
 }
+export interface RetryConfig {
+  times?: number;
+  interval?: number;
+  immediate?: boolean;
+}
 
 // 自定义配置
 export interface CustomConfig {
@@ -31,7 +36,7 @@ export interface CustomConfig {
   // 标签，用于取消请求
   tag?: string;
   // 失败重试次数
-  retry?: number;
+  retry?: number | RetryConfig;
 }
 
 export interface ResType<T = never> {

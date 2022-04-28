@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { AxiosRequestTemplate, Cache } from '../src';
-import { mockAxiosResponse } from './utils';
+import { mockAxiosResponse, sleep } from './utils';
 
 jest.mock('axios');
 const map = new Map<string, Function>();
@@ -59,7 +59,7 @@ describe('AxiosRequestTemplate retry', () => {
     const list = [
       get<{ username: string; id: number }>('/user', { key: 1 }),
       get<{ username: string; id: number }>('/user', { key: 2 }, { retry: 2 }),
-      get<{ username: string; id: number }>('/user', { key: 3 }, { retry: 10 }),
+      get<{ username: string; id: number }>('/user', { key: 3 }, { retry: { times: 10 } }),
     ];
     const res = await Promise.allSettled(list);
     expect(res).toEqual([
@@ -132,6 +132,30 @@ describe('AxiosRequestTemplate retry', () => {
     });
     expect(mockGet.mock.calls.length).toBe(1);
     expect(mockSet.mock.calls.length).toBe(4);
+  });
+  describe('immediate', () => {
+    test('use', async () => {
+      let res: any;
+      const p = get('/user', { use: 1 }, { retry: { times: 1, immediate: true, interval: 1000 } });
+      p.catch((r) => (res = r));
+
+      await sleep(0);
+      expect(res).toBeUndefined();
+
+      await sleep(10);
+      expect(res).toBe('times * 1');
+    });
+    test('unused', async () => {
+      let res: any;
+      const p = get('/user', { use: 2 }, { retry: { times: 1, immediate: false, interval: 50 } });
+      p.catch((r) => (res = r));
+
+      await sleep(20);
+      expect(res).toBeUndefined();
+
+      await sleep(50);
+      expect(res).toBe('times * 1');
+    });
   });
 
   describe('cancel', () => {

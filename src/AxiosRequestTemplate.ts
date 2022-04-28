@@ -1,4 +1,4 @@
-import type { ResType, CustomConfig, DynamicCustomConfig } from './types';
+import type { ResType, CustomConfig, DynamicCustomConfig, RetryConfig } from './types';
 import axios, {
   AxiosInstance,
   AxiosPromise,
@@ -94,6 +94,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
     clearSet.add(clearCanceler);
     // 取消
+    // 注意：对于retry的无效，无法判断时机
     this.cancelCurrentRequest = (msg) => {
       cancel(msg);
       clearCanceler();
@@ -130,10 +131,26 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     return merge(cacheConfig, merge(this.globalCustomConfig.cache));
   }
 
+  protected mergeRetryConfig(retryConfig: CustomConfig['retry']): RetryConfig {
+    function merge(retry: CustomConfig['retry'], base: RetryConfig = {}) {
+      switch (typeof retry) {
+        case 'number':
+          base.times = retry;
+          break;
+        case 'object':
+          base = { ...base, ...retry };
+          break;
+      }
+      return base;
+    }
+    return merge(retryConfig, merge(this.globalCustomConfig.retry));
+  }
+
   // 处理CustomConfig
   protected handleCustomConfig(customConfig: CC) {
     const config = { ...this.globalCustomConfig, ...customConfig };
     config.cache = this.mergeCacheConfig(customConfig.cache);
+    config.retry = this.mergeRetryConfig(customConfig.retry);
     return config;
   }
 
@@ -190,42 +207,66 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   protected handleRetry(ctx: Context<CC>) {
+    // 太长了  以后可优化
     const { customConfig, clearSet } = ctx;
-    if (customConfig.retry === undefined || customConfig.retry < 1) return;
-    const maxTimex = customConfig.retry;
-    let status: 'running' | 'stop' = 'running';
+    const retryConfig = customConfig.retry as RetryConfig;
+
+    if (retryConfig.times === undefined || retryConfig.times < 1) return;
+
+    const maxTimex = retryConfig.times;
     let times = 0;
+    let timer: NodeJS.Timer;
+    let reject = (): any => undefined;
     const stop = () => {
-      status = 'stop';
+      clearTimeout(timer);
+      reject();
     };
+
     if (customConfig.tag) {
       this.tagCancelMap.get(customConfig.tag)?.push(stop);
     }
     this.cancelerSet.add(stop);
     clearSet.add(stop);
+
     ctx.retry = (e: AxiosError<ResType<any>>) => {
       return new Promise((res, rej) => {
-        const retry = (e) => {
-          if (times >= maxTimex || status === 'stop') {
-            return rej(e);
+        // retry期间取消，则返回上一次的结果
+        reject = () => rej(e);
+        const startRetry = () => {
+          if (times >= maxTimex) {
+            reject();
+            return;
           }
+          // 立即执行时，间隔为undefined；否则为interval
+          const timeout =
+            times === 0
+              ? retryConfig.immediate
+                ? void 0
+                : retryConfig.interval
+              : retryConfig.interval;
+
+          timer = setTimeout(retry, timeout);
+        };
+        const retry = () => {
           times++;
           this.execRequest({ ...ctx, isRetry: true }).then(
-            (data) => {
-              res(data as AxiosResponse);
-            },
-            (e) => {
-              retry(e);
+            (data) => res(data as AxiosResponse),
+            (error) => {
+              e = error;
+              startRetry();
             },
           );
         };
-        retry(e);
+        startRetry();
       });
     };
   }
 
-  protected beforeRequest(ctx: Context<CC>) {
+  protected beforeExecRequest(ctx: Context<CC>) {
     this.handleCanceler(ctx);
+  }
+
+  protected beforeRequest(ctx: Context<CC>) {
     this.handleRetry(ctx);
   }
 
@@ -257,6 +298,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
   protected async execRequest(ctx: RetryContext<CC>) {
     try {
+      this.beforeExecRequest(ctx);
       // 请求
       const response: AxiosResponse = await this.fetch(ctx);
       // 请求结果数据结构处理
@@ -265,8 +307,8 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       return this.handleStatus(ctx, response, data);
     } catch (e: any) {
       // 重试
-      if (!ctx.isRetry && ctx.customConfig.retry !== undefined && !axios.isCancel(e)) {
-        return ctx.retry?.(e);
+      if (!ctx.isRetry && ctx.retry && !axios.isCancel(e)) {
+        return ctx.retry(e);
       }
       return Promise.reject(e);
     }
