@@ -303,6 +303,7 @@ describe('AxiosRequestTemplate', () => {
           cache: {
             enable: true,
           },
+          retry: {},
         },
         requestConfig: {
           method: 'get',
@@ -313,6 +314,7 @@ describe('AxiosRequestTemplate', () => {
       {
         customConfig: {
           cache: {},
+          retry: {},
         },
         requestConfig: {
           headers: {
@@ -326,6 +328,7 @@ describe('AxiosRequestTemplate', () => {
       {
         customConfig: {
           cache: {},
+          retry: {},
         },
         requestConfig: {
           data: {},

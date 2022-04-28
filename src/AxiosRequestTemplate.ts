@@ -1,4 +1,4 @@
-import type { ResType, CustomConfig, DynamicCustomConfig } from './types';
+import type { ResType, CustomConfig, DynamicCustomConfig, RetryConfig } from './types';
 import axios, {
   AxiosInstance,
   AxiosPromise,
@@ -9,7 +9,7 @@ import axios, {
   AxiosError,
 } from 'axios';
 import { Cache } from './Cache';
-import { Context, CustomCacheConfig } from './types';
+import { Context, CustomCacheConfig, RetryContext } from './types';
 
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
@@ -51,10 +51,12 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   protected handleResponse<T>(ctx: Context<CC>, response: AxiosResponse): ResType<T> {
     return response?.data as ResType;
   }
+
   // 获取拦截器
   protected get interceptors() {
     return this.axiosIns.interceptors;
   }
+
   protected setInterceptors() {
     // 重写此函数会在Request中调用
     // example
@@ -92,11 +94,13 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
     clearSet.add(clearCanceler);
     // 取消
+    // 注意：对于retry的无效，无法判断时机
     this.cancelCurrentRequest = (msg) => {
       cancel(msg);
       clearCanceler();
     };
   }
+
   // 处理requestConfig
   protected handleRequestConfig(
     url: string,
@@ -107,6 +111,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     finalConfig.method = finalConfig.method || 'get';
     return finalConfig;
   }
+
   // 合并缓存配置
   protected mergeCacheConfig(cacheConfig: CustomConfig['cache']): CustomCacheConfig {
     function merge(cache: CustomConfig['cache'], base: CustomCacheConfig = {}) {
@@ -125,12 +130,30 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }
     return merge(cacheConfig, merge(this.globalCustomConfig.cache));
   }
+
+  protected mergeRetryConfig(retryConfig: CustomConfig['retry']): RetryConfig {
+    function merge(retry: CustomConfig['retry'], base: RetryConfig = {}) {
+      switch (typeof retry) {
+        case 'number':
+          base.times = retry;
+          break;
+        case 'object':
+          base = { ...base, ...retry };
+          break;
+      }
+      return base;
+    }
+    return merge(retryConfig, merge(this.globalCustomConfig.retry));
+  }
+
   // 处理CustomConfig
   protected handleCustomConfig(customConfig: CC) {
     const config = { ...this.globalCustomConfig, ...customConfig };
     config.cache = this.mergeCacheConfig(customConfig.cache);
+    config.retry = this.mergeRetryConfig(customConfig.retry);
     return config;
   }
+
   // 处理请求用的数据
   protected handleRequestData(ctx: Context<CC>, data: {}) {
     const { requestConfig } = ctx;
@@ -142,6 +165,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }
     requestConfig.data = data;
   }
+
   // 处理响应结果
   protected handleStatus<T>(
     ctx: Context<CC>,
@@ -161,7 +185,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 请求
-  protected execRequest(ctx: Context<CC> & { isRetry?: boolean }) {
+  protected fetch(ctx: RetryContext<CC>) {
     const { requestConfig, customConfig, requestKey } = ctx;
     // 使用缓存
     const cacheConfig = customConfig.cache as CustomCacheConfig;
@@ -183,65 +207,82 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   protected handleRetry(ctx: Context<CC>) {
+    // 太长了  以后可优化
     const { customConfig, clearSet } = ctx;
-    if (customConfig.retry === undefined || customConfig.retry < 1) return;
-    const maxTimex = customConfig.retry;
-    let status: 'running' | 'stop' = 'running';
+    const retryConfig = customConfig.retry as RetryConfig;
+
+    if (retryConfig.times === undefined || retryConfig.times < 1) return;
+
+    const maxTimex = retryConfig.times;
     let times = 0;
-    const clear = () => {
-      status = 'stop';
+    let timer: NodeJS.Timer;
+    let reject = (): any => undefined;
+    const stop = () => {
+      clearTimeout(timer);
+      reject();
     };
+
     if (customConfig.tag) {
-      this.tagCancelMap.get(customConfig.tag)?.push(clear);
+      this.tagCancelMap.get(customConfig.tag)?.push(stop);
     }
-    this.cancelerSet.add(clear);
-    clearSet.add(clear);
+    this.cancelerSet.add(stop);
+    clearSet.add(stop);
+
     ctx.retry = (e: AxiosError<ResType<any>>) => {
       return new Promise((res, rej) => {
-        const handle = (e) => {
-          if (times >= maxTimex || status === 'stop') {
-            return rej(e);
+        // retry期间取消，则返回上一次的结果
+        reject = () => rej(e);
+        const startRetry = () => {
+          if (times >= maxTimex) {
+            reject();
+            return;
           }
+          // 立即执行时，间隔为undefined；否则为interval
+          const timeout =
+            times === 0
+              ? retryConfig.immediate
+                ? void 0
+                : retryConfig.interval
+              : retryConfig.interval;
+
+          timer = setTimeout(retry, timeout);
+        };
+        const retry = () => {
           times++;
           this.execRequest({ ...ctx, isRetry: true }).then(
-            (data) => {
-              res(data);
-            },
-            (e) => {
-              handle(e);
+            (data) => res(data as AxiosResponse),
+            (error) => {
+              e = error;
+              startRetry();
             },
           );
         };
-        handle(e);
+        startRetry();
       });
     };
   }
 
-  protected beforeRequest(ctx: Context<CC>) {
+  protected beforeExecRequest(ctx: Context<CC>) {
     this.handleCanceler(ctx);
+  }
+
+  protected beforeRequest(ctx: Context<CC>) {
     this.handleRetry(ctx);
   }
 
   protected afterRequest(ctx: Context<CC>) {
+    // 处理清理canceler等操作
     ctx.clearSet.forEach((clear) => clear());
     ctx.clearSet.clear();
   }
 
-  // 模板方法，最终请求所使用的方法。
-  // 可子类覆盖，如非必要不建议子类覆盖
-  request<T = never, RC extends boolean = false>(
+  protected generateContext(
     url: string,
-    data?: {},
-    customConfig?: DynamicCustomConfig<CC, RC>,
-    requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'cancelToken'>,
-  ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
-  async request<T>(
-    url: string,
-    data: {} = {},
-    customConfig = {} as CC,
-    requestConfig: AxiosRequestConfig = {},
-  ): Promise<any> {
-    // 1、处理配置
+    data: {},
+    customConfig: CC,
+    requestConfig: AxiosRequestConfig,
+  ) {
+    // 处理配置
     requestConfig = this.handleRequestConfig(url, requestConfig);
     customConfig = this.handleCustomConfig(customConfig);
     const ctx: Context<CC> = {
@@ -252,37 +293,62 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
     ctx.requestKey = this.generateRequestKey(ctx);
     this.handleRequestData(ctx, data);
-    // 2、处理cancel handler等等
+    return ctx;
+  }
+
+  protected async execRequest(ctx: RetryContext<CC>) {
+    try {
+      this.beforeExecRequest(ctx);
+      // 请求
+      const response: AxiosResponse = await this.fetch(ctx);
+      // 请求结果数据结构处理
+      const data = this.handleResponse(ctx, response);
+      // 状态码处理，并返回结果
+      return this.handleStatus(ctx, response, data);
+    } catch (e: any) {
+      // 重试
+      if (!ctx.isRetry && ctx.retry && !axios.isCancel(e)) {
+        return ctx.retry(e);
+      }
+      return Promise.reject(e);
+    }
+  }
+
+  // 模板方法，最终请求所使用的方法。
+  // 可子类覆盖，如非必要不建议子类覆盖
+  request<T = never, RC extends boolean = false>(
+    url: string,
+    data?: {},
+    customConfig?: DynamicCustomConfig<CC, RC>,
+    requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'cancelToken'>,
+  ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
+  async request(
+    url: string,
+    data: {} = {},
+    customConfig = {} as CC,
+    requestConfig: AxiosRequestConfig = {},
+  ): Promise<any> {
+    const ctx = this.generateContext(url, data, customConfig, requestConfig);
     this.beforeRequest(ctx);
     try {
-      // 3、请求
-      const response: AxiosResponse = await this.execRequest(ctx);
-      // 4、请求结果数据结构处理
-      const data = this.handleResponse<T>(ctx, response);
-      // 5、状态码处理，并返回结果
-      return this.handleStatus<T>(ctx, response, data);
-    } catch (error: any) {
-      const e = error as AxiosError<ResType<any>>;
-      // 错误处理
-      const response = e.response as AxiosResponse<ResType<any>>;
-      // 4、请求结果数据结构处理
-      const data = this.handleResponse<T>(ctx, response);
-      if (data && data.code !== undefined) {
-        // 5、状态码处理，并返回结果
-        return this.handleStatus<T>(ctx, response, data);
-      }
-      // 如未命中error处理 则再次抛出error
+      return await this.execRequest(ctx);
+    } catch (e: any) {
       return await this.handleError(ctx, e);
     } finally {
-      // 6、处理清理canceler等操作
       this.afterRequest(ctx);
     }
   }
 
-  protected handleError(ctx: Context<CC>, e: AxiosError<ResType<any>>): any {
-    const { customConfig } = ctx;
-    if (customConfig.retry === undefined || axios.isCancel(e)) throw e;
-    return ctx.retry?.(e);
+  protected handleError(ctx: Context<CC>, e: AxiosError<ResType<any>>) {
+    // 错误处理
+    const response = e.response as AxiosResponse<ResType<any>>;
+    // 4、请求结果数据结构处理
+    const data = this.handleResponse(ctx, response);
+    if (data && data.code !== undefined) {
+      // 5、状态码处理，并返回结果
+      return this.handleStatus(ctx, response, data);
+    }
+    return Promise.reject(e);
   }
 
   // 取消所有请求
