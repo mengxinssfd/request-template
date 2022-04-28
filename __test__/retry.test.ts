@@ -1,26 +1,39 @@
 import axios from 'axios';
-import { AxiosRequestTemplate, CustomConfig } from '../src';
+import { AxiosRequestTemplate, Cache } from '../src';
+import { mockAxiosResponse } from './utils';
 
 jest.mock('axios');
 const map = new Map<string, Function>();
-let times = 0;
+const timesMap = new Map<string, number>();
 const mockCreate = () => {
-  return function ({ cancelToken, url }) {
+  return function (requestConfig) {
+    const { cancelToken, url, method, data, headers, params } = requestConfig;
+    const key = JSON.stringify({ url, method, params, data, headers });
+    const times = timesMap.get(key) || 0;
     return new Promise((res, rej) => {
+      timesMap.set(key, times + 1);
       map.set(cancelToken, (msg?: string) => {
         rej({ message: msg });
       });
+      if (url === '/config') {
+        if (times === 3) {
+          setTimeout(() => res(mockAxiosResponse(requestConfig, requestConfig)));
+          return;
+        }
+      }
       if (url === '3') {
         if (times === 3) {
           setTimeout(() => {
-            res({ code: 200, data: {}, msg: 'success' });
+            res(mockAxiosResponse(requestConfig, { code: 200, data: {}, msg: 'success' }));
           });
           return;
-        } else {
-          times++;
         }
       }
       setTimeout(() => {
+        if (times > 0) {
+          rej('times * ' + times);
+          return;
+        }
         rej('404');
       });
     });
@@ -39,61 +52,14 @@ const mockCreate = () => {
 (axios as any).create.mockImplementation(mockCreate);
 (axios as any).isCancel = (value: any) => typeof value === 'object' && 'message' in value;
 
-describe('retry', () => {
-  class RetryTemp<CC extends CustomConfig> extends AxiosRequestTemplate<CC> {
-    protected handleRetry(ctx) {
-      const { customConfig, clearSet } = ctx;
-      if (customConfig.retry === undefined || customConfig.retry < 1) return;
-      const maxTimex = customConfig.retry;
-      let status: 'running' | 'stop' = 'running';
-      let times = 0;
-      const clear = () => {
-        status = 'stop';
-      };
-      if (customConfig.tag) {
-        this.tagCancelMap.get(customConfig.tag)?.push(clear);
-      }
-      this.cancelerSet.add(clear);
-      clearSet.add(clear);
-      ctx.retry = () => {
-        return new Promise((res, rej) => {
-          const handle = () => {
-            if (times >= maxTimex || status === 'stop') {
-              return rej('times * ' + times);
-            }
-            times++;
-            this.execRequest({ ...ctx }).then(
-              (data) => {
-                res(data);
-              },
-              () => {
-                handle();
-              },
-            );
-          };
-          handle();
-        });
-      };
-    }
-
-    protected beforeRequest(ctx) {
-      super.beforeRequest(ctx);
-      this.handleRetry(ctx);
-    }
-
-    protected handleError(ctx, e): any {
-      const { customConfig } = ctx;
-      if (customConfig.retry === undefined || axios.isCancel(e)) return super.handleError(ctx, e);
-      return ctx.retry();
-    }
-  }
-  const get = new RetryTemp().methodFactory('get');
+describe('AxiosRequestTemplate retry', () => {
+  const get = new AxiosRequestTemplate().methodFactory('get');
   test('base', async () => {
-    expect.assertions(4);
+    // expect.assertions(4);
     const list = [
-      get<{ username: string; id: number }>('/user'),
-      get<{ username: string; id: number }>('/user', {}, { retry: 2 }),
-      get<{ username: string; id: number }>('/user', {}, { retry: 10 }),
+      get<{ username: string; id: number }>('/user', { key: 1 }),
+      get<{ username: string; id: number }>('/user', { key: 2 }, { retry: 2 }),
+      get<{ username: string; id: number }>('/user', { key: 3 }, { retry: 10 }),
     ];
     const res = await Promise.allSettled(list);
     expect(res).toEqual([
@@ -112,18 +78,18 @@ describe('retry', () => {
     ]);
 
     try {
-      await get<{ username: string; id: number }>('/user');
+      await get<{ username: string; id: number }>('/user', { key: 4 });
     } catch (e) {
       expect(e).toBe('404');
     }
 
     try {
-      await get<{ username: string; id: number }>('/user', {}, { retry: 2 });
+      await get<{ username: string; id: number }>('/user', { key: 5 }, { retry: 2 });
     } catch (e) {
       expect(e).toBe('times * 2');
     }
     try {
-      await get<{ username: string; id: number }>('/user', {}, { retry: 10 });
+      await get<{ username: string; id: number }>('/user', { key: 6 }, { retry: 10 });
     } catch (e) {
       expect(e).toBe('times * 10');
     }
@@ -139,13 +105,37 @@ describe('retry', () => {
     } catch (e) {
       expect(e).toBe('times * 2');
     }
-    times = 0;
     const res = await get<{ username: string; id: number }>('3', {}, { tag: 'cancel', retry: 3 });
     expect(res).toEqual({ code: 200, data: {}, msg: 'success' });
   });
 
+  test('cache&retry，有retry时不要用缓存', async () => {
+    const req = new AxiosRequestTemplate();
+    const c = new Cache();
+    const originSet = c.set;
+    const mockSet = jest.fn((...args: any) => originSet.apply(c, args));
+    c.set = mockSet;
+    const originGet = c.get;
+    const mockGet = jest.fn((...args: any) => originGet.apply(c, args));
+    c.get = mockGet;
+    (req as any).cache = c;
+    (req as any).afterRequest = () => void 0;
+
+    const get = req.methodFactory('get');
+
+    const res = await get('/config', { test: 1 }, { retry: 10, cache: true });
+    delete (res as any).cancelToken;
+    expect(res).toEqual({
+      method: 'get',
+      url: '/config',
+      params: { test: 1 },
+    });
+    expect(mockGet.mock.calls.length).toBe(1);
+    expect(mockSet.mock.calls.length).toBe(4);
+  });
+
   describe('cancel', () => {
-    const req = new RetryTemp();
+    const req = new AxiosRequestTemplate();
     const get = req.methodFactory('get');
     test('cancelAll', async () => {
       expect.assertions(1);
