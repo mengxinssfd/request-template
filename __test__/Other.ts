@@ -7,8 +7,8 @@ interface MyCustomConfig extends CustomConfig {
 }
 
 const statusHandlers: StatusHandlers<MyCustomConfig> = {
-  200: (res, data, customConfig) => {
-    return customConfig.returnRes ? res : data;
+  200: (config, res, data) => {
+    return config.customConfig.returnRes ? res : data;
   },
 };
 

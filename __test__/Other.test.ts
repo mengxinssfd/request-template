@@ -13,6 +13,7 @@ describe('Other', () => {
   const { get, post } = Other;
 
   test('base', async () => {
+    expect.assertions(7);
     const res = await get<{ username: string; id: number }, true>('/user');
     expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
 
@@ -39,5 +40,11 @@ describe('Other', () => {
     expect(res5).toEqual({ code: 500, msg: 111 });
     const res6 = await post<any, true>('/create', undefined, { returnRes: true });
     expect(res6).toEqual({ status: 200, data: { code: 500, msg: 111 } });
+
+    try {
+      await post('/login2', { username: 'foo' });
+    } catch (e) {
+      expect(e).toBe('404');
+    }
   });
 });

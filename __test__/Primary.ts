@@ -2,8 +2,8 @@
 import { StatusHandlers, AxiosRequestTemplate } from '../src';
 
 const statusHandlers: StatusHandlers = {
-  200: (res, data, customConfig) => {
-    return customConfig.returnRes ? res : data;
+  200: (config, res, data) => {
+    return config.customConfig.returnRes ? res : data;
   },
 };
 export default class Primary extends AxiosRequestTemplate {
@@ -13,6 +13,10 @@ export default class Primary extends AxiosRequestTemplate {
 
   private constructor() {
     super({ baseURL: 'http://test.test' }, { statusHandlers });
+  }
+
+  protected handleRequestData(config, data: {}) {
+    super.handleRequestData(config, { ...data, token: 123 });
   }
 
   protected setInterceptors() {

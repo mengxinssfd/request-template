@@ -25,13 +25,13 @@ const mockCreate = (/*config: AxiosRequestConfig*/) => {
 
 (axios as any).create.mockImplementation(mockCreate);
 
-describe('AxiosWrapper', () => {
+describe('AxiosRequestTemplate', () => {
   const statusHandlers: StatusHandlers = {
-    200: (res, data, customConfig) => {
-      return customConfig.returnRes ? res : data;
+    200: (ctx, res, data) => {
+      return ctx.customConfig.returnRes ? res : data;
     },
-    default: (res, data, customConfig) => {
-      return customConfig.returnRes ? res : data;
+    default: (ctx, res, data) => {
+      return ctx.customConfig.returnRes ? res : data;
     },
   };
   const req = new AxiosRequestTemplate<CustomConfig>({ baseURL: '/' }, { statusHandlers });
@@ -39,6 +39,7 @@ describe('AxiosWrapper', () => {
   const post = req.methodFactory('post');
 
   test('base', async () => {
+    expect.assertions(4);
     // console.log((axios.create({ url: 'test' }) as any)(1, 2, 3), Req);
     const res = await get<{ username: string; id: number }>('/user');
     expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
@@ -53,10 +54,7 @@ describe('AxiosWrapper', () => {
       data: { code: 200, data: { username: 'get', id: 1 }, msg: 'success' },
     });
 
-    const fd = new FormData();
-    fd.append('username', 'foo');
-    fd.append('password', 'bar');
-    const res3 = await post('/login', fd);
+    const res3 = await post('/login', { username: 'foo', password: 'bar' });
     expect(res3).toEqual({ code: 200, msg: 'success' });
 
     try {
@@ -65,23 +63,67 @@ describe('AxiosWrapper', () => {
       expect(e).toEqual({ code: 0, msg: '账号或密码错误' });
     }
   });
-  test('no cache', async () => {
-    const res = await get<{ username: string; id: number }>('/user');
-    expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
-    const res2 = await get<{ username: string; id: number }>('/user');
-    expect(res2).toEqual(res);
-    expect(res2).not.toBe(res);
-  });
-  test('cache', async () => {
-    const res = await get<{ username: string; id: number }>('/user', undefined, { useCache: true });
-    expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
-    const res2 = await get<{ username: string; id: number }>('/user', undefined, {
-      useCache: { timeout: 1000 },
+
+  describe('AxiosWrapper Cache', () => {
+    test('no cache', async () => {
+      const res = await get<{ username: string; id: number }>('/user');
+      expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+      const res2 = await get<{ username: string; id: number }>('/user');
+      expect(res2).toEqual(res);
+      expect(res2).not.toBe(res);
     });
-    expect(res2).toEqual(res);
-    expect(res2).toBe(res);
+    test('cache', async () => {
+      const res = await get<{ username: string; id: number }>('/user', undefined, { cache: true });
+      expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+      const res2 = await get<{ username: string; id: number }>('/user', undefined, {
+        cache: { timeout: 1000 },
+      });
+      expect(res2).toEqual(res);
+      expect(res2).toBe(res);
+    });
+    test('global cache object', async () => {
+      const req = new AxiosRequestTemplate({}, { cache: {} });
+      const get = req.methodFactory('get');
+      const res = await get<{ username: string; id: number }>('/user');
+      expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+      const res2 = await get<{ username: string; id: number }>('/user');
+      expect(res2).toEqual(res);
+      expect(res2).toBe(res);
+    });
+    test('global cache empty object', async () => {
+      const req = new AxiosRequestTemplate<CustomConfig>({}, { cache: true });
+      const get = req.methodFactory('get');
+      const res = await get<{ username: string; id: number }>('/user');
+      expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+      const res2 = await get<{ username: string; id: number }>('/user');
+      expect(res2).toEqual(res);
+      expect(res2).toBe(res);
+
+      const res3 = await get<{ username: string; id: number }>('/user', {}, { cache: false });
+      expect(res3).toEqual(res);
+      expect(res3).not.toBe(res);
+    });
+    test('global cache empty object', async () => {
+      const req = new AxiosRequestTemplate<CustomConfig>(
+        {},
+        { cache: { enable: false, timeout: 1000 * 60 } },
+      );
+      const get = req.methodFactory('get');
+      const res = await get<{ username: string; id: number }>('/user');
+      expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+      const res2 = await get<{ username: string; id: number }>('/user', {}, { cache: true });
+      expect(res2).toEqual(res);
+      expect(res2).not.toBe(res);
+
+      const res3 = await get<{ username: string; id: number }>('/user', {}, { cache: true });
+      expect(res3).toEqual(res);
+      expect(res3).not.toBe(res);
+      expect(res3).toBe(res2);
+    });
   });
+
   test('serve 404', async () => {
+    expect.assertions(3);
     try {
       await get('/test');
     } catch (e) {
@@ -99,7 +141,7 @@ describe('AxiosWrapper', () => {
       '/user',
       {},
       {
-        statusHandlers: { '200': (res) => res },
+        statusHandlers: { '200': (ctx, res) => res },
       },
     );
     expect(res).toEqual({
@@ -112,11 +154,11 @@ describe('AxiosWrapper', () => {
       '/user',
       {},
       {
-        statusHandlers: { '200': (res) => res },
+        statusHandlers: { '200': (_, res) => res },
       },
       // 改为post，无效；
-      // methodFactory优先级更高，除了method，url，data其他的axios配置优先级都是这里的高
-      { method: 'post' },
+      // methodFactory的method优先级更高，除了method，url，data其他的axios配置优先级都是这里的高
+      { method: 'post' } as any,
     );
     expect(res1).toEqual({
       data: { code: 200, data: { username: 'get', id: 1 }, msg: 'success' },
@@ -128,7 +170,7 @@ describe('AxiosWrapper', () => {
       '/user',
       {},
       {
-        statusHandlers: { '200': (res) => res },
+        statusHandlers: { '200': (_, res) => res },
       },
     );
     expect(res2).toEqual({
@@ -140,7 +182,7 @@ describe('AxiosWrapper', () => {
       '/user',
       {},
       {
-        statusHandlers: { '200': (res) => res },
+        statusHandlers: { '200': (_, res) => res },
       },
       { method: 'post' },
     );
@@ -150,16 +192,11 @@ describe('AxiosWrapper', () => {
     });
   });
   test('nocode', async () => {
-    try {
-      await get('/nocode');
-    } catch (e) {
-      expect(e).toBe('1');
-    }
-    try {
-      await get('/nocode', {}, { returnRes: true });
-    } catch (e) {
-      expect(e).toEqual({ data: '1', status: 200 });
-    }
+    expect.assertions(2);
+    const res = await get('/nocode');
+    expect(res).toBe('1');
+    const res2 = await get('/nocode', {}, { returnRes: true });
+    expect(res2).toEqual({ data: '1', status: 200 });
   });
   test('global customConfig', async () => {
     const req = new AxiosRequestTemplate({}, { returnRes: true, statusHandlers });
@@ -188,11 +225,11 @@ describe('AxiosWrapper', () => {
     const req = new AxiosRequestTemplate();
     const get = req.methodFactory('get');
     const res1 = get('/user');
-    req.cancelCurrentRequest('cancel1');
+    req.cancelCurrentRequest?.('cancel1');
     const res2 = get('/user');
-    req.cancelCurrentRequest('cancel2');
+    req.cancelCurrentRequest?.('cancel2');
     const res3 = get('/user');
-    req.cancelCurrentRequest('cancel3');
+    req.cancelCurrentRequest?.('cancel3');
 
     const res = await Promise.allSettled([res1, res2, res3]);
 
@@ -226,7 +263,7 @@ describe('AxiosWrapper', () => {
     const req = new AxiosRequestTemplate(undefined, { tag: 'cancellable' });
     const get = req.methodFactory('get');
     const res1 = get('/user');
-    req.cancelCurrentRequest('cancelCurrent');
+    req.cancelCurrentRequest?.('cancelCurrent');
     const res2 = get('/user');
     const res3 = get('/user');
     req.cancelAll('cancelAll');
@@ -238,6 +275,67 @@ describe('AxiosWrapper', () => {
       { status: 'rejected', reason: 'cancelCurrent' },
       { status: 'rejected', reason: 'cancelAll' },
       { status: 'rejected', reason: 'cancelAll' },
+    ]);
+  });
+  test('test config', async () => {
+    const req = new AxiosRequestTemplate<CustomConfig>(undefined, {
+      statusHandlers: {
+        1000: ({ customConfig, requestConfig }, res) => {
+          customConfig = { ...customConfig };
+          requestConfig = { ...requestConfig };
+          delete customConfig.statusHandlers;
+          delete requestConfig.cancelToken;
+          return customConfig.returnRes ? res : { requestConfig, customConfig };
+        },
+      },
+    });
+    const get = req.methodFactory('get');
+    const post = req.methodFactory('post');
+    const res1 = get('/config', {}, { cache: true });
+    const res2 = get('/config', {}, {}, { headers: { test: 1 } });
+    const res3 = post('/config');
+
+    const res = await Promise.all([res1, res2, res3]);
+
+    expect(res).toEqual([
+      {
+        customConfig: {
+          cache: {
+            enable: true,
+          },
+          retry: {},
+        },
+        requestConfig: {
+          method: 'get',
+          params: {},
+          url: '/config',
+        },
+      },
+      {
+        customConfig: {
+          cache: {},
+          retry: {},
+        },
+        requestConfig: {
+          headers: {
+            test: 1,
+          },
+          method: 'get',
+          params: {},
+          url: '/config',
+        },
+      },
+      {
+        customConfig: {
+          cache: {},
+          retry: {},
+        },
+        requestConfig: {
+          data: {},
+          method: 'post',
+          url: '/config',
+        },
+      },
     ]);
   });
 });
