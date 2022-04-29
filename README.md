@@ -178,6 +178,7 @@ export function login(data: { username: string; password: string }) {
   return post<{ token: string }>('/user/login', data, { cache: true });
 }
 ```
+注意：因避免使用过长的缓存时间，否则有内存溢出的风险。
 
 #### 自定义过期时间
 
