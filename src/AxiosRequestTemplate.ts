@@ -19,7 +19,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
   // cancel函数缓存
   protected readonly cancelerSet = new Set<Canceler>();
-  protected readonly tagCancelMap = new Map<string, Canceler[]>();
+  protected readonly tagCancelMap = new Map<CustomConfig['tag'], Canceler[]>();
 
   cancelCurrentRequest?: Canceler;
 
@@ -361,7 +361,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 根据tag标签取消请求
-  cancelWithTag(tag: string, msg?: string) {
+  cancelWithTag(tag: CustomConfig['tag'], msg?: string) {
     const cancelers = this.tagCancelMap.get(tag);
     if (!cancelers) return;
     cancelers.forEach((canceler) => {

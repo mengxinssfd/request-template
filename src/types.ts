@@ -34,7 +34,7 @@ export interface CustomConfig {
   // 缓存配置
   cache?: boolean | CustomCacheConfig;
   // 标签，用于取消请求
-  tag?: string;
+  tag?: string | symbol;
   // 失败重试次数
   retry?: number | RetryConfig;
 }
