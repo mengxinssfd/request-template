@@ -43,8 +43,8 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   protected generateRequestKey(ctx: Omit<Context<CC>, 'requestKey'>): string {
     const { requestConfig } = ctx;
     const data = requestConfig.data || requestConfig.params;
-    const { url, headers, method } = requestConfig;
-    return JSON.stringify({ url, data, headers, method });
+    const { url, headers, method, params } = requestConfig;
+    return JSON.stringify({ url, data, headers, method, params });
   }
 
   // 转换数据结构为ResType
@@ -158,7 +158,6 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   protected handleRequestData(ctx: Context<CC>, data: {}) {
     const { requestConfig } = ctx;
     delete requestConfig.data;
-    delete requestConfig.params;
     if (String(requestConfig.method).toLowerCase() === 'get') {
       requestConfig.params = data;
       return;
@@ -291,8 +290,8 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       requestKey: '',
       clearSet: new Set(),
     };
-    ctx.requestKey = this.generateRequestKey(ctx);
     this.handleRequestData(ctx, data);
+    ctx.requestKey = this.generateRequestKey(ctx);
     return ctx;
   }
 
@@ -320,7 +319,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     url: string,
     data?: {},
     customConfig?: DynamicCustomConfig<CC, RC>,
-    requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'cancelToken'>,
+    requestConfig?: Omit<AxiosRequestConfig, 'data' | 'cancelToken'>,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
   async request(
     url: string,
