@@ -240,14 +240,19 @@ describe('AxiosRequestTemplate', () => {
     ]);
   });
   test('cancel with tag', async () => {
-    const req = new AxiosRequestTemplate(undefined, { tag: 'cancellable' });
+    const req = new AxiosRequestTemplate<CustomConfig>(undefined, { tag: 'cancellable' });
     const get = req.methodFactory('get');
     const res1 = get('/user', {}, { tag: 'irrevocable' });
     const res2 = get('/user');
     const res3 = get('/user');
+    const symbol = Symbol('cancel');
+    const symbol1 = Symbol('cancel');
+    const res4 = get('/user', {}, { tag: symbol });
+    const res5 = get('/user', {}, { tag: symbol1 });
     req.cancelWithTag('cancellable', 'cancel with tag');
+    req.cancelWithTag(symbol, 'cancel with tag symbol');
 
-    const res = await Promise.allSettled([res1, res2, res3]);
+    const res = await Promise.allSettled([res1, res2, res3, res4, res5]);
 
     expect(res).toEqual([
       {
@@ -256,6 +261,11 @@ describe('AxiosRequestTemplate', () => {
       },
       { status: 'rejected', reason: 'cancel with tag' },
       { status: 'rejected', reason: 'cancel with tag' },
+      { status: 'rejected', reason: 'cancel with tag symbol' },
+      {
+        status: 'fulfilled',
+        value: { code: 200, data: { id: 1, username: 'get' }, msg: 'success' },
+      },
     ]);
     req.cancelWithTag('default', 'cancel with tag');
   });
