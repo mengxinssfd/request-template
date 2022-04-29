@@ -178,6 +178,7 @@ export function login(data: { username: string; password: string }) {
   return post<{ token: string }>('/user/login', data, { cache: true });
 }
 ```
+
 注意：因避免使用过长的缓存时间，否则有内存溢出的风险。
 
 #### 自定义过期时间
@@ -704,5 +705,225 @@ export default class MyTemplate extends AxiosRequestTemplate {
     }
     super.handleRequestData(ctx, data);
   }
+}
+```
+
+## 完整demo
+
+环境：vue3、vite、ts、elementplus
+
+目录结构
+
+```text
+src
+├── api
+|  ├── user.ts // 具体的请求
+|  └── ....
+├── http
+|  ├─── primary // 主模板
+|  |   ├── index.ts // 请求模板
+|  |   ├── token.ts // token操作工具类
+|  |   └── statusHandlers.ts // 状态处理
+|  └── other  // 其他规则模板
+|     ├── index.ts // 请求模板
+|     └── statusHandlers.ts // 状态处理
+```
+
+### 主模板封装
+
+#### src/primary/token.ts
+
+```ts
+export class Token {
+  private static KEY = 'token';
+
+  static set key(key: string) {
+    Token.KEY = key;
+  }
+  static get key(): string {
+    return Token.KEY;
+  }
+
+  static get(): string {
+    return localStorage.getItem(Token.KEY) || '';
+  }
+  static set(token: string) {
+    localStorage.setItem(Token.KEY, token);
+  }
+
+  static clear() {
+    localStorage.removeItem(Token.KEY);
+  }
+  static exists(): boolean {
+    return !!Token.get();
+  }
+}
+
+```
+
+#### src/primary/statusHandlers.ts
+
+```ts
+import { HttpStatus, StatusHandler, StatusHandlers, CustomConfig } from 'request-template';
+import { ElMessage } from 'element-plus';
+import { Token } from '@/http/primary/token';
+import Store from '@/store/index';
+
+// 通用错误Handler
+const commonErrorHandler: StatusHandler<CustomConfig> = ({ customConfig }, res, data) => {
+  // 非静音模式下，有错误直接显示错误信息
+  !customConfig.silent && ElMessage({ type: 'error', message: data.msg });
+  return Promise.reject(customConfig.returnRes ? res : data);
+};
+
+export const statusHandlers: StatusHandlers = {
+  [HttpStatus.UNAUTHORIZED]: (ctx, res, data) => {
+    sessionStorage.removeItem('user');
+    Store.commit('clearUser');
+    Token.clear();
+    return commonErrorHandler(ctx, res, data);
+  },
+  207: ({ customConfig }, res, data) => {
+    data.data.token && Token.set(data.data.token);
+    return customConfig.returnRes ? res : data;
+  },
+  [HttpStatus.OK]: ({ customConfig }, res, data) => {
+    return customConfig.returnRes ? res : data;
+  },
+  default: commonErrorHandler,
+};
+
+```
+
+#### src/primary/index.ts
+
+```ts
+import { Token } from './token';
+import { statusHandlers } from './statusHandlers';
+import { AxiosRequestTemplate, Context, CustomConfig, DynamicCustomConfig } from 'request-template';
+import { ElLoading, ILoadingInstance } from 'element-plus';
+import { AxiosRequestConfig, Method } from 'axios';
+
+let uuid = localStorage.getItem('uuid');
+
+interface LoadingCustomConfig extends CustomConfig {
+    loading?: boolean;
+}
+
+export class PrimaryRequest<
+    CC extends LoadingCustomConfig = LoadingCustomConfig,
+    > extends AxiosRequestTemplate<CC> {
+    static readonly ins = new PrimaryRequest();
+    private loading?: ILoadingInstance;
+
+    private constructor() {
+        super(
+            //  baseUrl，axios配置，每个请求都会拼接上baseUrl作为前缀，跟process.env.BASE_URL类似
+            { baseURL: import.meta.env.VITE_BASE_URL },
+            { statusHandlers, cache: { enable: false, timeout: 60 * 1000 }, loading: false } as CC,
+        );
+    }
+
+    protected beforeRequest(ctx: Context<CC>) {
+        super.beforeRequest(ctx); // 复用基础模板逻辑
+        if (ctx.customConfig.loading) {
+            this.loading = ElLoading.service({ fullscreen: true });
+        }
+    }
+
+    protected afterRequest(ctx) {
+        super.afterRequest(ctx); // 复用基础模板逻辑
+        // 加个定时器避免请求太快，loading一闪而过
+        setTimeout(() => {
+            this.loading?.close();
+        }, 200);
+    }
+
+    private static getUUID() {
+        if (uuid) {
+            return uuid;
+        }
+        uuid = Math.floor(Math.random() * 0xffffffffff).toString(16);
+        localStorage.setItem('uuid', uuid);
+        return uuid;
+    }
+
+    protected handleRequestConfig(url, requestConfig) {
+        if (!requestConfig.headers) requestConfig.headers = {};
+        Token.exists() && (requestConfig.headers.authorization = `Bearer ${Token.get()}`);
+        requestConfig.headers.uuid = PrimaryRequest.getUUID();
+        return super.handleRequestConfig(url, requestConfig);
+    }
+    methodFactoryWithUrlPrefix(method: Method, urlPrefix?: string) {
+        return <T = never, RC extends boolean = false>(
+            url: string,
+            data?: {},
+            customConfig?: DynamicCustomConfig<CC, RC>,
+            requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'method' | 'cancelToken'>,
+        ) => {
+            urlPrefix && (url = urlPrefix + url);
+            return this.request<T, RC>(url, data, customConfig, {
+                ...(requestConfig as any),
+                method,
+            });
+        };
+    }
+}
+```
+
+#### src/api/user.ts
+
+```ts
+import { PrimaryRequest } from '@/http/primary';
+
+const urlPrefix = '/api/user';
+
+const Get = PrimaryRequest.ins.methodFactoryWithUrlPrefix('get', urlPrefix);
+const Post = PrimaryRequest.ins.methodFactoryWithUrlPrefix('post', urlPrefix);
+const Delete = PrimaryRequest.ins.methodFactoryWithUrlPrefix('delete', urlPrefix);
+const Patch = PrimaryRequest.ins.methodFactoryWithUrlPrefix('patch', urlPrefix);
+
+export interface User {
+  id: number;
+  nickname: string;
+  avatar: string;
+  username: string;
+  loginAt: string;
+  createAt: string;
+  muted: boolean;
+  deletedAt: string;
+}
+export function getUser() {
+  return Get<{ user: User }>('/self', {}, { silent: true, loading: true });
+}
+export function deleteUser(id: string | number) {
+  return Delete('/' + id);
+}
+export function restoreUser(id: string | number) {
+  return Patch('/restore/' + id);
+}
+export function getUserAll() {
+  return Get<{ list: User[]; count: number }>(urlPrefix, {});
+}
+export function getUserById(id: number | string) {
+  return Get<User>('/' + id);
+}
+export function login(data: {}) {
+  return Post<{ token: string }>('/login', data);
+}
+export function register(data: {}) {
+  return Post('/register', data);
+}
+export function updateUserInfo(userId: number | string, data: {}) {
+  return Patch('/' + userId, data);
+}
+export function updatePassword(userId: number | string, data: {}) {
+  return Patch('/password/' + userId, data);
+}
+export function muteUser(userId: number | string) {
+  return Patch('/mute/' + userId);
+}
+export function cancelMuteUser(userId: number | string) {
+  return Patch('/cancel-mute/' + userId);
 }
 ```

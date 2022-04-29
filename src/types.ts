@@ -2,7 +2,7 @@ import type { AxiosPromise, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { AxiosError } from 'axios';
 
 export type StatusHandler<CC extends CustomConfig> = (
-  config: Context<CC>,
+  ctx: Context<CC>,
   res: AxiosResponse<ResType<any>>,
   data: ResType<any>,
 ) => any;
