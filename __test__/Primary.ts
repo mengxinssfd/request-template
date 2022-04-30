@@ -12,7 +12,7 @@ export default class Primary extends AxiosRequestTemplate {
   static readonly post = Primary.ins.methodFactory('post');
 
   private constructor() {
-    super({ baseURL: 'http://test.test' }, { statusHandlers });
+    super({ requestConfig: { baseURL: 'http://test.test' }, customConfig: { statusHandlers } });
   }
 
   protected handleRequestData(config, data: {}) {

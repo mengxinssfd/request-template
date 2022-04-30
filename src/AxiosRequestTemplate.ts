@@ -1,4 +1,4 @@
-import type { ResType, CustomConfig, DynamicCustomConfig, RetryConfig } from './types';
+import type { ResType, CustomConfig, DynamicCustomConfig, RetryConfig, Configs } from './types';
 import axios, {
   AxiosInstance,
   AxiosPromise,
@@ -17,24 +17,24 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   protected axiosIns!: AxiosInstance;
   protected cache!: Cache<AxiosPromise>;
 
+  // 全局配置
+  protected globalConfigs!: Configs<CC>;
+
   // cancel函数缓存
   protected readonly cancelerSet = new Set<Canceler>();
   protected readonly tagCancelMap = new Map<CustomConfig['tag'], Canceler[]>();
 
   cancelCurrentRequest?: Canceler;
 
-  constructor(
-    // 全局配置
-    protected globalRequestConfig: AxiosRequestConfig = {},
-    protected globalCustomConfig = {} as CC,
-  ) {
+  constructor(globalConfigs: Partial<Configs<CC>> = {}) {
+    this.globalConfigs = { customConfig: {} as CC, requestConfig: {}, ...globalConfigs };
     this.init();
     this.setInterceptors();
   }
 
   protected init() {
     // 1、保存基础配置
-    this.axiosIns = axios.create(this.globalRequestConfig);
+    this.axiosIns = axios.create(this.globalConfigs.requestConfig);
     // 2、缓存初始化
     this.cache = new Cache();
   }
@@ -106,7 +106,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     url: string,
     requestConfig: AxiosRequestConfig,
   ): AxiosRequestConfig {
-    // globalRequestConfig在axios内部会处理，不需要再手动处理
+    // globalConfigs.requestConfig在axios内部会处理，不需要再手动处理
     const finalConfig: AxiosRequestConfig = { ...requestConfig, url };
     finalConfig.method = finalConfig.method || 'get';
     return finalConfig;
@@ -128,7 +128,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       }
       return base;
     }
-    return merge(cacheConfig, merge(this.globalCustomConfig.cache));
+    return merge(cacheConfig, merge(this.globalConfigs.customConfig.cache));
   }
 
   protected mergeRetryConfig(retryConfig: CustomConfig['retry']): RetryConfig {
@@ -143,12 +143,12 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       }
       return base;
     }
-    return merge(retryConfig, merge(this.globalCustomConfig.retry));
+    return merge(retryConfig, merge(this.globalConfigs.customConfig.retry));
   }
 
   // 处理CustomConfig
   protected handleCustomConfig(customConfig: CC) {
-    const config = { ...this.globalCustomConfig, ...customConfig };
+    const config = { ...this.globalConfigs.customConfig, ...customConfig };
     config.cache = this.mergeCacheConfig(customConfig.cache);
     config.retry = this.mergeRetryConfig(customConfig.retry);
     return config;
@@ -175,7 +175,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     const code = data?.code ?? 'default';
     const handlers = {
       default: ({ customConfig }, res, data) => (customConfig.returnRes ? res : data),
-      ...this.globalCustomConfig.statusHandlers,
+      ...this.globalConfigs.customConfig.statusHandlers,
       ...customConfig.statusHandlers,
     };
 
@@ -313,7 +313,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }
   }
 
-  // 模板方法，最终请求所使用的方法。
+  // 模板方法，请求入口。
   // 可子类覆盖，如非必要不建议子类覆盖
   request<T = never, RC extends boolean = false>(
     url: string,

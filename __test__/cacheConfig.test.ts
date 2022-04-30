@@ -33,7 +33,7 @@ describe('mock cacheConfig', () => {
     expect(mock.mock.calls.length).toBe(mockCallTimes);
   });
   test('global false', async () => {
-    const req = new AxiosRequestTemplate<CustomConfig>({}, { cache: false });
+    const req = new AxiosRequestTemplate<CustomConfig>({ customConfig: { cache: false } });
     const mock = jest.fn();
     (<any>req).cache.set = mock;
     let mockCallTimes = 0;
@@ -62,7 +62,7 @@ describe('mock cacheConfig', () => {
     expect(mock.mock.calls.length).toBe(mockCallTimes);
   });
   test('global true', async () => {
-    const req = new AxiosRequestTemplate<CustomConfig>({}, { cache: true });
+    const req = new AxiosRequestTemplate<CustomConfig>({ customConfig: { cache: true } });
     const mock = jest.fn();
     (<any>req).cache.set = mock;
     let mockCallTimes = 0;
@@ -92,7 +92,9 @@ describe('mock cacheConfig', () => {
     expect(mock.mock.calls.length).toBe(mockCallTimes);
   });
   test('global object true', async () => {
-    const req = new AxiosRequestTemplate<CustomConfig>({}, { cache: { enable: true } });
+    const req = new AxiosRequestTemplate<CustomConfig>({
+      customConfig: { cache: { enable: true } },
+    });
     const mock = jest.fn();
     (<any>req).cache.set = mock;
     let mockCallTimes = 0;
@@ -122,10 +124,9 @@ describe('mock cacheConfig', () => {
     expect(mock.mock.calls.length).toBe(mockCallTimes);
   });
   test('mixin', async () => {
-    const req = new AxiosRequestTemplate<CustomConfig>(
-      {},
-      { cache: { enable: true, timeout: 20 } },
-    );
+    const req = new AxiosRequestTemplate<CustomConfig>({
+      customConfig: { cache: { enable: true, timeout: 20 } },
+    });
     const mock = jest.fn();
     (<any>req).cache.set = mock;
     let mockCallTimes = 0;

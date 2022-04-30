@@ -34,7 +34,10 @@ describe('AxiosRequestTemplate', () => {
       return ctx.customConfig.returnRes ? res : data;
     },
   };
-  const req = new AxiosRequestTemplate<CustomConfig>({ baseURL: '/' }, { statusHandlers });
+  const req = new AxiosRequestTemplate<CustomConfig>({
+    requestConfig: { baseURL: '/' },
+    customConfig: { statusHandlers },
+  });
   const get = req.methodFactory('get');
   const post = req.methodFactory('post');
 
@@ -82,7 +85,7 @@ describe('AxiosRequestTemplate', () => {
       expect(res2).toBe(res);
     });
     test('global cache object', async () => {
-      const req = new AxiosRequestTemplate({}, { cache: {} });
+      const req = new AxiosRequestTemplate({ customConfig: { cache: {} } });
       const get = req.methodFactory('get');
       const res = await get<{ username: string; id: number }>('/user');
       expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
@@ -91,7 +94,7 @@ describe('AxiosRequestTemplate', () => {
       expect(res2).toBe(res);
     });
     test('global cache empty object', async () => {
-      const req = new AxiosRequestTemplate<CustomConfig>({}, { cache: true });
+      const req = new AxiosRequestTemplate<CustomConfig>({ customConfig: { cache: true } });
       const get = req.methodFactory('get');
       const res = await get<{ username: string; id: number }>('/user');
       expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
@@ -104,10 +107,9 @@ describe('AxiosRequestTemplate', () => {
       expect(res3).not.toBe(res);
     });
     test('global cache empty object', async () => {
-      const req = new AxiosRequestTemplate<CustomConfig>(
-        {},
-        { cache: { enable: false, timeout: 1000 * 60 } },
-      );
+      const req = new AxiosRequestTemplate<CustomConfig>({
+        customConfig: { cache: { enable: false, timeout: 1000 * 60 } },
+      });
       const get = req.methodFactory('get');
       const res = await get<{ username: string; id: number }>('/user');
       expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
@@ -199,7 +201,7 @@ describe('AxiosRequestTemplate', () => {
     expect(res2).toEqual({ data: '1', status: 200 });
   });
   test('global customConfig', async () => {
-    const req = new AxiosRequestTemplate({}, { returnRes: true, statusHandlers });
+    const req = new AxiosRequestTemplate({ customConfig: { returnRes: true, statusHandlers } });
     const get = req.methodFactory('get');
     const res = await get<{ username: string; id: number }, true>('/user', undefined);
     expect(res).toEqual({
@@ -240,7 +242,7 @@ describe('AxiosRequestTemplate', () => {
     ]);
   });
   test('cancel with tag', async () => {
-    const req = new AxiosRequestTemplate<CustomConfig>(undefined, { tag: 'cancellable' });
+    const req = new AxiosRequestTemplate<CustomConfig>({ customConfig: { tag: 'cancellable' } });
     const get = req.methodFactory('get');
     const res1 = get('/user', {}, { tag: 'irrevocable' });
     const res2 = get('/user');
@@ -270,7 +272,7 @@ describe('AxiosRequestTemplate', () => {
     req.cancelWithTag('default', 'cancel with tag');
   });
   test('mixin cancel', async () => {
-    const req = new AxiosRequestTemplate(undefined, { tag: 'cancellable' });
+    const req = new AxiosRequestTemplate({ customConfig: { tag: 'cancellable' } });
     const get = req.methodFactory('get');
     const res1 = get('/user');
     req.cancelCurrentRequest?.('cancelCurrent');
@@ -288,14 +290,16 @@ describe('AxiosRequestTemplate', () => {
     ]);
   });
   test('test config', async () => {
-    const req = new AxiosRequestTemplate<CustomConfig>(undefined, {
-      statusHandlers: {
-        1000: ({ customConfig, requestConfig }, res) => {
-          customConfig = { ...customConfig };
-          requestConfig = { ...requestConfig };
-          delete customConfig.statusHandlers;
-          delete requestConfig.cancelToken;
-          return customConfig.returnRes ? res : { requestConfig, customConfig };
+    const req = new AxiosRequestTemplate<CustomConfig>({
+      customConfig: {
+        statusHandlers: {
+          1000: ({ customConfig, requestConfig }, res) => {
+            customConfig = { ...customConfig };
+            requestConfig = { ...requestConfig };
+            delete customConfig.statusHandlers;
+            delete requestConfig.cancelToken;
+            return customConfig.returnRes ? res : { requestConfig, customConfig };
+          },
         },
       },
     });

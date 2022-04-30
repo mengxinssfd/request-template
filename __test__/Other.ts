@@ -18,7 +18,7 @@ export default class Other extends AxiosRequestTemplate<MyCustomConfig> {
   static readonly post = Other.ins.methodFactory('post');
 
   private constructor() {
-    super({ baseURL: 'http://test.test' }, { statusHandlers });
+    super({ requestConfig: { baseURL: 'http://test.test' }, customConfig: { statusHandlers } });
   }
 
   protected setInterceptors() {
