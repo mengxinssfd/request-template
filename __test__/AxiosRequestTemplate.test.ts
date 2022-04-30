@@ -137,7 +137,7 @@ describe('AxiosRequestTemplate', () => {
     expect(res2).toEqual({ code: 300 });
   });
   test('default constructor params', async () => {
-    const req = new AxiosRequestTemplate();
+    const req = new AxiosRequestTemplate<CustomConfig>();
     const get = req.methodFactory('get');
     const res = await get<{ username: string; id: number }>(
       '/user',
@@ -168,13 +168,16 @@ describe('AxiosRequestTemplate', () => {
     });
 
     // 不传method时默认为get
-    const res2 = await req.request<{ username: string; id: number }>(
-      '/user',
+    const res2 = await req.request2<{ username: string; id: number }>(
       {},
       {
         statusHandlers: { '200': (_, res) => res },
       },
     );
+
+    const patch = req.use({ requestConfig: { url: 'hello', method: 'delete' } });
+    patch({ url: '' });
+
     expect(res2).toEqual({
       data: { code: 200, data: { username: 'get', id: 1 }, msg: 'success' },
       status: 200,

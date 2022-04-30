@@ -10,6 +10,7 @@ import axios, {
 } from 'axios';
 import { Cache } from './Cache';
 import { Context, CustomCacheConfig, RetryContext } from './types';
+import { mergeObj } from './utils';
 
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
@@ -174,7 +175,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     const { customConfig } = ctx;
     const code = data?.code ?? 'default';
     const handlers = {
-      default: ({ customConfig }, res, data) => (customConfig.returnRes ? res : data),
+      default: ({ customConfig }, res, data) => (customConfig.enable ? res : data),
       ...this.globalConfigs.customConfig.statusHandlers,
       ...customConfig.statusHandlers,
     };
@@ -338,6 +339,27 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }
   }
 
+  request2<T = never, RC extends boolean = false>(
+    requestConfig: Omit<AxiosRequestConfig, 'cancelToken'>,
+    customConfig?: DynamicCustomConfig<CC, RC>,
+  ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
+  async request2(requestConfig: AxiosRequestConfig, customConfig = {} as CC): Promise<any> {
+    const ctx = this.generateContext(
+      requestConfig.url as string,
+      requestConfig.data,
+      customConfig,
+      requestConfig,
+    );
+    this.beforeRequest(ctx);
+    try {
+      return await this.execRequest(ctx);
+    } catch (e: any) {
+      return await this.handleError(ctx, e);
+    } finally {
+      this.afterRequest(ctx);
+    }
+  }
+
   protected handleError(ctx: Context<CC>, e: AxiosError<ResType<any>>) {
     // 错误处理
     const response = e.response as AxiosResponse<ResType<any>>;
@@ -379,5 +401,24 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       customConfig?: DynamicCustomConfig<CC, RC>,
       requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'method' | 'cancelToken'>,
     ) => this.request<T, RC>(url, data, customConfig, { ...requestConfig, method });
+  }
+
+  use(configs: Partial<Configs<CC>>) {
+    const { customConfig: custom = {}, requestConfig: request = {} } = configs;
+    return <T = never, RC extends boolean = false>(
+      requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & { url: string },
+      customConfig?: DynamicCustomConfig<CC, RC>,
+    ) => {
+      // baseURL还是起作用的，所以使用外部的configs中的url作为url前缀
+      requestConfig.url = `${request.url || ''}${requestConfig.url}`;
+      requestConfig = mergeObj(request, requestConfig);
+
+      customConfig = mergeObj(
+        custom as DynamicCustomConfig<CC, boolean>,
+        customConfig as DynamicCustomConfig<CC, RC>,
+      );
+
+      return this.request2<T>(requestConfig, customConfig as any);
+    };
   }
 }

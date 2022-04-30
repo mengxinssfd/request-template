@@ -21,10 +21,10 @@ export const routers = {
     return Promise.reject({ code: 0, msg: '账号或密码错误' });
   },
   '404'(d: any) {
-    if (d.returnRes === 1) {
+    if (d.enable === 1) {
       return Promise.reject({ status: 404, response: { data: { code: 200 } } });
     }
-    if (d.returnRes === 2) {
+    if (d.enable === 2) {
       return Promise.reject({ status: 404, response: { data: { code: 300 } } });
     }
     return Promise.reject('404');
