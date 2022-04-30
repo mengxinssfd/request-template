@@ -9,27 +9,27 @@ describe('mock cacheConfig', () => {
     (<any>req).cache.set = mock;
     let mockCallTimes = 0;
 
-    await req.request('/user', {}, { cache: { timeout: 20000 } });
+    await req.request({ url: '/user' }, { cache: { timeout: 20000 } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20000 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: { timeout: 20000 } });
+    await req.request({ url: '/user' }, { cache: { timeout: 20000 } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20000 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: true });
+    await req.request({ url: '/user' }, { cache: true });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: { enable: true } });
+    await req.request({ url: '/user' }, { cache: { enable: true } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true });
     ++mockCallTimes;
     expect(mock.mock.calls.length).toBe(mockCallTimes);
 
-    await req.request('/user');
+    await req.request({ url: '/user' });
     expect(mock.mock.calls.length).toBe(mockCallTimes);
 
-    await req.request('/user', {}, { cache: false });
+    await req.request({ url: '/user' }, { cache: false });
     expect(mock.mock.calls.length).toBe(mockCallTimes);
   });
   test('global false', async () => {
@@ -38,27 +38,27 @@ describe('mock cacheConfig', () => {
     (<any>req).cache.set = mock;
     let mockCallTimes = 0;
 
-    await req.request('/user', {}, { cache: { timeout: 20000 } });
+    await req.request({ url: '/user' }, { cache: { timeout: 20000 } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20000 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: { timeout: 20000 } });
+    await req.request({ url: '/user' }, { cache: { timeout: 20000 } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20000 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: true });
+    await req.request({ url: '/user' }, { cache: true });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: { enable: true } });
+    await req.request({ url: '/user' }, { cache: { enable: true } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true });
     ++mockCallTimes;
     expect(mock.mock.calls.length).toBe(mockCallTimes);
 
-    await req.request('/user');
+    await req.request({ url: '/user' });
     expect(mock.mock.calls.length).toBe(mockCallTimes);
 
-    await req.request('/user', {}, { cache: false });
+    await req.request({ url: '/user' }, { cache: false });
     expect(mock.mock.calls.length).toBe(mockCallTimes);
   });
   test('global true', async () => {
@@ -67,28 +67,28 @@ describe('mock cacheConfig', () => {
     (<any>req).cache.set = mock;
     let mockCallTimes = 0;
 
-    await req.request('/user', {}, { cache: { timeout: 20000 } });
+    await req.request({ url: '/user' }, { cache: { timeout: 20000 } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20000 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: { timeout: 20000 } });
+    await req.request({ url: '/user' }, { cache: { timeout: 20000 } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20000 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: true });
+    await req.request({ url: '/user' }, { cache: true });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: { enable: true } });
+    await req.request({ url: '/user' }, { cache: { enable: true } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true });
     ++mockCallTimes;
     expect(mock.mock.calls.length).toBe(mockCallTimes);
 
-    await req.request('/user');
+    await req.request({ url: '/user' });
     ++mockCallTimes;
     expect(mock.mock.calls.length).toBe(mockCallTimes);
 
-    await req.request('/user', {}, { cache: false });
+    await req.request({ url: '/user' }, { cache: false });
     expect(mock.mock.calls.length).toBe(mockCallTimes);
   });
   test('global object true', async () => {
@@ -99,28 +99,28 @@ describe('mock cacheConfig', () => {
     (<any>req).cache.set = mock;
     let mockCallTimes = 0;
 
-    await req.request('/user', {}, { cache: { timeout: 20000 } });
+    await req.request({ url: '/user' }, { cache: { timeout: 20000 } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20000 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: { timeout: 20000 } });
+    await req.request({ url: '/user' }, { cache: { timeout: 20000 } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20000 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: true });
+    await req.request({ url: '/user' }, { cache: true });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: { enable: true } });
+    await req.request({ url: '/user' }, { cache: { enable: true } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true });
     ++mockCallTimes;
     expect(mock.mock.calls.length).toBe(mockCallTimes);
 
-    await req.request('/user');
+    await req.request({ url: '/user' });
     ++mockCallTimes;
     expect(mock.mock.calls.length).toBe(mockCallTimes);
 
-    await req.request('/user', {}, { cache: false });
+    await req.request({ url: '/user' }, { cache: false });
     expect(mock.mock.calls.length).toBe(mockCallTimes);
   });
   test('mixin', async () => {
@@ -131,28 +131,28 @@ describe('mock cacheConfig', () => {
     (<any>req).cache.set = mock;
     let mockCallTimes = 0;
 
-    await req.request('/user', {}, { cache: { timeout: 20000 } });
+    await req.request({ url: '/user' }, { cache: { timeout: 20000 } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20000 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: { timeout: 20000 } });
+    await req.request({ url: '/user' }, { cache: { timeout: 20000 } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20000 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: true });
+    await req.request({ url: '/user' }, { cache: true });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: { enable: true } });
+    await req.request({ url: '/user' }, { cache: { enable: true } });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20 });
     ++mockCallTimes;
     expect(mock.mock.calls.length).toBe(mockCallTimes);
 
-    await req.request('/user');
+    await req.request({ url: '/user' });
     expect(mock.mock.calls[mockCallTimes][2]).toEqual({ enable: true, timeout: 20 });
     ++mockCallTimes;
 
-    await req.request('/user', {}, { cache: false });
+    await req.request({ url: '/user' }, { cache: false });
     expect(mock.mock.calls.length).toBe(mockCallTimes);
   });
 });

@@ -175,7 +175,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     const { customConfig } = ctx;
     const code = data?.code ?? 'default';
     const handlers = {
-      default: ({ customConfig }, res, data) => (customConfig.enable ? res : data),
+      default: ({ customConfig }, res, data) => (customConfig.returnRes ? res : data),
       ...this.globalConfigs.customConfig.statusHandlers,
       ...customConfig.statusHandlers,
     };
@@ -316,7 +316,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
   // 模板方法，请求入口。
   // 可子类覆盖，如非必要不建议子类覆盖
-  request<T = never, RC extends boolean = false>(
+  /* request<T = never, RC extends boolean = false>(
     url: string,
     data?: {},
     customConfig?: DynamicCustomConfig<CC, RC>,
@@ -337,13 +337,13 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     } finally {
       this.afterRequest(ctx);
     }
-  }
+  }*/
 
-  request2<T = never, RC extends boolean = false>(
+  request<T = never, RC extends boolean = false>(
     requestConfig: Omit<AxiosRequestConfig, 'cancelToken'>,
     customConfig?: DynamicCustomConfig<CC, RC>,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
-  async request2(requestConfig: AxiosRequestConfig, customConfig = {} as CC): Promise<any> {
+  async request(requestConfig: AxiosRequestConfig, customConfig = {} as CC): Promise<any> {
     const ctx = this.generateContext(
       requestConfig.url as string,
       requestConfig.data,
@@ -396,11 +396,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   // 简单工厂：生成get post delete等method
   methodFactory(method: Method) {
     return <T = never, RC extends boolean = false>(
-      url: string,
-      data?: {},
+      requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & { url: string },
       customConfig?: DynamicCustomConfig<CC, RC>,
-      requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'method' | 'cancelToken'>,
-    ) => this.request<T, RC>(url, data, customConfig, { ...requestConfig, method });
+    ) => this.request<T, RC>({ ...requestConfig, method }, customConfig);
   }
 
   use(configs: Partial<Configs<CC>>) {
@@ -418,7 +416,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
         customConfig as DynamicCustomConfig<CC, RC>,
       );
 
-      return this.request2<T>(requestConfig, customConfig as any);
+      return this.request<T>(requestConfig, customConfig as any);
     };
   }
 }
