@@ -103,12 +103,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 处理requestConfig
-  protected handleRequestConfig(
-    url: string,
-    requestConfig: AxiosRequestConfig,
-  ): AxiosRequestConfig {
+  protected handleRequestConfig(requestConfig: AxiosRequestConfig): AxiosRequestConfig {
     // globalConfigs.requestConfig在axios内部会处理，不需要再手动处理
-    const finalConfig: AxiosRequestConfig = { ...requestConfig, url };
+    const finalConfig: AxiosRequestConfig = { ...requestConfig };
     finalConfig.method = finalConfig.method || 'get';
     return finalConfig;
   }
@@ -153,17 +150,6 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     config.cache = this.mergeCacheConfig(customConfig.cache);
     config.retry = this.mergeRetryConfig(customConfig.retry);
     return config;
-  }
-
-  // 处理请求用的数据
-  protected handleRequestData(ctx: Context<CC>, data: {}) {
-    const { requestConfig } = ctx;
-    delete requestConfig.data;
-    if (String(requestConfig.method).toLowerCase() === 'get') {
-      requestConfig.params = data;
-      return;
-    }
-    requestConfig.data = data;
   }
 
   // 处理响应结果
@@ -276,14 +262,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     ctx.clearSet.clear();
   }
 
-  protected generateContext(
-    url: string,
-    data: {},
-    customConfig: CC,
-    requestConfig: AxiosRequestConfig,
-  ) {
+  protected generateContext(customConfig: CC, requestConfig: AxiosRequestConfig) {
     // 处理配置
-    requestConfig = this.handleRequestConfig(url, requestConfig);
+    requestConfig = this.handleRequestConfig(requestConfig);
     customConfig = this.handleCustomConfig(customConfig);
     const ctx: Context<CC> = {
       requestConfig,
@@ -291,7 +272,6 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       requestKey: '',
       clearSet: new Set(),
     };
-    this.handleRequestData(ctx, data);
     ctx.requestKey = this.generateRequestKey(ctx);
     return ctx;
   }
@@ -344,12 +324,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     customConfig?: DynamicCustomConfig<CC, RC>,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
   async request(requestConfig: AxiosRequestConfig, customConfig = {} as CC): Promise<any> {
-    const ctx = this.generateContext(
-      requestConfig.url as string,
-      requestConfig.data,
-      customConfig,
-      requestConfig,
-    );
+    const ctx = this.generateContext(customConfig, requestConfig);
     this.beforeRequest(ctx);
     try {
       return await this.execRequest(ctx);

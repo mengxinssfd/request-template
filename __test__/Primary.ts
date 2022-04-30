@@ -15,8 +15,15 @@ export default class Primary extends AxiosRequestTemplate {
     super({ requestConfig: { baseURL: 'http://test.test' }, customConfig: { statusHandlers } });
   }
 
-  protected handleRequestData(config, data: {}) {
-    super.handleRequestData(config, { ...data, token: 123 });
+  protected handleRequestConfig(config) {
+    if (config.method === 'get') {
+      if (!config.params) config.params = {};
+      config.params.token = 1;
+    } else {
+      if (!config.data) config.data = {};
+      config.data.token = 1;
+    }
+    return super.handleRequestConfig(config);
   }
 
   protected setInterceptors() {

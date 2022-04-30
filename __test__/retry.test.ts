@@ -131,7 +131,7 @@ describe('AxiosRequestTemplate retry', () => {
 
     const get = req.methodFactory('get');
 
-    const res = await get({ url: '/config', data: { test: 1 } }, { retry: 10, cache: true });
+    const res = await get({ url: '/config', params: { test: 1 } }, { retry: 10, cache: true });
     delete (res as any).cancelToken;
     expect(res).toEqual({
       method: 'get',
