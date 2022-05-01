@@ -319,8 +319,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }
   }*/
 
+  // 模板方法，请求入口。
   request<T = never, RC extends boolean = false>(
-    requestConfig: Omit<AxiosRequestConfig, 'cancelToken'>,
+    requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & { url: string },
     customConfig?: DynamicCustomConfig<CC, RC>,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
   async request(requestConfig: AxiosRequestConfig, customConfig = {} as CC): Promise<any> {
@@ -369,13 +370,24 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 简单工厂：生成get post delete等method
-  methodFactory(method: Method) {
+  methodFactory(method: Method, handler?: (configs: Configs) => void) {
     return <T = never, RC extends boolean = false>(
-      requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & { url: string },
+      requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url' | 'method'> & { url: string },
       customConfig?: DynamicCustomConfig<CC, RC>,
-    ) => this.request<T, RC>({ ...requestConfig, method }, customConfig);
+    ) => {
+      const configs: Configs = {
+        requestConfig: requestConfig,
+        customConfig: customConfig || {},
+      };
+      handler?.(configs);
+      return this.request<T, RC>(
+        { ...(configs.requestConfig as any), method },
+        configs.customConfig as DynamicCustomConfig<CC, RC>,
+      );
+    };
   }
 
+  // 本质上跟methodFactory其实是一样的
   use(configs: Partial<Configs<CC>>) {
     const { customConfig: custom = {}, requestConfig: request = {} } = configs;
     return <T = never, RC extends boolean = false>(

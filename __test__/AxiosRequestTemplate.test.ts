@@ -154,13 +154,12 @@ describe('AxiosRequestTemplate', () => {
     // 不传method时默认为get
     const defGet = req.methodFactory(undefined as any);
     const res1 = await defGet<{ username: string; id: number }>(
-      { url: '/user' },
+      // 改为post，无效；
+      // methodFactory的method优先级更高，除了method，url，data其他的axios配置优先级都是这里的高
+      { url: '/user', method: 'post' } as any, // method已经从methodFactory剔除出去，不设置为any将会报错
       {
         statusHandlers: { '200': (_, res) => res },
       },
-      // 改为post，无效；
-      // methodFactory的method优先级更高，除了method，url，data其他的axios配置优先级都是这里的高
-      // { method: 'post' } as any,
     );
     expect(res1).toEqual({
       data: { code: 200, data: { username: 'get', id: 1 }, msg: 'success' },
