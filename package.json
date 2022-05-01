@@ -1,6 +1,6 @@
 {
   "name": "request-template",
-  "version": "0.0.11",
+  "version": "0.1.0",
   "description": "请求模板封装",
   "main": "dist/index.js",
   "typings": "./types/",
