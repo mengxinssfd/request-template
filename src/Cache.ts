@@ -1,5 +1,5 @@
 export class Cache<V> {
-  constructor(private readonly cache = new Map<any, { value: V; expires: number }>()) {}
+  constructor(protected readonly cache = new Map<any, { value: V; expires: number }>()) {}
 
   clearDeadCache() {
     const now = Date.now();
@@ -23,6 +23,10 @@ export class Cache<V> {
   set(key: any, value: V, { timeout = 5 * 1000 }: { timeout?: number } = {}) {
     this.cache.set(key, { value, expires: timeout + Date.now() });
     this.clearDeadCache();
+  }
+
+  delete(key: any) {
+    this.cache.delete(key);
   }
 
   has(key: any): boolean {

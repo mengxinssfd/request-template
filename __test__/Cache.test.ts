@@ -16,6 +16,14 @@ describe('Cache', () => {
     await sleep(350);
     expect(cache.get(key)).toEqual(null);
     expect(cache.has(key)).toBeFalsy();
+
+    cache.set(key, { a: 123 }, { timeout: 500 });
+    expect(cache.get(key)).toEqual({ a: 123 });
+    expect(cache.has(key)).toBeTruthy();
+
+    cache.delete(key);
+    expect(cache.get(key)).toEqual(null);
+    expect(cache.has(key)).toBeFalsy();
   });
   // jest.setTimeout(7000);
   test('default timeout', async () => {

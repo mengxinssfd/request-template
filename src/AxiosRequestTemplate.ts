@@ -73,7 +73,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     requestConfig.cancelToken = token;
     const tag = customConfig.tag;
 
-    // 缓存tag取消
+    // 设置tag取消
     if (tag) {
       if (!this.tagCancelMap.has(tag)) {
         this.tagCancelMap.set(tag, []);
@@ -87,7 +87,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       });
     }
 
-    // 缓存取消
+    // 设置取消
     this.cancelerSet.add(cancel);
     // 清理取消
     const clearCanceler = () => {
@@ -173,7 +173,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   // 请求
   protected fetch(ctx: RetryContext<CC>) {
     const { requestConfig, customConfig, requestKey } = ctx;
-    // 使用缓存
+
     const cacheConfig = customConfig.cache as CustomCacheConfig;
 
     // 缓存
@@ -183,10 +183,16 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
         if (cache) return cache;
       }
       // 请求
-      const res = this.axiosIns(requestConfig);
+      const axiosPromise = this.axiosIns(requestConfig);
       // 存储缓存
-      this.cache.set(requestKey, res, cacheConfig);
-      return res;
+      this.cache.set(requestKey, axiosPromise, cacheConfig);
+      // 如果该请求是被取消的话，就清理掉该缓存
+      axiosPromise.catch((reason) => {
+        if (axios.isCancel(reason)) {
+          this.cache.delete(requestKey);
+        }
+      });
+      return axiosPromise;
     }
     // 请求
     return this.axiosIns(requestConfig);
