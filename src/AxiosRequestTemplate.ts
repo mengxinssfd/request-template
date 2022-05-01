@@ -1,4 +1,4 @@
-import type { ResType, CustomConfig, DynamicCustomConfig, RetryConfig } from './types';
+import type { ResType, CustomConfig, DynamicCustomConfig, RetryConfig, Configs } from './types';
 import axios, {
   AxiosInstance,
   AxiosPromise,
@@ -10,6 +10,7 @@ import axios, {
 } from 'axios';
 import { Cache } from './Cache';
 import { Context, CustomCacheConfig, RetryContext } from './types';
+import { mergeObj } from './utils';
 
 // 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
@@ -17,24 +18,24 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   protected axiosIns!: AxiosInstance;
   protected cache!: Cache<AxiosPromise>;
 
+  // 全局配置
+  protected globalConfigs!: Configs<CC>;
+
   // cancel函数缓存
   protected readonly cancelerSet = new Set<Canceler>();
   protected readonly tagCancelMap = new Map<CustomConfig['tag'], Canceler[]>();
 
   cancelCurrentRequest?: Canceler;
 
-  constructor(
-    // 全局配置
-    protected globalRequestConfig: AxiosRequestConfig = {},
-    protected globalCustomConfig = {} as CC,
-  ) {
+  constructor(globalConfigs: Partial<Configs<CC>> = {}) {
+    this.globalConfigs = { customConfig: {} as CC, requestConfig: {}, ...globalConfigs };
     this.init();
     this.setInterceptors();
   }
 
   protected init() {
     // 1、保存基础配置
-    this.axiosIns = axios.create(this.globalRequestConfig);
+    this.axiosIns = axios.create(this.globalConfigs.requestConfig);
     // 2、缓存初始化
     this.cache = new Cache();
   }
@@ -102,12 +103,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 处理requestConfig
-  protected handleRequestConfig(
-    url: string,
-    requestConfig: AxiosRequestConfig,
-  ): AxiosRequestConfig {
-    // globalRequestConfig在axios内部会处理，不需要再手动处理
-    const finalConfig: AxiosRequestConfig = { ...requestConfig, url };
+  protected handleRequestConfig(requestConfig: AxiosRequestConfig): AxiosRequestConfig {
+    // globalConfigs.requestConfig在axios内部会处理，不需要再手动处理
+    const finalConfig: AxiosRequestConfig = { ...requestConfig };
     finalConfig.method = finalConfig.method || 'get';
     return finalConfig;
   }
@@ -128,7 +126,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       }
       return base;
     }
-    return merge(cacheConfig, merge(this.globalCustomConfig.cache));
+    return merge(cacheConfig, merge(this.globalConfigs.customConfig.cache));
   }
 
   protected mergeRetryConfig(retryConfig: CustomConfig['retry']): RetryConfig {
@@ -143,26 +141,15 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       }
       return base;
     }
-    return merge(retryConfig, merge(this.globalCustomConfig.retry));
+    return merge(retryConfig, merge(this.globalConfigs.customConfig.retry));
   }
 
   // 处理CustomConfig
   protected handleCustomConfig(customConfig: CC) {
-    const config = { ...this.globalCustomConfig, ...customConfig };
+    const config = { ...this.globalConfigs.customConfig, ...customConfig };
     config.cache = this.mergeCacheConfig(customConfig.cache);
     config.retry = this.mergeRetryConfig(customConfig.retry);
     return config;
-  }
-
-  // 处理请求用的数据
-  protected handleRequestData(ctx: Context<CC>, data: {}) {
-    const { requestConfig } = ctx;
-    delete requestConfig.data;
-    if (String(requestConfig.method).toLowerCase() === 'get') {
-      requestConfig.params = data;
-      return;
-    }
-    requestConfig.data = data;
   }
 
   // 处理响应结果
@@ -175,7 +162,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     const code = data?.code ?? 'default';
     const handlers = {
       default: ({ customConfig }, res, data) => (customConfig.returnRes ? res : data),
-      ...this.globalCustomConfig.statusHandlers,
+      ...this.globalConfigs.customConfig.statusHandlers,
       ...customConfig.statusHandlers,
     };
 
@@ -275,14 +262,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     ctx.clearSet.clear();
   }
 
-  protected generateContext(
-    url: string,
-    data: {},
-    customConfig: CC,
-    requestConfig: AxiosRequestConfig,
-  ) {
+  protected generateContext(customConfig: CC, requestConfig: AxiosRequestConfig) {
     // 处理配置
-    requestConfig = this.handleRequestConfig(url, requestConfig);
+    requestConfig = this.handleRequestConfig(requestConfig);
     customConfig = this.handleCustomConfig(customConfig);
     const ctx: Context<CC> = {
       requestConfig,
@@ -290,7 +272,6 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       requestKey: '',
       clearSet: new Set(),
     };
-    this.handleRequestData(ctx, data);
     ctx.requestKey = this.generateRequestKey(ctx);
     return ctx;
   }
@@ -313,21 +294,13 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }
   }
 
-  // 模板方法，最终请求所使用的方法。
-  // 可子类覆盖，如非必要不建议子类覆盖
+  // 模板方法，请求入口。
   request<T = never, RC extends boolean = false>(
-    url: string,
-    data?: {},
+    requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & { url: string },
     customConfig?: DynamicCustomConfig<CC, RC>,
-    requestConfig?: Omit<AxiosRequestConfig, 'data' | 'cancelToken'>,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
-  async request(
-    url: string,
-    data: {} = {},
-    customConfig = {} as CC,
-    requestConfig: AxiosRequestConfig = {},
-  ): Promise<any> {
-    const ctx = this.generateContext(url, data, customConfig, requestConfig);
+  async request(requestConfig: AxiosRequestConfig, customConfig = {} as CC): Promise<any> {
+    const ctx = this.generateContext(customConfig, requestConfig);
     this.beforeRequest(ctx);
     try {
       return await this.execRequest(ctx);
@@ -372,12 +345,58 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 简单工厂：生成get post delete等method
-  methodFactory(method: Method) {
+  methodFactory(method: Method, handler?: (configs: Configs) => void) {
+    return <T = never, RC extends boolean = false>(
+      requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url' | 'method'> & { url: string },
+      customConfig?: DynamicCustomConfig<CC, RC>,
+    ) => {
+      const configs: Configs = {
+        requestConfig: requestConfig,
+        customConfig: customConfig || {},
+      };
+      handler?.(configs);
+      return this.request<T, RC>(
+        { ...(configs.requestConfig as any), method },
+        configs.customConfig as DynamicCustomConfig<CC, RC>,
+      );
+    };
+  }
+
+  // 简化版请求方法工厂 忽略data还是params，url前缀，只改axios到url，data，method；及自定义配置
+  simplifyMethodFactory(method: Method, urlPrefix = '') {
     return <T = never, RC extends boolean = false>(
       url: string,
-      data?: {},
+      data = {},
+      customConfig = {} as DynamicCustomConfig<CC, RC>,
+    ) => {
+      const requestConfig: AxiosRequestConfig = {};
+      if (method === 'get') {
+        requestConfig.params = data;
+      } else {
+        requestConfig.data = data;
+      }
+      requestConfig.url = urlPrefix + url;
+      return this.request<T, RC>(requestConfig as any, customConfig);
+    };
+  }
+
+  // 本质上跟methodFactory是一样的
+  use(configs: Partial<Configs<CC>>) {
+    const { customConfig: custom = {}, requestConfig: request = {} } = configs;
+    return <T = never, RC extends boolean = false>(
+      requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & { url: string },
       customConfig?: DynamicCustomConfig<CC, RC>,
-      requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'method' | 'cancelToken'>,
-    ) => this.request<T, RC>(url, data, customConfig, { ...requestConfig, method });
+    ) => {
+      // baseURL还是起作用的，所以使用外部的configs中的url作为url前缀
+      requestConfig.url = `${request.url || ''}${requestConfig.url}`;
+      requestConfig = mergeObj(request, requestConfig);
+
+      customConfig = mergeObj(
+        custom as DynamicCustomConfig<CC, boolean>,
+        customConfig as DynamicCustomConfig<CC, RC>,
+      );
+
+      return this.request<T>(requestConfig, customConfig as any);
+    };
   }
 }

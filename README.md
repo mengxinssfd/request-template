@@ -22,29 +22,7 @@
 
 封装但不封闭
 
-## 流程
-
-```mermaid
-classDiagram
-      direction LR
-      class AxiosRequestTemplate{
-          #cache : Cache
-          +cancelAll()
-          +cancelCurrentRequest()
-          +cancelWithTag(tag)
-          +methodFactory(method)
-          +request(url,data,customConfig,requestConfig)
-      }
-      AxiosRequestTemplate "1" --o "1" Cache: cache
-      class Cache{
-          -keyHandler:Function
-          -cache: Map
-          +clearDeadCache()
-          +get(key)
-          +set(key, value)
-      }
-
-```
+## 生命周期
 
 ```mermaid
 flowchart
@@ -61,9 +39,9 @@ CreateTemplate --> GlobalCustomConfig --> template实例
 template实例 --> request
 
 
-request --> MergeConfig --> 请求开始 --> 生成Canceler --> 使用缓存?
+request --> MergeConfig --> 请求开始 --> 添加Canceler钩子 --> 使用缓存?
 
-生成Canceler --> 这一步后才可以执行取消handler
+添加Canceler钩子 --> 这一步后才可以执行取消handler
 
 使用缓存? --> |是| retry中?
 retry中? --> |否| 命中缓存?
@@ -80,7 +58,7 @@ retry中? --> |是| 请求
 
 
 retry? --> |否| 处理请求结果
-retry? --> |是| 请求开始
+retry? --> |是| 添加清理钩子 --> 请求开始
 
 
 处理请求结果 --> 处理状态 --> 请求完成 --> 清理钩子
@@ -99,6 +77,7 @@ retry? --> |是| 请求开始
 - [X]  模板方法模式实现
   - [X]  可实现自定义模板
   - [X]  可继承复用基础模板
+  - [X]  可复用 api 级配置
 - [X]  多实例
 - [X]  ts 类型支持
   - [X]  范型支持
@@ -136,35 +115,41 @@ pnpm add request-template
 ```ts
 // new一个实例
 const template = new AxiosRequestTemplate();
-// request(url: string, data?: {}, customConfig?: DynamicCustomConfig<CC, RC>, requestConfig?: AxiosRequestConfig)
-// `request`支持4个参数分别是必填的`url`，和选填的请求数据`data`，自定义设置的`customConfig`,以及`axios`的请求设置`requestConfig`
-// `requestConfig`为`axios`原设置；data,param已提取出来,cancelToken已内部实现，所以该配置不再接收这三个属性
+
+// request<T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & {
+//        url: string;
+//    }, customConfig?: DynamicCustomConfig<CC, RC>): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
+
+// `request`支持2个参数分别是`axios`的请求设置`requestConfig`以及，自定义设置的`customConfig`
+// `requestConfig`为`axios`原设置
 // `request`默认为`get`请求
-template.request('/test', { param1: 1, param2: 2 }).then((res) => {
+template.request({ url: '/test', params: { param1: 1, param2: 2 } }).then((res) => {
   console.log(res);
 });
 // `post`请求，`delete` `patch`也是以此类推
-template.request('/test', { param1: 1, param2: 2 }, {}, { method: 'post' }).then((res) => {
+template.request({ url: '/test', data: { param1: 1, param2: 2 }, method: 'post' }).then((res) => {
   console.log(res);
 });
 ```
 
-### 使用`methodFactory`函数生成一个`method`函数
+### 使用`methodFactory`方法生成一个`method`函数
 
 上面使用每次都要设置`method`有些麻烦了，可以用`methodFactory`函数生成一个`method`函数简化一下
 
 ```ts
 // 'post','get','patch'...
 const post = template.methodFactory('post');
-post('/test', { param1: 1, param2: 2 }).then((res) => {
+post({ url: '/test', data: { param1: 1, param2: 2 } }).then((res) => {
   console.log(res);
 });
-post('/test', { param1: 1, param2: 2 }).then((res) => {
+post({ url: '/test', data: { param1: 1, param2: 2 } }).then((res) => {
   console.log(res);
 });
 ```
 
 注意：`methodFactory`生成的 `method`函数与 `request`参数返回值一致，且 `requestConfig`里的 `method`属性不再起作用
+
+该方法第二个参数接收一个`handler`可以对配置进行一些处理，如设置一些公共 url 前缀等。
 
 ### 使用缓存
 
@@ -175,7 +160,7 @@ post('/test', { param1: 1, param2: 2 }).then((res) => {
 ```ts
 export function login(data: { username: string; password: string }) {
   // 5秒内都会是同样的数据
-  return post<{ token: string }>('/user/login', data, { cache: true });
+  return post<{ token: string }>({ url: '/user/login', data }, { cache: true });
 }
 ```
 
@@ -186,7 +171,10 @@ export function login(data: { username: string; password: string }) {
 ```ts
 export function login(data: { username: string; password: string }) {
   // timeout单位为毫秒
-  return post<{ token: string }>('/user/login', data, { cache: { timeout: 30 * 60 * 1000 } });
+  return post<{ token: string }>(
+    { url: '/user/login', data },
+    { cache: { timeout: 30 * 60 * 1000 } },
+  );
 }
 ```
 
@@ -205,28 +193,32 @@ export function login(data: { username: string; password: string }) {
 ```ts
 const req = login({ username: 'test', password: 'test' });
 // 必须使用对应的实例来取消请求
-template.cancelCurrentRequest('test');
+template.cancelCurrentRequest('cancel message');
 try {
   await req;
 } catch (e: { message: string }) {
   // 会捕获该报错
-  // message: "test"
+  // message: "cancel message"
 }
 ```
+
+使用该方法可以取消失败重试，但由于时机难以确定，当前请求可能其他请求，所以不推荐使用它取消重试
 
 #### 取消所有请求
 
 ```ts
 const req = login({ username: 'test', password: 'test' });
 // 或者
-template.cancelAll('test');
+template.cancelAll('cancel message');
 try {
   await req;
 } catch (e: { message: string }) {
   // 会捕获该报错
-  // message: "test"
+  // message: "cancel message"
 }
 ```
+
+可以取消重试，但范围太大，可能会误伤其他请求
 
 #### 根据`tag`取消请求
 
@@ -239,7 +231,7 @@ export function login(data: { username: string; password: string }) {
 
 ```ts
 const req = login({ username: 'test', password: 'test' });
-template.cancelWithTag('cancelable', 'test');
+template.cancelWithTag('cancelable', 'cancel message');
 try {
   await req;
 } catch (e: { message: string }) {
@@ -247,6 +239,12 @@ try {
   // message: "test"
 }
 ```
+
+使用`tag`方式取消很方便灵活且实用，我们可以在请求前取消相同`tag`的请求；
+
+或者复用模板时所有请求设置一个默认`tag`，然后某一个请求设置为不一样的`tag`，从而实现反向`tag`取消的功能
+
+还能取消正在执行中的失败重试
 
 ### 失败重试
 
@@ -256,7 +254,7 @@ try {
 
 ```ts
 try {
-  await post('/retry', {}, { retry: 3 });
+  await post({ url: '/retry' }, { retry: 3 });
 } catch (e: any) {
   // 会捕获最后一次请求的错误
 }
@@ -268,7 +266,7 @@ try {
 
 ```ts
 try {
-  await post('/retry', {}, { retry: { times: 3, interval: 3000 } });
+  await post({ url: '/retry' }, { retry: { times: 3, interval: 3000 } });
 } catch (e: any) {
   // 会捕获最后一次请求的错误
 }
@@ -280,7 +278,7 @@ try {
 
 ```ts
 try {
-  await post('/retry', {}, { retry: { times: 3, interval: 3000, immediate: true } });
+  await post({ url: '/retry' }, { retry: { times: 3, interval: 3000, immediate: true } });
 } catch (e: any) {
   // 会捕获最后一次请求的错误
 }
@@ -291,7 +289,7 @@ try {
 错误的方式
 
 ```ts
-const req = post('/retry', {}, { retry: 3 });
+const req = post({ url: '/retry' }, { retry: 3 });
 const cancel = template.cancelCurrentRequest;
 cancel(); // 错误，由于`cancelCurrentRequest`会记住当前请求，此时无法确定当前是哪个请求
 try {
@@ -310,7 +308,7 @@ try {
 
 ```ts
 const symbol = Symbol('cancel'); // 可以使用字符串，但是用Symbol可以让tag不会与任何tag重复
-const req = post('/retry', {}, { retry: 3, tag: symbol });
+const req = post({ url: '/retry' }, { retry: 3, tag: symbol });
 template.cancelWithTag(symbol, 'msg');
 try {
   await req;
@@ -350,11 +348,11 @@ post(
 ```ts
 import { AxiosRequestTemplate } from './AxiosRequestTemplate';
 
-const template = new AxiosRequestTemplate(
+const template = new AxiosRequestTemplate({
   // AxiosRequestConfig axios配置
-  { data: { a: 1 }, params: { a: 1 } },
+  requestConfig: { data: { a: 1 }, params: { a: 1 } },
   // 自定义配置
-  {
+  customConfig: {
     tag: 'cancelable',
     retry: { times: 3, interval: 3000, immediate: true },
     statusHandlers: {
@@ -369,7 +367,7 @@ const template = new AxiosRequestTemplate(
     },
     cache: { timeout: 30 * 60 * 1000, enable: true },
   },
-);
+});
 ```
 
 ```ts
@@ -386,122 +384,10 @@ post('/test').then((res) => {
 然后请求时，把`cache`设置为`true`，那么就可以全局不使用缓存，只使用缓存时间，请求时再开启请求缓存功能
 
 ```ts
-post('/test', {}, { cache: true }).then((res) => {
+post({ url: '/test' }, { cache: true }).then((res) => {
   // do something
 });
 ```
-
-## 进阶用法
-
-请求
-
-#### 创建自定义模板
-
-该库使用模板方法模式实现，所以每个处理模块都可以用子类实现
-
-首先定义一个封装模板
-
-```ts
-import { StatusHandlers, CustomConfig, HttpStatus, AxiosRequestTemplate } from 'request-template';
-
-// 通用错误Handler
-const errorHandler: StatusHandler<CustomConfig> = (res, data, customConfig) => {
-  if (!customConfig.silent) {
-    // ElMessage({ type: 'error', message: data.msg })
-    console.log('非静音模式，显示错误信息');
-  }
-  // throw data.data || new Error( `data: ${JSON.stringify(data)}`);
-  return Promise.reject(customConfig.returnRes ? res : data);
-};
-
-const statusHandlers: StatusHandlers = {
-  // 登录过期
-  [HttpStatus.UNAUTHORIZED]: (res, data, customConfig) => {
-    if (res.status === HttpStatus.UNAUTHORIZED) {
-      // Store.clearUser();
-      console.log('清理掉保存的用户信息');
-      Token.clear();
-    }
-    return errorHandler(res, data, customConfig);
-  },
-  // token更新了
-  207: (res, data, customConfig) => {
-    data.data.token && Token.set(data.data.token);
-    return customConfig.returnRes ? res : data;
-  },
-  // 成功
-  [HttpStatus.OK]: (res, data, customConfig) => {
-    return customConfig.returnRes ? res : data;
-  },
-  // 其余所有都提示失败
-  default: errorHandler,
-};
-```
-
-直接使用 AxiosRequestTemplate
-
-```ts
-const req = new AxiosRequestTemplate<CustomConfig>({ baseURL: '/' }, { statusHandlers });
-// 使用methodFactory生成请求方法
-const get = req.methodFactory('get');
-const post = req.methodFactory('post');
-```
-
-或者继承 AxiosRequestTemplate 作为一个固定模板(推荐)
-
-```ts
-/**
- * 主域名请求类
- * 单例模式
- */
-export default class PrimaryRequest extends AxiosRequestTemplate {
-  static readonly ins = new PrimaryRequest();
-  // 把get，post挂到static上
-  static readonly get = PrimaryRequest.ins.methodFactory('get');
-  static readonly post = PrimaryRequest.ins.methodFactory('post');
-
-  private constructor() {
-    super({ baseURL: import.meta.env.VITE_BASE_URL }, { statusHandlers });
-  }
-
-  protected setInterceptors() {
-    this.interceptors.request.use((config) => {
-      if (!config.headers) config.headers = {};
-      const headers = config.headers as AxiosRequestHeaders;
-      Token.exists() && (headers.authorization = `Bearer ${Token.get()}`);
-      // headers.uuid = getUUID();
-      return config;
-    });
-  }
-}
-```
-
-最好再封装成 API
-
-```ts
-const { post, get } = PrimaryRequest;
-export class User {
-  username!: string;
-  id!: number;
-  static login(data: { username: string; password: string }) {
-    return post<{ token: string }>('/user/login', data);
-  }
-  static getSelf() {
-    const req = get<{ user: User }>('/user/self', {}, { silent: true });
-    const cancel = PrimaryRequest.ins.cancelCurrentRequest;
-    setTimeout(() => cancel('cancel test'));
-    return req;
-  }
-}
-```
-
-### 全局配置与局部配置
-
-new 一个模板时构造器接收的配置的为全局配置，get、post 时传过去的为局部配置，请求时局部配置优先于全局配置，且不会污染全局配置
-
-### 转换响应数据结构
-
-如果你接口返回的数据结构不是 `{code:number;msg:string;data:any}`这种格式的话就需要继承基础模板然后重写 `transformRes`方法
 
 ## 场景
 
@@ -541,7 +427,7 @@ class RequestWithLoading<CC extends MyConfig = MyConfig> extends AxiosRequestTem
 // 可以配置默认是开启还是关闭，此例子默认所有的都开启
 const req = new RequestWithLoading({}, { loading: true });
 
-const get = req.methodFactory('get');
+const get = req.simplifyMethodFactory('get');
 
 // 此时所有的请求都可以带上loading
 get('/test');
@@ -675,17 +561,21 @@ export default class MyTemplate extends AxiosRequestTemplate {
 ```ts
 import Qs from 'qs';
 export default class MyTemplate extends AxiosRequestTemplate {
-  protected handleRequestConfig(url, requestConfig) {
+  protected handleRequestConfig(requestConfig) {
+    requestConfig = super.handleRequestConfig(requestConfig);
+    //  设置headers
     if (!requestConfig.headers) requestConfig.headers = {};
     requestConfig.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    return super.handleRequestConfig(url, requestConfig);
-  }
 
-  protected handleRequestData(ctx, data) {
-    if (String(ctx.requestConfig.method).toLowerCase() === 'post' && !(data instanceof FormData)) {
-      data = Qs.stringify(data);
+    // qs序列化
+    if (
+      String(requestConfig.method).toLowerCase() === 'post' &&
+      !(requestConfig.data instanceof FormData)
+    ) {
+      requestConfig.data = Qs.stringify(requestConfig.data);
     }
-    super.handleRequestData(ctx, data);
+
+    return requestConfig;
   }
 }
 ```
@@ -696,19 +586,27 @@ export default class MyTemplate extends AxiosRequestTemplate {
 import Qs from 'qs';
 export default class MyTemplate extends AxiosRequestTemplate {
   constructor() {
+    //  设置headers
     super({ headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
   }
 
-  protected handleRequestData(ctx, data) {
-    if (String(ctx.requestConfig.method).toLowerCase() === 'post' && !(data instanceof FormData)) {
-      data = Qs.stringify(data);
+  protected handleRequestConfig(requestConfig) {
+    requestConfig = super.handleRequestConfig(requestConfig);
+    // qs序列化
+    if (
+      String(requestConfig.method).toLowerCase() === 'post' &&
+      !(requestConfig.data instanceof FormData)
+    ) {
+      requestConfig.data = Qs.stringify(requestConfig.data);
     }
-    super.handleRequestData(ctx, data);
+    return requestConfig;
   }
 }
 ```
 
-## 完整demo
+## 完整 demo
+
+这是我博客前台的`api`使用封装
 
 环境：vue3、vite、ts、elementplus
 
@@ -717,21 +615,24 @@ export default class MyTemplate extends AxiosRequestTemplate {
 ```text
 src
 ├── api
-|  ├── user.ts // 具体的请求
+|  ├── user.ts // 具体的api
+|  ├── tag.ts // 具体的api
 |  └── ....
 ├── http
 |  ├─── primary // 主模板
 |  |   ├── index.ts // 请求模板
 |  |   ├── token.ts // token操作工具类
 |  |   └── statusHandlers.ts // 状态处理
-|  └── other  // 其他规则模板
-|     ├── index.ts // 请求模板
-|     └── statusHandlers.ts // 状态处理
+|  └─── other  // 其他规则模板
+|      ├── index.ts // 请求模板
+|      └── statusHandlers.ts // 状态处理
 ```
 
 ### 主模板封装
 
 #### src/primary/token.ts
+
+`token`封装类
 
 ```ts
 export class Token {
@@ -758,15 +659,16 @@ export class Token {
     return !!Token.get();
   }
 }
-
 ```
 
 #### src/primary/statusHandlers.ts
 
+给用户提示错误信息，`token`的保存、清理、刷新等操作的通用处理
+
 ```ts
 import { HttpStatus, StatusHandler, StatusHandlers, CustomConfig } from 'request-template';
 import { ElMessage } from 'element-plus';
-import { Token } from '@/http/primary/token';
+import { Token } from './token';
 import Store from '@/store/index';
 
 // 通用错误Handler
@@ -777,111 +679,123 @@ const commonErrorHandler: StatusHandler<CustomConfig> = ({ customConfig }, res, 
 };
 
 export const statusHandlers: StatusHandlers = {
+  //  401 token失效或者未登录
   [HttpStatus.UNAUTHORIZED]: (ctx, res, data) => {
-    sessionStorage.removeItem('user');
-    Store.commit('clearUser');
+    // 从vuex或pinia中删除用户信息
+    // Store.commit('clearUser');
     Token.clear();
     return commonErrorHandler(ctx, res, data);
   },
+  // token刷新时
   207: ({ customConfig }, res, data) => {
     data.data.token && Token.set(data.data.token);
     return customConfig.returnRes ? res : data;
   },
+  // 200 普通成功请求
   [HttpStatus.OK]: ({ customConfig }, res, data) => {
     return customConfig.returnRes ? res : data;
   },
+  // ...
+  // 其余状态全部走错误处理
   default: commonErrorHandler,
 };
-
 ```
 
 #### src/primary/index.ts
 
+实现自定义请求模板
+
 ```ts
 import { Token } from './token';
 import { statusHandlers } from './statusHandlers';
-import { AxiosRequestTemplate, Context, CustomConfig, DynamicCustomConfig } from 'request-template';
+import { AxiosRequestTemplate, Context, CustomConfig } from 'request-template';
 import { ElLoading, ILoadingInstance } from 'element-plus';
-import { AxiosRequestConfig, Method } from 'axios';
+import { Method } from 'axios';
 
 let uuid = localStorage.getItem('uuid');
 
 interface LoadingCustomConfig extends CustomConfig {
-    loading?: boolean;
+  loading?: boolean;
 }
 
 export class PrimaryRequest<
-    CC extends LoadingCustomConfig = LoadingCustomConfig,
-    > extends AxiosRequestTemplate<CC> {
-    static readonly ins = new PrimaryRequest();
-    private loading?: ILoadingInstance;
+  CC extends LoadingCustomConfig = LoadingCustomConfig,
+> extends AxiosRequestTemplate<CC> {
+  // 单例模式
+  static readonly ins = new PrimaryRequest();
+  
+  private loading?: ILoadingInstance;
 
-    private constructor() {
-        super(
-            //  baseUrl，axios配置，每个请求都会拼接上baseUrl作为前缀，跟process.env.BASE_URL类似
-            { baseURL: import.meta.env.VITE_BASE_URL },
-            { statusHandlers, cache: { enable: false, timeout: 60 * 1000 }, loading: false } as CC,
-        );
-    }
+  private constructor() {
+    super(
+      //  baseUrl，axios配置，每个请求都会拼接上baseUrl作为前缀，跟process.env.BASE_URL类似
+      { baseURL: import.meta.env.VITE_BASE_URL },
+      // 缓存设置60秒
+      { statusHandlers, cache: { enable: false, timeout: 60 * 1000 }, loading: false } as CC,
+    );
+  }
 
-    protected beforeRequest(ctx: Context<CC>) {
-        super.beforeRequest(ctx); // 复用基础模板逻辑
-        if (ctx.customConfig.loading) {
-            this.loading = ElLoading.service({ fullscreen: true });
-        }
+  // 请求前开启loading
+  protected beforeRequest(ctx: Context<CC>) {
+    super.beforeRequest(ctx); // 复用基础模板逻辑
+    if (ctx.customConfig.loading) {
+      this.loading = ElLoading.service({ fullscreen: true });
     }
+  }
 
-    protected afterRequest(ctx) {
-        super.afterRequest(ctx); // 复用基础模板逻辑
-        // 加个定时器避免请求太快，loading一闪而过
-        setTimeout(() => {
-            this.loading?.close();
-        }, 200);
-    }
+  // 请求后关闭loading
+  protected afterRequest(ctx) {
+    super.afterRequest(ctx); // 复用基础模板逻辑
+    // 加个定时器避免请求太快，loading一闪而过
+    setTimeout(() => {
+      this.loading?.close();
+    }, 200);
+  }
 
-    private static getUUID() {
-        if (uuid) {
-            return uuid;
-        }
-        uuid = Math.floor(Math.random() * 0xffffffffff).toString(16);
-        localStorage.setItem('uuid', uuid);
-        return uuid;
+  // 生成uuid
+  private static getUUID() {
+    if (uuid) {
+      return uuid;
     }
+    uuid = Math.floor(Math.random() * 0xffffffffff).toString(16);
+    localStorage.setItem('uuid', uuid);
+    return uuid;
+  }
 
-    protected handleRequestConfig(url, requestConfig) {
-        if (!requestConfig.headers) requestConfig.headers = {};
-        Token.exists() && (requestConfig.headers.authorization = `Bearer ${Token.get()}`);
-        requestConfig.headers.uuid = PrimaryRequest.getUUID();
-        return super.handleRequestConfig(url, requestConfig);
-    }
-    methodFactoryWithUrlPrefix(method: Method, urlPrefix?: string) {
-        return <T = never, RC extends boolean = false>(
-            url: string,
-            data?: {},
-            customConfig?: DynamicCustomConfig<CC, RC>,
-            requestConfig?: Omit<AxiosRequestConfig, 'data' | 'params' | 'method' | 'cancelToken'>,
-        ) => {
-            urlPrefix && (url = urlPrefix + url);
-            return this.request<T, RC>(url, data, customConfig, {
-                ...(requestConfig as any),
-                method,
-            });
-        };
-    }
+  // 处理config，添加uuid和token到headers
+  protected handleRequestConfig(requestConfig) {
+    if (!requestConfig.headers) requestConfig.headers = {};
+    Token.exists() && (requestConfig.headers.authorization = `Bearer ${Token.get()}`);
+    requestConfig.headers.uuid = PrimaryRequest.getUUID();
+    return super.handleRequestConfig(requestConfig);
+  }
+
+  // 通过数组生成method
+  methodsWithUrl(methods: Method[], urlPrefix: string) {
+    return methods.map((method) => this.simplifyMethodFactory(method, urlPrefix));
+  }
 }
+
+// 导出公共的method
+export const [Get, Post, Patch, Delete] = PrimaryRequest.ins.methodsWithUrl(
+  ['get', 'post', 'patch', 'delete'],
+  '',
+);
 ```
 
 #### src/api/user.ts
 
+user模块
+
 ```ts
 import { PrimaryRequest } from '@/http/primary';
 
+// 复用url前缀
 const urlPrefix = '/api/user';
-
-const Get = PrimaryRequest.ins.methodFactoryWithUrlPrefix('get', urlPrefix);
-const Post = PrimaryRequest.ins.methodFactoryWithUrlPrefix('post', urlPrefix);
-const Delete = PrimaryRequest.ins.methodFactoryWithUrlPrefix('delete', urlPrefix);
-const Patch = PrimaryRequest.ins.methodFactoryWithUrlPrefix('patch', urlPrefix);
+const [Get, Post, Patch, Delete] = PrimaryRequest.ins.methodsWithUrl(
+  ['get', 'post', 'patch', 'delete'],
+  urlPrefix,
+);
 
 export interface User {
   id: number;
@@ -893,8 +807,8 @@ export interface User {
   muted: boolean;
   deletedAt: string;
 }
-export function getUser() {
-  return Get<{ user: User }>('/self', {}, { silent: true, loading: true });
+export function getSelf() {
+  return Get<{ user: User }>('/self', {}, { silent: true });
 }
 export function deleteUser(id: string | number) {
   return Delete('/' + id);
@@ -925,5 +839,30 @@ export function muteUser(userId: number | string) {
 }
 export function cancelMuteUser(userId: number | string) {
   return Patch('/cancel-mute/' + userId);
+}
+```
+
+#### src/api/tag.ts
+
+tag模块
+
+```ts
+import { Get, Post } from '@/http/primary';
+
+const url = '/api/tag';
+
+export interface Tag {
+  createAt: string;
+  description: string;
+  id: number | string;
+  name: string;
+}
+
+export function createTag(data: {}) {
+  return Post(url, data);
+}
+
+export function getTags() {
+  return Get<Tag[]>(url);
 }
 ```

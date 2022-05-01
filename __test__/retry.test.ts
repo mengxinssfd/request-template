@@ -57,9 +57,12 @@ describe('AxiosRequestTemplate retry', () => {
   test('base', async () => {
     // expect.assertions(4);
     const list = [
-      get<{ username: string; id: number }>('/user', { key: 1 }),
-      get<{ username: string; id: number }>('/user', { key: 2 }, { retry: 2 }),
-      get<{ username: string; id: number }>('/user', { key: 3 }, { retry: { times: 10 } }),
+      get<{ username: string; id: number }>({ url: '/user', data: { key: 1 } }),
+      get<{ username: string; id: number }>({ url: '/user', data: { key: 2 } }, { retry: 2 }),
+      get<{ username: string; id: number }>(
+        { url: '/user', data: { key: 3 } },
+        { retry: { times: 10 } },
+      ),
     ];
     const res = await Promise.allSettled(list);
     expect(res).toEqual([
@@ -78,18 +81,21 @@ describe('AxiosRequestTemplate retry', () => {
     ]);
 
     try {
-      await get<{ username: string; id: number }>('/user', { key: 4 });
+      await get<{ username: string; id: number }>({ url: '/user', data: { key: 4 } });
     } catch (e) {
       expect(e).toBe('404');
     }
 
     try {
-      await get<{ username: string; id: number }>('/user', { key: 5 }, { retry: 2 });
+      await get<{ username: string; id: number }>({ url: '/user', data: { key: 5 } }, { retry: 2 });
     } catch (e) {
       expect(e).toBe('times * 2');
     }
     try {
-      await get<{ username: string; id: number }>('/user', { key: 6 }, { retry: 10 });
+      await get<{ username: string; id: number }>(
+        { url: '/user', data: { key: 6 } },
+        { retry: 10 },
+      );
     } catch (e) {
       expect(e).toBe('times * 10');
     }
@@ -98,14 +104,16 @@ describe('AxiosRequestTemplate retry', () => {
     expect.assertions(2);
     try {
       await get<{ username: string; id: number }>(
-        '3',
-        { code: 200, data: {}, msg: 'success' },
+        { url: '3', data: { code: 200, data: {}, msg: 'success' } },
         { tag: 'cancel', retry: 2 },
       );
     } catch (e) {
       expect(e).toBe('times * 2');
     }
-    const res = await get<{ username: string; id: number }>('3', {}, { tag: 'cancel', retry: 3 });
+    const res = await get<{ username: string; id: number }>(
+      { url: '3' },
+      { tag: 'cancel', retry: 3 },
+    );
     expect(res).toEqual({ code: 200, data: {}, msg: 'success' });
   });
 
@@ -123,7 +131,7 @@ describe('AxiosRequestTemplate retry', () => {
 
     const get = req.methodFactory('get');
 
-    const res = await get('/config', { test: 1 }, { retry: 10, cache: true });
+    const res = await get({ url: '/config', params: { test: 1 } }, { retry: 10, cache: true });
     delete (res as any).cancelToken;
     expect(res).toEqual({
       method: 'get',
@@ -136,7 +144,10 @@ describe('AxiosRequestTemplate retry', () => {
   describe('immediate', () => {
     test('use', async () => {
       let res: any;
-      const p = get('/user', { use: 1 }, { retry: { times: 1, immediate: true, interval: 1000 } });
+      const p = get(
+        { url: '/user', data: { use: 1 } },
+        { retry: { times: 1, immediate: true, interval: 1000 } },
+      );
       p.catch((r) => (res = r));
 
       await sleep(0);
@@ -147,7 +158,10 @@ describe('AxiosRequestTemplate retry', () => {
     });
     test('unused', async () => {
       let res: any;
-      const p = get('/user', { use: 2 }, { retry: { times: 1, immediate: false, interval: 50 } });
+      const p = get(
+        { url: '/user', data: { use: 2 } },
+        { retry: { times: 1, immediate: false, interval: 50 } },
+      );
       p.catch((r) => (res = r));
 
       await sleep(20);
@@ -164,7 +178,7 @@ describe('AxiosRequestTemplate retry', () => {
     test('cancelAll', async () => {
       expect.assertions(1);
       try {
-        const p = get<{ username: string; id: number }>('/user', {}, { retry: 2 });
+        const p = get<{ username: string; id: number }>({ url: '/user' }, { retry: 2 });
         req.cancelAll('cancel');
         await p;
       } catch (e) {
@@ -174,7 +188,10 @@ describe('AxiosRequestTemplate retry', () => {
     test('cancelWithTag', async () => {
       expect.assertions(1);
       try {
-        const p = get<{ username: string; id: number }>('/user', {}, { tag: 'cancel', retry: 2 });
+        const p = get<{ username: string; id: number }>(
+          { url: '/user' },
+          { tag: 'cancel', retry: 2 },
+        );
         req.cancelWithTag('cancel', 'with tag');
         await p;
       } catch (e) {
@@ -184,7 +201,10 @@ describe('AxiosRequestTemplate retry', () => {
     test('cancelCurrentRequest', async () => {
       expect.assertions(1);
       try {
-        const p = get<{ username: string; id: number }>('/user', {}, { tag: 'cancel', retry: 2 });
+        const p = get<{ username: string; id: number }>(
+          { url: '/user' },
+          { tag: 'cancel', retry: 2 },
+        );
         req.cancelCurrentRequest?.('cancel');
         await p;
       } catch (e) {

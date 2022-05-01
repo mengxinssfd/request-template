@@ -51,9 +51,12 @@ export type DynamicCustomConfig<CC extends CustomConfig, RC extends boolean> = O
 > &
   (RC extends false ? { returnRes?: RC } : { returnRes: true });
 
-export interface Context<CC> {
+export interface Configs<CC extends CustomConfig = CustomConfig> {
   customConfig: CC;
   requestConfig: AxiosRequestConfig;
+}
+
+export interface Context<CC> extends Configs<CC> {
   clearSet: Set<Function>;
   requestKey: string;
   retry?: (e: AxiosError<ResType<any>>) => AxiosPromise;
