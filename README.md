@@ -30,34 +30,34 @@
 
 ## 主要实现
 
-- [X]  非侵入开放式封装
-  - [X]  对于继承扩展开放
-  - [X]  对于使用时修改关闭
-- [X]  模板方法模式实现
-  - [X]  可实现自定义模板
-  - [X]  可继承复用基础模板
-- [X]  多实例
-- [X]  ts 类型支持
-  - [X]  范型支持
-  - [X]  原 axios 类型支持
-- [X]  多状态处理
-- [X]  接口缓存
-  - [X]  自定义缓存命中规则
-- [X]  配置
-  - [X]  全局配置(保持统一，复用配置)
-  - [X]  局部配置(支持个性化配置{某些不按规范实现的接口})
-- [X]  配置复用
-  - [X]  实例级复用
-  - [X]  api 级复用
-- [X]  取消请求
-  - [X]  取消单个请求
-  - [X]  根据 tag 取消请求
-  - [X]  取消所有请求
-- [X]  请求失败重试
-  - [X]  重试次数
-  - [X]  延时重试
-  - [X]  第一次重试立即启动（可选）
-  - [X]  中断重试
+- [x] 非侵入开放式封装
+  - [x] 对于继承扩展开放
+  - [x] 对于使用时修改关闭
+- [x] 模板方法模式实现
+  - [x] 可实现自定义模板
+  - [x] 可继承复用基础模板
+- [x] 多实例
+- [x] ts 类型支持
+  - [x] 范型支持
+  - [x] 原 axios 类型支持
+- [x] 多状态处理
+- [x] 接口缓存
+  - [x] 自定义缓存命中规则
+- [x] 配置
+  - [x] 全局配置(保持统一，复用配置)
+  - [x] 局部配置(支持个性化配置{某些不按规范实现的接口})
+- [x] 配置复用
+  - [x] 实例级复用
+  - [x] api 级复用
+- [x] 取消请求
+  - [x] 取消单个请求
+  - [x] 根据 tag 取消请求
+  - [x] 取消所有请求
+- [x] 请求失败重试
+  - [x] 重试次数
+  - [x] 延时重试
+  - [x] 第一次重试立即启动（可选）
+  - [x] 中断重试
 
 ## 生命周期
 
@@ -756,7 +756,7 @@ export const statusHandlers: StatusHandlers = {
 
 #### src/primary/index.ts
 
-实现自定义请求模板
+实现自定义请求模板，添加全局`loading`、`token`、`uuid`等, 并生成`Get`、`Post`、`Patch`、`Delete`等常用`method`
 
 ```ts
 import { Token } from './token';
@@ -767,6 +767,7 @@ import { Method } from 'axios';
 
 let uuid = localStorage.getItem('uuid');
 
+// 扩展自定义配置
 interface LoadingCustomConfig extends CustomConfig {
   loading?: boolean;
 }
@@ -870,12 +871,12 @@ export function restoreUser(id: string | number) {
   return Patch('/restore/' + id);
 }
 export function getUserAll() {
-  return Get<{ list: User[]; count: number }>(urlPrefix, {});
+  return Get<{ list: User[]; count: number }>('');
 }
 export function getUserById(id: number | string) {
   return Get<User>('/' + id);
 }
-export function login(data: {}) {
+export function login(data: { username: string; password: string }) {
   return Post<{ token: string }>('/login', data);
 }
 export function register(data: {}) {
