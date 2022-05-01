@@ -295,31 +295,6 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 模板方法，请求入口。
-  // 可子类覆盖，如非必要不建议子类覆盖
-  /* request<T = never, RC extends boolean = false>(
-    url: string,
-    data?: {},
-    customConfig?: DynamicCustomConfig<CC, RC>,
-    requestConfig?: Omit<AxiosRequestConfig, 'data' | 'cancelToken'>,
-  ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
-  async request(
-    url: string,
-    data: {} = {},
-    customConfig = {} as CC,
-    requestConfig: AxiosRequestConfig = {},
-  ): Promise<any> {
-    const ctx = this.generateContext(url, data, customConfig, requestConfig);
-    this.beforeRequest(ctx);
-    try {
-      return await this.execRequest(ctx);
-    } catch (e: any) {
-      return await this.handleError(ctx, e);
-    } finally {
-      this.afterRequest(ctx);
-    }
-  }*/
-
-  // 模板方法，请求入口。
   request<T = never, RC extends boolean = false>(
     requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & { url: string },
     customConfig?: DynamicCustomConfig<CC, RC>,
@@ -387,7 +362,25 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
   }
 
-  // 本质上跟methodFactory其实是一样的
+  // 简化版请求方法工厂 忽略data还是params，url前缀，只改axios到url，data，method；及自定义配置
+  simplifyMethodFactory(method: Method, urlPrefix = '') {
+    return <T = never, RC extends boolean = false>(
+      url: string,
+      data = {},
+      customConfig = {} as DynamicCustomConfig<CC, RC>,
+    ) => {
+      const requestConfig: AxiosRequestConfig = {};
+      if (method === 'get') {
+        requestConfig.params = data;
+      } else {
+        requestConfig.data = data;
+      }
+      requestConfig.url = urlPrefix + url;
+      return this.request<T, RC>(requestConfig as any, customConfig);
+    };
+  }
+
+  // 本质上跟methodFactory是一样的
   use(configs: Partial<Configs<CC>>) {
     const { customConfig: custom = {}, requestConfig: request = {} } = configs;
     return <T = never, RC extends boolean = false>(

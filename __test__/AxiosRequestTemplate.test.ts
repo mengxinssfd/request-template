@@ -65,6 +65,33 @@ describe('AxiosRequestTemplate', () => {
       expect(e).toEqual({ code: 0, msg: '账号或密码错误' });
     }
   });
+  test('simplifyMethodFactory', async () => {
+    const get = req.simplifyMethodFactory('get');
+    const post = req.simplifyMethodFactory('post');
+    expect.assertions(4);
+    // console.log((axios.create({ url: 'test' }) as any)(1, 2, 3), Req);
+    const res = await get<{ username: string; id: number }>('/user');
+    expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
+
+    const res2 = await get<{ username: string; id: number }, true>(
+      '/user',
+      {},
+      { returnRes: true },
+    );
+    expect(res2).toEqual({
+      status: 200,
+      data: { code: 200, data: { username: 'get', id: 1 }, msg: 'success' },
+    });
+
+    const res3 = await post('/login', { username: 'foo', password: 'bar' });
+    expect(res3).toEqual({ code: 200, msg: 'success' });
+
+    try {
+      await post('/login', { username: 'foo' });
+    } catch (e) {
+      expect(e).toEqual({ code: 0, msg: '账号或密码错误' });
+    }
+  });
 
   describe('AxiosWrapper Cache', () => {
     test('no cache', async () => {
