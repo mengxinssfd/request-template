@@ -188,7 +188,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       this.cache.set(requestKey, axiosPromise, cacheConfig);
       // 如果该请求是被取消的话，就清理掉该缓存
       axiosPromise.catch((reason) => {
-        if (axios.isCancel(reason)) {
+        if (this.isCancel(reason)) {
           this.cache.delete(requestKey);
         }
       });
@@ -293,11 +293,16 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       return this.handleStatus(ctx, response, data);
     } catch (e: any) {
       // 重试
-      if (!ctx.isRetry && ctx.retry && !axios.isCancel(e)) {
+      if (!ctx.isRetry && ctx.retry && !this.isCancel(e)) {
         return ctx.retry(e);
       }
       return Promise.reject(e);
     }
+  }
+
+  // 使isCancel支持子类覆盖
+  protected isCancel(value: any) {
+    return axios.isCancel(value);
   }
 
   // 模板方法，请求入口。
