@@ -227,19 +227,12 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       return new Promise((res, rej) => {
         // retry期间取消，则返回上一次的结果
         reject = () => rej(e);
-        const startRetry = () => {
+        const startRetry = (timeout?: number) => {
           if (times >= maxTimex) {
             reject();
             return;
           }
           // 立即执行时，间隔为undefined；否则为interval
-          const timeout =
-            times === 0
-              ? retryConfig.immediate
-                ? void 0
-                : retryConfig.interval
-              : retryConfig.interval;
-
           timer = setTimeout(retry, timeout);
         };
         const retry = () => {
@@ -248,11 +241,11 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
             (data) => res(data as AxiosResponse),
             (error) => {
               e = error;
-              startRetry();
+              startRetry(retryConfig.interval);
             },
           );
         };
-        startRetry();
+        startRetry(retryConfig.immediate ? undefined : retryConfig.interval);
       });
     };
   }
