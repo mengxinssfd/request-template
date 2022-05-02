@@ -186,7 +186,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       this.cache.set(requestKey, promise, cacheConfig);
       // 如果该请求是被取消的话，就清理掉该缓存
       promise.catch((reason) => {
-        if (!cacheConfig.cacheFailedReq || this.isCancel(reason)) {
+        if (!cacheConfig.failedReq || this.isCancel(reason)) {
           this.cache.delete(requestKey);
         }
       });

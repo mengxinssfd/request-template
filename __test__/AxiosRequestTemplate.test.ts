@@ -113,7 +113,7 @@ describe('AxiosRequestTemplate', () => {
       expect(res2).toEqual(res);
       expect(res2).toBe(res);
     });
-    test('cacheFailedReq = false', async () => {
+    test('failedReq = false', async () => {
       const get = req.simplifyMethodFactory('get');
       let rej1: any;
       try {
@@ -129,17 +129,17 @@ describe('AxiosRequestTemplate', () => {
         expect(e).not.toBe(rej1);
       }
     });
-    test('cacheFailedReq = true', async () => {
+    test('failedReq = true', async () => {
       const get = req.simplifyMethodFactory('get');
       let rej1: any;
       try {
-        await get('/11111', { returnRes: 'obj' }, { cache: { cacheFailedReq: true } });
+        await get('/11111', { returnRes: 'obj' }, { cache: { failedReq: true } });
       } catch (e) {
         rej1 = e;
         expect(rej1).toEqual({ test: 1 });
       }
       try {
-        await get('/11111', { returnRes: 'obj' }, { cache: { cacheFailedReq: true } });
+        await get('/11111', { returnRes: 'obj' }, { cache: { failedReq: true } });
       } catch (e) {
         expect(e).toEqual(rej1);
         expect(e).toBe(rej1);
