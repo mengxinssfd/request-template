@@ -171,17 +171,15 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 请求
-  protected useCache(ctx: RetryContext<CC>, request: () => Promise<any>) {
+  protected useCache(ctx: Context<CC>, request: () => Promise<any>) {
     const { customConfig, requestKey } = ctx;
 
     const cacheConfig = customConfig.cache as CustomCacheConfig;
 
     // 缓存
     if (cacheConfig.enable) {
-      if (!ctx.isRetry) {
-        const cache = this.cache.get(requestKey);
-        if (cache) return cache;
-      }
+      const cache = this.cache.get(requestKey);
+      if (cache) return cache;
       // 请求
       const promise = request();
       // 存储缓存
@@ -200,7 +198,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
   // 请求
   protected fetch(ctx: RetryContext<CC>) {
-    return this.useCache(ctx, () => this.axiosIns(ctx.requestConfig));
+    return this.axiosIns(ctx.requestConfig);
   }
 
   protected handleRetry(ctx: Context<CC>) {
@@ -319,7 +317,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     const ctx = this.generateContext(customConfig, requestConfig);
     this.beforeRequest(ctx);
     try {
-      return await this.execRequest(ctx);
+      return await this.useCache(ctx, () => this.execRequest(ctx));
     } catch (e: any) {
       return await this.handleError(ctx, e);
     } finally {

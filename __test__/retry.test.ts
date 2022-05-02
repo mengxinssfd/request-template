@@ -139,7 +139,7 @@ describe('AxiosRequestTemplate retry', () => {
       params: { test: 1 },
     });
     expect(mockGet.mock.calls.length).toBe(1);
-    expect(mockSet.mock.calls.length).toBe(4);
+    expect(mockSet.mock.calls.length).toBe(1);
   });
   describe('immediate', () => {
     test('use', async () => {
