@@ -114,6 +114,7 @@ describe('AxiosRequestTemplate', () => {
       expect(res2).toBe(res);
     });
     test('failedReq = false', async () => {
+      expect.assertions(3);
       const get = req.simplifyMethodFactory('get');
       let rej1: any;
       try {
@@ -130,6 +131,7 @@ describe('AxiosRequestTemplate', () => {
       }
     });
     test('failedReq = true', async () => {
+      expect.assertions(3);
       const get = req.simplifyMethodFactory('get');
       let rej1: any;
       try {
