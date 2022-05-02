@@ -30,7 +30,7 @@
 
 ## 主要实现
 
-- [x] 非侵入开放式封装
+- [x] 开放式封装
   - [x] 对于继承扩展开放
   - [x] 对于使用时修改关闭
 - [x] 模板方法模式实现
@@ -396,6 +396,107 @@ post('/test').then((res) => {
 post({ url: '/test' }, { cache: true }).then((res) => {
   // do something
 });
+```
+
+### 配置复用
+
+目前提供三个级别的配置复用，分别是继承级、实例级以及 api 级配置复用
+
+#### 继承配置复用
+
+扩展性最大的方式，继承后你可以改成如何你想改的样子，可以完全复用或重构整个模版，具体可看案例或完整demo
+
+#### 实例配置复用
+
+在new一个实例时带上参数后，该实例的所有请求都会带上复用这些参数，例子可看[全局配置](#全局配置)
+
+#### api 配置复用
+
+目前提供 3 个方法以供 api 配置复用，分别是`methodFactory`、 `use`、 `simplifyMethodFactory`方法
+
+##### `methodFactory`
+
+该方法是一个闭包，提供配置缓存的功能，接收`method` `handler`两个参数，`handler`支持统一对配置修改，返回一个`request`方法
+
+该方法返回的`request`方法`method`以固定，不能修改
+
+以统一加上`url`前缀，并且全部添加缓存为例
+
+```ts
+import { AxiosRequestConfig } from 'axios';
+import { CustomConfig, AxiosRequestTemplate } from 'request-template';
+
+const req = new AxiosRequestTemplate({ requestConfig: { baseURL: 'https://test.com/1' } });
+
+const handler = (config: { requestConfig: AxiosRequestConfig; customConfig: CustomConfig }) => {
+  // 支持对axios和自定义配置修改
+  config.requestConfig.url = '/test' + config.requestConfig.url;
+  config.customConfig.cache = true;
+};
+const post = req.methodFactory('post', handler);
+const get = req.methodFactory('get', handler);
+
+post({ url: '/path' }); // 实际url为 https://test.com/1/test/path
+get({ url: '/path' }); // 实际url为 https://test.com/1/test/path
+```
+
+##### `use`
+
+该方法是一个闭包，提供配置缓存的功能，接收`config`参数，`config` 参数包含 `requestConfig` `customConfig` 两个属性，返回一个`request`方法
+
+跟`methodFactory`的区别是`methodFactory`能通过回调修改配置，而`use`内部实现了合并配置，但没有函数灵活；
+
+该方法返回的`request`方法仍然能改`method`
+
+以统一加上`url`前缀，并且全部添加缓存为例
+
+```ts
+import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestTemplate } from 'request-template';
+
+const req = new AxiosRequestTemplate({ requestConfig: { baseURL: 'https://test.com/1' } });
+
+// use内部实现了url但拼接
+const post = req.use({
+  requestConfig: { method: 'post', url: '/test' },
+  customConfig: { cache: true },
+});
+const get = req.use({
+  requestConfig: { method: 'get', url: '/test' },
+  customConfig: { cache: true },
+});
+
+post({ url: '/path' }); // 实际url为 https://test.com/1/test/path
+get({ url: '/path' }); // 实际url为 https://test.com/1/test/path
+```
+
+##### `simplifyMethodFactory`
+
+写多了请求你会发现：其实你很少会去改`axios`的其他配置，真正常改动的只有`method` `url` `data`这三个参数，
+
+也不关心数据是属于`data`还是`params`，我只知道它是数据，遇到`get` `post`给我自动转换就好（一般来说很少会在`post`请求里传`params`）
+
+针对这种情况我提供了`simplifyMethodFactory`方法
+
+该方法同样是一个闭包，接收`method`和`urlPrefix`（考虑到公共 url 前缀挺常用的，可不传）
+
+返回一个只接收`(url:string, data:{}, customConfig:{})`修改过的`request`方法，不再提供`axios`配置修改，简化操作
+
+```ts
+import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestTemplate } from 'request-template';
+
+const req = new AxiosRequestTemplate({ requestConfig: { baseURL: 'https://test.com/1' } });
+
+// simplifyMethodFactory内部实现了url但拼接
+const post = req.simplifyMethodFactory('post', '/test');
+const get = req.req.simplifyMethodFactory('get', '/test');
+
+// 不管你是data也好params也好，我都不关心，我只知道它是数据，方法内部给我处理好就行
+
+post('/path', { page: 1 }); // 实际url为 https://test.com/1/test/path
+
+get('/path', { page: 1 }, { cache: true }); // 实际url为 https://test.com/1/test/path
 ```
 
 ## 实际场景及解决方案
