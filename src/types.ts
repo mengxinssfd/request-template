@@ -16,6 +16,8 @@ export type StatusHandlers<CC extends CustomConfig = CustomConfig> = Record<
 export interface CustomCacheConfig {
   enable?: boolean;
   timeout?: number;
+  // 是否清理失败的请求缓存 false时清理
+  cacheFailedReq?: boolean;
 }
 export interface RetryConfig {
   times?: number;

@@ -27,6 +27,9 @@ export const routers = {
     if (d.returnRes === 2) {
       return Promise.reject({ status: 404, response: { data: { code: 300 } } });
     }
+    if (d.returnRes === 'obj') {
+      return Promise.reject({ test: 1 });
+    }
     return Promise.reject('404');
   },
   '/nocode'() {

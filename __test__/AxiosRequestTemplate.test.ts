@@ -113,6 +113,38 @@ describe('AxiosRequestTemplate', () => {
       expect(res2).toEqual(res);
       expect(res2).toBe(res);
     });
+    test('cacheFailedReq = false', async () => {
+      const get = req.simplifyMethodFactory('get');
+      let rej1: any;
+      try {
+        await get('/11111', { returnRes: 'obj' }, { cache: true });
+      } catch (e) {
+        rej1 = e;
+        expect(rej1).toEqual({ test: 1 });
+      }
+      try {
+        await get('/11111', { returnRes: 'obj' }, { cache: true });
+      } catch (e) {
+        expect(e).toEqual(rej1);
+        expect(e).not.toBe(rej1);
+      }
+    });
+    test('cacheFailedReq = true', async () => {
+      const get = req.simplifyMethodFactory('get');
+      let rej1: any;
+      try {
+        await get('/11111', { returnRes: 'obj' }, { cache: { cacheFailedReq: true } });
+      } catch (e) {
+        rej1 = e;
+        expect(rej1).toEqual({ test: 1 });
+      }
+      try {
+        await get('/11111', { returnRes: 'obj' }, { cache: { cacheFailedReq: true } });
+      } catch (e) {
+        expect(e).toEqual(rej1);
+        expect(e).toBe(rej1);
+      }
+    });
     test('global cache object', async () => {
       const req = new AxiosRequestTemplate({ customConfig: { cache: {} } });
       const get = req.methodFactory('get');
