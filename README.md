@@ -47,6 +47,7 @@
   - [x] 全局配置(保持统一，复用配置)
   - [x] 局部配置(支持个性化配置{某些不按规范实现的接口})
 - [x] 配置复用
+  - [x] 继承复用
   - [x] 实例级复用
   - [x] api 级复用
 - [x] 取消请求
@@ -159,6 +160,20 @@ post({ url: '/test', data: { param1: 1, param2: 2 } }).then((res) => {
 注意：`methodFactory`生成的 `method`函数与 `request`参数返回值一致，且 `requestConfig`里的 `method`属性不再起作用
 
 该方法第二个参数接收一个`handler`可以对配置进行一些处理，如设置一些公共 url 前缀等。
+
+### 范型支持
+
+```ts
+const post = template.methodFactory('post');
+
+// 此时的res类型为{code:number; data:{username:string;id:number;}; msg:string;}
+const res = await post<{ username: string; id: number }>({
+  url: '/user',
+  data: { param1: 1, param2: 2 },
+});
+```
+
+![](docs/type-support.png)
 
 ### 使用缓存
 
@@ -404,11 +419,11 @@ post({ url: '/test' }, { cache: true }).then((res) => {
 
 #### 继承配置复用
 
-扩展性最大的方式，继承后你可以改成如何你想改的样子，可以完全复用或重构整个模版，具体可看案例或完整demo
+扩展性最大的方式，继承后你可以改成如何你想改的样子，可以完全复用或重构整个模版，具体可看案例或完整 demo
 
 #### 实例配置复用
 
-在new一个实例时带上参数后，该实例的所有请求都会带上复用这些参数，例子可看[全局配置](#全局配置)
+在 new 一个实例时带上参数后，该实例的所有请求都会带上复用这些参数，例子可看[全局配置](#全局配置)
 
 #### api 配置复用
 
