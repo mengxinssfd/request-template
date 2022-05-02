@@ -10,7 +10,7 @@
 
 缺乏关于一整套完整的方案。
 
-## github request-template
+## `request-template`
 
 针对以上问题，我实现了该库[`request-template`](https://github.com/mengxinssfd/request-template)。
 
@@ -20,11 +20,9 @@
 
 这不是一个最终方案，不是说用了这个库就能什么都不用写了，但它能极大减少你的代码复杂度，提高代码的复用性，为你的最终方案提供支持。
 
-面向继承开放，面向使用关闭。
+面向继承开放，面向使用关闭，封装但不封闭。
 
-封装但不封闭
-
-地址：[https://github.com/mengxinssfd/request-template](https://github.com/mengxinssfd/request-template)
+GitHub地址：[https://github.com/mengxinssfd/request-template](https://github.com/mengxinssfd/request-template)
 
 欢迎 star、issue、pr
 
@@ -132,8 +130,8 @@ const template = new AxiosRequestTemplate();
 //        url: string;
 //    }, customConfig?: DynamicCustomConfig<CC, RC>): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
 
-// `request`支持2个参数分别是`axios`的请求设置`requestConfig`以及，自定义设置的`customConfig`
-// `requestConfig`为`axios`原设置
+// `request`支持2个参数分别是`axios`的请求设置`requestConfig`，以及自定义设置的`customConfig`
+// `requestConfig`为`axios`原设置（除了cancelToken：有另外一套机制取消），具体参数可去axios官方查看配置
 // `request`默认为`get`请求
 template.request({ url: '/test', params: { param1: 1, param2: 2 } }).then((res) => {
   console.log(res);
@@ -217,11 +215,39 @@ export function login(data: { username: string; password: string }) {
 }
 ```
 
+#### 自定义缓存命中策略
+
+> 默认缓存命中策略为 `{url,headers,data,method,params}` 5 个合成的对象转为的字符串是一样的则会命中缓存。
+>
+> 现在在原有基础上添加一条：根据`tag`命中缓存
+
+需要实现自定义模板
+
+```ts
+export default class MyCacheTemplate extends AxiosRequestTemplate {
+  private readonly cacheKeys = ['cache', 'login'];
+  private constructor() {
+    super({ baseURL: 'http://test.test' });
+  }
+
+  // 转换缓存所用的key，默认根据配置生成key
+  protected generateRequestKey(ctx) {
+    // 只要是tag在cacheKeys中就命中缓存
+    const tag = ctx.customConfig.tag;
+    if (cacheKeys.includes(tag)) {
+      return tag;
+    }
+    // 复用之前的逻辑
+    return super.generateRequestKey(ctx);
+  }
+}
+```
+
 ### 取消请求
 
 很多人不知道取消请求的作用，说什么后端还是会收到请求，请求还是发出去了什么的。
 
-其实那些我们完全不需要关心，
+其实那些我们完全不需要关心这些，
 
 我们只需要关心：不要再处理接口后续，也就是说那些接口不管成不成功那些结果我都不要了，这就是取消请求的意义
 
@@ -229,7 +255,7 @@ export function login(data: { username: string; password: string }) {
 
 #### 取消当前请求
 
-取消函数的时机很重要，必须在 request、get、post 等请求方法执行后获取的取消函数才是有效的，而且必须使用对应的实例来取消请求
+获取`cancleHandler`的时机很重要，必须在 `request`、`get`、`post` 等请求方法执行后获取的取消函数才是有效的，而且必须使用对应的实例来取消请求
 
 ```ts
 const req = login({ username: 'test', password: 'test' });
@@ -243,7 +269,7 @@ try {
 }
 ```
 
-使用该方法可以取消失败重试，但由于时机难以确定，当前请求可能其他请求，所以不推荐使用它取消重试
+使用该方法可以取消失败重试`retry`，但由于时机难以确定——当前请求可能变成了其他请求，所以不推荐使用它取消重试
 
 #### 取消所有请求
 
@@ -259,7 +285,7 @@ try {
 }
 ```
 
-可以取消重试，但范围太大，可能会误伤其他请求
+可以取消重试，但范围太大，可能会误伤其他请求，需要慎重使用
 
 #### 根据`tag`取消请求
 
@@ -291,7 +317,7 @@ try {
 
 #### 重试
 
-重试 3 次，`http`状态码非`200`时会重试 3 次
+重试 3 次，`http`状态码非`200`时会重试 3 次。如果一直失败的话，加上第一次失败请求，那么最后会发起 4 次相同请求
 
 ```ts
 try {
@@ -303,7 +329,7 @@ try {
 
 #### 重试间隔
 
-每次重试间隔 3 秒, `interval`缺省时为 0 秒，也就是说每次都是`setTimeout(request, undefined))`请求
+重试 3 次，每次重试间隔 3 秒, `interval`缺省时为 0 秒，也就是说每次都是`setTimeout(request, undefined))`请求
 
 ```ts
 try {
@@ -315,7 +341,7 @@ try {
 
 #### 第一次重试零间隔
 
-每次重试间隔 3 秒, 第一次重试零间隔，也就是说第一次重试是`setTimeout(request, undefined))`请求
+重试 3 次，每次重试间隔 3 秒, 第一次重试零间隔，也就是说第一次重试是`setTimeout(request, undefined))`请求
 
 ```ts
 try {
@@ -341,9 +367,9 @@ try {
 }
 ```
 
-由于`cancelCurrentRequest`会记住此时无法确定当前是哪个请求，虽然可以直接调用`template.cancelCurrentRequest()`，但是如果请求多的话，可能会误伤其他请求。
-
-所以最好的办法是使用`tag`方式取消请求：
+> 由于`cancelCurrentRequest`会记住此时无法确定当前是哪个请求，虽然可以直接调用`template.cancelCurrentRequest()`，但是如果请求多的话，可能会误伤其他请求。
+>
+> 所以最好的办法是使用`tag`方式取消请求。
 
 正确的方式
 
@@ -418,11 +444,7 @@ post('/test').then((res) => {
 });
 ```
 
-此时的每次请求都会使用缓存，带上`tag`，使用状态处理，失败重试， `data`或`params`会带上`{a:1}`，
-
-`cache`有一个小技巧，可以先设置`{ timeout: 30 * 60 * 1000, enable: false }`，把`enable`设置为`false`，只设置`timeout`
-
-然后请求时，把`cache`设置为`true`，那么就可以全局不使用缓存，只使用缓存时间，请求时再开启请求缓存功能
+此时的每次请求都会使用缓存，带上`tag`，使用状态处理，失败重试， `data`或`params`会带上`{a:1}`
 
 ```ts
 post({ url: '/test' }, { cache: true }).then((res) => {
@@ -430,13 +452,19 @@ post({ url: '/test' }, { cache: true }).then((res) => {
 });
 ```
 
+
+
+> 全局`cache`有一个小技巧，可以先设置`{ timeout: 30 * 60 * 1000, enable: false }`，把`enable`设置为`false`，只设置`timeout`
+>
+> 然后请求时，把`cache`设置为`true`，那么就可以全局不使用缓存，只使用缓存时间，请求时只需要开启请求缓存功能就好了，简化了操作
+
 ### 配置复用
 
 目前提供三个级别的配置复用，分别是继承级、实例级以及 api 级配置复用
 
 #### 继承配置复用
 
-扩展性最大的方式，继承后你可以改成如何你想改的样子，可以完全复用或重构整个模版，具体可看案例或完整 demo
+扩展性最大的方式，继承后你可以改成任何你需要的样子，可以完全复用或重构整个模版，具体可看案例或完整 demo
 
 #### 实例配置复用
 
@@ -616,7 +644,7 @@ export class Token {
 }
 ```
 
-状态码为`401`时清除`token`, 状态码为`207`时保存`token`,
+状态码为`401`时清除`token`, 状态码为`207`时保存`token`, 可按实际业务调整
 
 ```ts
 import { StatusHandlers } from 'request-template';
@@ -640,21 +668,6 @@ export class PrimaryRequest extends AxiosRequestTemplate {
     if (!requestConfig.headers) requestConfig.headers = {};
     Token.exists() && (requestConfig.headers.authorization = `Bearer ${Token.get()}`);
     return super.handleRequestConfig(url, requestConfig);
-  }
-}
-```
-
-如果`token`是放置在`data`，那么在设置`axios`配置时顺带配置好`data`
-
-自定义模板
-
-```ts
-export class PrimaryRequest extends AxiosRequestTemplate {
-  protected handleRequestData(ctx, data) {
-    if (Token.exists()) {
-      data.token = Token.get();
-    }
-    super.handleRequestData(ctx, data);
   }
 }
 ```
@@ -690,32 +703,6 @@ export function getArticleList(params: { cate: number; tags: number[]; sort: num
 然后只要`{url,headers,data,method}`这些参数是一样的话就不会发起请求了，而是直接从缓存中拿数据，不过按`f5`刷新的话还是会发起请求的。
 
 实现保存缓存到本地存储的功能也很简单，只要继承`AxiosRequestTemplate` `Cache`，并重写`Cache`的`getter` `setter`以及`AxiosRequestTemplate`的`init`方法就可以实现。
-
-### 自定义缓存命中策略
-
-> 默认缓存命中策略为 `{url,headers,data,method}`4 个合成的对象转为的字符串是一样的则会命中缓存现在在原有基础上添加一条：根据`tag`命中缓存
-
-自定义模板
-
-```ts
-export default class MyCacheTemplate extends AxiosRequestTemplate {
-  private readonly cacheKeys = ['cache', 'login'];
-  private constructor() {
-    super({ baseURL: 'http://test.test' });
-  }
-
-  // 转换缓存所用的key，默认根据配置生成key
-  protected generateRequestKey(ctx) {
-    // 只要是tag在cacheKeys中就命中缓存
-    const tag = ctx.customConfig.tag;
-    if (cacheKeys.includes(tag)) {
-      return tag;
-    }
-    // 复用之前的逻辑
-    return super.generateRequestKey(ctx);
-  }
-}
-```
 
 ### post 请求参数序列化
 
@@ -768,6 +755,8 @@ export default class MyTemplate extends AxiosRequestTemplate {
   }
 }
 ```
+
+
 
 ### 分页场景快速切换页码时中断请求
 
