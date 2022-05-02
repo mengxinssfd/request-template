@@ -30,37 +30,37 @@
 
 ## 主要实现
 
-- [X]  开放式封装
-  - [X]  对于继承扩展开放
-  - [X]  对于使用时修改关闭
-- [X]  模板方法模式实现
-  - [X]  可实现自定义模板
-  - [X]  可继承复用基础模板
-- [X]  多实例
-- [X]  ts 类型支持
-  - [X]  范型支持
-  - [X]  原 axios 类型支持
-- [X]  多状态处理
-- [X]  接口缓存
-  - [X]  自定义缓存命中规则
-  - [X]  自定义缓存过期时间
-  - [X]  是否缓存失败请求
-- [X]  配置
-  - [X]  全局配置(保持统一，复用配置)
-  - [X]  局部配置(支持个性化配置{某些不按规范实现的接口})
-- [X]  配置复用
-  - [X]  继承复用
-  - [X]  实例级复用
-  - [X]  api 级复用
-- [X]  取消请求
-  - [X]  取消单个请求
-  - [X]  根据 tag 取消请求
-  - [X]  取消所有请求
-- [X]  请求失败重试
-  - [X]  重试次数
-  - [X]  延时重试
-  - [X]  第一次重试立即启动（可选）
-  - [X]  中断重试
+- [x] 开放式封装
+  - [x] 对于继承扩展开放
+  - [x] 对于使用时修改关闭
+- [x] 模板方法模式实现
+  - [x] 可实现自定义模板
+  - [x] 可继承复用基础模板
+- [x] 多实例
+- [x] ts 类型支持
+  - [x] 范型支持
+  - [x] 原 axios 类型支持
+- [x] 多状态处理
+- [x] 接口缓存
+  - [x] 自定义缓存命中规则
+  - [x] 自定义缓存过期时间
+  - [x] 是否缓存失败请求
+- [x] 配置
+  - [x] 全局配置(保持统一，复用配置)
+  - [x] 局部配置(支持个性化配置{某些不按规范实现的接口})
+- [x] 配置复用
+  - [x] 继承复用
+  - [x] 实例级复用
+  - [x] api 级复用
+- [x] 取消请求
+  - [x] 取消单个请求
+  - [x] 根据 tag 取消请求
+  - [x] 取消所有请求
+- [x] 请求失败重试
+  - [x] 重试次数
+  - [x] 延时重试
+  - [x] 第一次重试立即启动（可选）
+  - [x] 中断重试
 
 ## 生命周期
 
@@ -212,7 +212,7 @@ export function login(data: { username: string; password: string }) {
 export function login(data: { username: string; password: string }) {
   return post<{ token: string }>(
     { url: '/user/login', data },
-    { cache: { timeout: 30 * 60 * 1000, failedReq: true} },
+    { cache: { timeout: 30 * 60 * 1000, failedReq: true } },
   );
 }
 ```
@@ -790,21 +790,20 @@ export function getXXList(p: number) {
 
 只要给该请求加上`tag`，然后每次调用前取消就好了，是不是很简单呢。
 
-### 前端并发10个相同的请求，怎么控制为只发一个请求？
+### 前端并发 10 个相同的请求，怎么控制为只发一个请求？
 
-这问题来源于[前端并发10个相同的请求，怎么控制为只发一个请求？ - 掘金 (juejin.cn)](https://juejin.cn/post/7052700635154219015)
+这问题来源于[前端并发 10 个相同的请求，怎么控制为只发一个请求？ - 掘金 (juejin.cn)](https://juejin.cn/post/7052700635154219015)
 
 > ### 描述如下
 >
 > - 同时发多个相同的请求，如果第一个请求成功，那么剩余的请求都不会发出，成功的结果作为剩余请求返回
-> - 如果第一个请求失败了，那么接着发编号为2的请求，如果请求成功，那么剩余的请求都不会发出，成功的结果作为剩余请求返回
-> - 如果第二个请求失败了，那么接着发编号为3的请求，如果请求成功，那么剩余的请求都不会发出，成功的结果作为剩余请求返回
+> - 如果第一个请求失败了，那么接着发编号为 2 的请求，如果请求成功，那么剩余的请求都不会发出，成功的结果作为剩余请求返回
+> - 如果第二个请求失败了，那么接着发编号为 3 的请求，如果请求成功，那么剩余的请求都不会发出，成功的结果作为剩余请求返回
 > - `...`以此递推，直到遇到最坏的情况需要发送最后一个请求
 >
->> 并发： 一个接口请求还处于pending，短时间内就发送相同的请求
->>
+> > 并发： 一个接口请求还处于 pending，短时间内就发送相同的请求
 
-这个问题刚开始时看岔了，被10个请求误导了，以为10次以后就用失败的。
+这个问题刚开始时看岔了，被 10 个请求误导了，以为 10 次以后就用失败的。
 
 仔细看后其实说起来还是缓存问题，就是失败的不缓存，有成功的就用成功的结果。
 
@@ -813,11 +812,10 @@ export function getXXList(p: number) {
 ```ts
 const req = new AxiosRequestTemplate();
 
-export function request(){
+export function request() {
   // 不知道它要求多长时间内，就定为无限吧，并且不缓存失败请求
-  return req.request({url:'/test'}, { cache: {timeout: Infinity, failedReq: false}});
+  return req.request({ url: '/test' }, { cache: { timeout: Infinity, failedReq: false } });
 }
-
 ```
 
 ## 完整 demo
@@ -882,7 +880,7 @@ export class Token {
 给用户提示错误信息，`token`的保存、清理、刷新等操作的通用处理
 
 ```ts
-import { HttpStatus, StatusHandler, StatusHandlers, CustomConfig } from 'request-template';
+import { HttpStatus, StatusHandler, StatusHandlers, CustomConfig, Context } from 'request-template';
 import { ElMessage } from 'element-plus';
 import { Token } from './token';
 import Store from '@/store/index';
@@ -950,6 +948,18 @@ export class PrimaryRequest<
       // 缓存设置60秒
       { statusHandlers, cache: { enable: false, timeout: 60 * 1000 }, loading: false } as CC,
     );
+  }
+
+  // 转换响应数据结构为{code:number; data:any; msg:string}
+  // 例如有些接口的code可能叫status或ercode，msg叫message之类的
+  // 如果是一样的结构可以跳过该方法
+  protected handleResponse(ctx: Context<CC>, response: AxiosResponse) {
+    const data = (response?.data as ResType) || {};
+    return {
+      code: data.code,
+      data: data.data,
+      msg: data.msg,
+    };
   }
 
   // 请求前开启loading
