@@ -43,8 +43,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   // 根据配置生成key
   protected generateRequestKey(ctx: Omit<Context<CC>, 'requestKey'>): string {
     const { requestConfig } = ctx;
-    const data = requestConfig.data || requestConfig.params;
-    const { url, headers, method, params } = requestConfig;
+    const { url, headers, method, params, data } = requestConfig;
     return JSON.stringify({ url, data, headers, method, params });
   }
 
