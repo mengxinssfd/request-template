@@ -1,4 +1,4 @@
-# request-template
+# 我把所有关于Axios的封装都放在这里了
 
 ## 前言
 
@@ -6,7 +6,7 @@
 
 但看上去大部分都是单独的函数：如单独的取消请求，缓存，自动带上 token 等等。
 
-结构过于松散，不够封装，需要用户手动复制过来，过于麻烦，且一旦业务改了又得重写一堆；又或封装了但扩展性太低，无法根据业务调整而调整。
+结构过于松散，不够封装，需要手动复制过来，过于麻烦，且一旦业务改了又得重写一堆；又或封装了但扩展性太低，无法根据业务调整而调整；复用性太低等等。
 
 缺乏关于一整套完整的方案。
 
@@ -58,7 +58,7 @@ GitHub地址：[https://github.com/mengxinssfd/request-template](https://github.
   - [x] 重试次数
   - [x] 延时重试
   - [x] 第一次重试立即启动（可选）
-  - [x] 中断重试
+  - [x] 可中断重试
 
 ## 生命周期
 
@@ -77,19 +77,16 @@ CreateTemplate --> GlobalCustomConfig --> template实例
 template实例 --> request
 
 
-request --> MergeConfig --> 请求开始 --> 添加Canceler钩子 --> 使用缓存?
+request --> MergeConfig --> 使用缓存?
 
 添加Canceler钩子 --> 这一步后才可以执行取消handler
 
-使用缓存? --> |是| retry中?
-retry中? --> |否| 命中缓存?
-retry中? --> |是| 请求
+使用缓存? --> |否| 请求开始 --> 添加Canceler钩子  --> 请求 -->  缓存请求  --> 请求成功?
 
+使用缓存? --> |是| 命中缓存?
 
 命中缓存?  --> |是| 使用缓存 --> 请求成功?
-命中缓存?  --> |否| 请求
-
-使用缓存? --> |否| 请求 -->  缓存请求  --> 请求成功?
+命中缓存?  --> |否| 请求开始
 
 
 请求成功? --> |是| 处理请求结果
@@ -123,6 +120,7 @@ pnpm add request-template
 这时约等于`axios({url})`
 
 ```ts
+import { AxiosRequestTemplate } from 'request-template';
 // new一个实例
 const template = new AxiosRequestTemplate();
 
@@ -147,6 +145,7 @@ template.request({ url: '/test', data: { param1: 1, param2: 2 }, method: 'post' 
 上面使用每次都要设置`method`有些麻烦了，可以用`methodFactory`函数生成一个`method`函数简化一下
 
 ```ts
+// 代码复用自'零配置直接使用'
 // 'post','get','patch'...
 const post = template.methodFactory('post');
 post({ url: '/test', data: { param1: 1, param2: 2 } }).then((res) => {
@@ -164,6 +163,7 @@ post({ url: '/test', data: { param1: 1, param2: 2 } }).then((res) => {
 ### 范型支持
 
 ```ts
+// 代码复用自'零配置直接使用'
 const post = template.methodFactory('post');
 
 // 此时的res类型为{code:number; data:{username:string;id:number;}; msg:string;}
@@ -184,6 +184,7 @@ const res = await post<{ username: string; id: number }>({
 #### 默认 5 秒内使用缓存
 
 ```ts
+// 代码复用自'零配置直接使用'
 export function login(data: { username: string; password: string }) {
   // 5秒内都会是同样的数据
   return post<{ token: string }>({ url: '/user/login', data }, { cache: true });
@@ -195,6 +196,7 @@ export function login(data: { username: string; password: string }) {
 #### 自定义过期时间
 
 ```ts
+// 代码复用自'零配置直接使用'
 export function login(data: { username: string; password: string }) {
   // timeout单位为毫秒
   return post<{ token: string }>(
@@ -207,6 +209,7 @@ export function login(data: { username: string; password: string }) {
 #### 缓存失败请求
 
 ```ts
+// 代码复用自'零配置直接使用'
 export function login(data: { username: string; password: string }) {
   return post<{ token: string }>(
     { url: '/user/login', data },
@@ -258,6 +261,7 @@ export default class MyCacheTemplate extends AxiosRequestTemplate {
 获取`cancleHandler`的时机很重要，必须在 `request`、`get`、`post` 等请求方法执行后获取的取消函数才是有效的，而且必须使用对应的实例来取消请求
 
 ```ts
+// 复用‘默认 5 秒内使用缓存’
 const req = login({ username: 'test', password: 'test' });
 // 必须使用对应的实例来取消请求
 template.cancelCurrentRequest('cancel message');
@@ -274,6 +278,7 @@ try {
 #### 取消所有请求
 
 ```ts
+// 复用‘默认 5 秒内使用缓存’
 const req = login({ username: 'test', password: 'test' });
 // 或者
 template.cancelAll('cancel message');
@@ -290,6 +295,7 @@ try {
 #### 根据`tag`取消请求
 
 ```ts
+// 代码复用自'零配置直接使用'
 export function login(data: { username: string; password: string }) {
   // timeout单位为毫秒
   return post<{ token: string }>('/user/login', data, { tag: 'cancelable' });
@@ -320,6 +326,7 @@ try {
 重试 3 次，`http`状态码非`200`时会重试 3 次。如果一直失败的话，加上第一次失败请求，那么最后会发起 4 次相同请求
 
 ```ts
+// 代码复用自'零配置直接使用'
 try {
   await post({ url: '/retry' }, { retry: 3 });
 } catch (e: any) {
@@ -332,6 +339,7 @@ try {
 重试 3 次，每次重试间隔 3 秒, `interval`缺省时为 0 秒，也就是说每次都是`setTimeout(request, undefined))`请求
 
 ```ts
+// 代码复用自'零配置直接使用'
 try {
   await post({ url: '/retry' }, { retry: { times: 3, interval: 3000 } });
 } catch (e: any) {
@@ -344,6 +352,7 @@ try {
 重试 3 次，每次重试间隔 3 秒, 第一次重试零间隔，也就是说第一次重试是`setTimeout(request, undefined))`请求
 
 ```ts
+// 代码复用自'零配置直接使用'
 try {
   await post({ url: '/retry' }, { retry: { times: 3, interval: 3000, immediate: true } });
 } catch (e: any) {
@@ -356,6 +365,7 @@ try {
 错误的方式
 
 ```ts
+// 代码复用自'零配置直接使用'
 const req = post({ url: '/retry' }, { retry: 3 });
 const cancel = template.cancelCurrentRequest;
 cancel(); // 错误，由于`cancelCurrentRequest`会记住当前请求，此时无法确定当前是哪个请求
@@ -374,6 +384,7 @@ try {
 正确的方式
 
 ```ts
+// 代码复用自'零配置直接使用'
 const symbol = Symbol('cancel'); // 可以使用字符串，但是用Symbol可以让tag不会与任何tag重复
 const req = post({ url: '/retry' }, { retry: 3, tag: symbol });
 template.cancelWithTag(symbol, 'msg');
@@ -392,6 +403,7 @@ try {
 请求级状态处理更多时候是作为一种补充，常用状态处理推荐写到`自定义模板`+`全局配置`上
 
 ```ts
+// 代码复用自'零配置直接使用'
 post(
   '/login',
   {},
@@ -476,7 +488,7 @@ post({ url: '/test' }, { cache: true }).then((res) => {
 
 ##### `methodFactory`
 
-该方法是一个闭包，提供配置缓存的功能，接收`method` `handler`两个参数，`handler`支持统一对配置修改，返回一个`request`方法
+该方法返回一个闭包，提供配置缓存的功能，接收`method` `handler`两个参数，`handler`支持统一对配置修改，返回一个`request`方法
 
 该方法返回的`request`方法`method`以固定，不能修改
 
@@ -502,7 +514,7 @@ get({ url: '/path' }); // 实际url为 https://test.com/1/test/path
 
 ##### `use`
 
-该方法是一个闭包，提供配置缓存的功能，接收`config`参数，`config` 参数包含 `requestConfig` `customConfig` 两个属性，返回一个`request`方法
+该方法返回一个闭包，提供配置缓存的功能，接收`config`参数，`config` 参数包含 `requestConfig` `customConfig` 两个属性，返回一个`request`方法
 
 跟`methodFactory`的区别是`methodFactory`能通过回调修改配置，而`use`内部实现了合并配置，但没有函数灵活；
 
@@ -530,6 +542,8 @@ post({ url: '/path' }); // 实际url为 https://test.com/1/test/path
 get({ url: '/path' }); // 实际url为 https://test.com/1/test/path
 ```
 
+注意：跟其他库的`use`会影响到实例不一样，`use`只会影响到闭包内的请求
+
 ##### `simplifyMethodFactory`
 
 写多了请求你会发现：其实你很少会去改`axios`的其他配置，真正常改动的只有`method` `url` `data`这三个参数，
@@ -538,7 +552,7 @@ get({ url: '/path' }); // 实际url为 https://test.com/1/test/path
 
 针对这种情况我提供了`simplifyMethodFactory`方法
 
-该方法同样是一个闭包，接收`method`和`urlPrefix`（考虑到公共 url 前缀挺常用的，可不传）
+该方法同样返回一个闭包，接收`method`和`urlPrefix`（考虑到公共 url 前缀挺常用的，可不传）
 
 返回一个只接收`(url:string, data:{}, customConfig:{})`修改过的`request`方法，不再提供`axios`配置修改，简化操作
 
@@ -932,7 +946,8 @@ export class PrimaryRequest<
 
   private constructor() {
     super(
-      //  baseUrl，axios配置，每个请求都会拼接上baseUrl作为前缀，跟process.env.BASE_URL类似
+      // baseUrl，axios配置，每个请求都会拼接上baseUrl作为前缀，跟process.env.BASE_URL类似
+      // VITE_BASE_URL定义在.env文件中，方便使用环境变量切换baseurl
       { baseURL: import.meta.env.VITE_BASE_URL },
       // 缓存设置60秒
       { statusHandlers, cache: { enable: false, timeout: 60 * 1000 }, loading: false } as CC,
