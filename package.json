@@ -22,7 +22,10 @@
     "prettier-fix": "prettier src __test__ --write",
     "prettier-check": "prettier src __test__ --check",
     "lint-check": "run-p eslint prettier-check",
-    "check-all": "run-p lint-check type-check"
+    "check-all": "run-p lint-check type-check",
+
+    "publish": "npm publish",
+    "prepare": "tsc --build tsconfig.build.json"
   },
   "repository": {
     "type": "git",
