@@ -18,7 +18,7 @@
     "type-check": "tsc --noEmit",
     "pub": "npm publish",
     "compub": "run-s check-all compile pub",
-    "eslint": "eslint",
+    "eslint": "eslint src __test__",
     "prettier-fix": "prettier src __test__ --write",
     "prettier-check": "prettier src __test__ --check",
     "lint-check": "run-p eslint prettier-check",
