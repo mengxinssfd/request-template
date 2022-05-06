@@ -12,7 +12,7 @@ import { Cache } from './Cache';
 import { Context, CustomCacheConfig, RetryContext } from './types';
 import { mergeObj } from './utils';
 
-// 使用模板方法模式处理axios请求, 具体类可实现protected方法替换掉原有方法
+// 使用模板方法模式处理axios请求, 具体类可实现protected的方法替换掉原有方法
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   // 实例
   protected axiosIns!: AxiosInstance;
@@ -368,7 +368,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
   }
 
-  // 简化版请求方法工厂 忽略data还是params，url前缀，只改axios到url，data，method；及自定义配置
+  // 简化版请求方法工厂 忽略data还是params；url前缀；只改axios的url，data/params，method,及自定义配置
   simplifyMethodFactory(method: Method, urlPrefix = '') {
     return <T = never, RC extends boolean = false>(
       url: string,
