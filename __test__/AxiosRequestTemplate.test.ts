@@ -68,7 +68,7 @@ describe('AxiosRequestTemplate', () => {
   test('simplifyMethodFactory', async () => {
     const get = req.simplifyMethodFactory('get');
     const post = req.simplifyMethodFactory('post');
-    expect.assertions(4);
+    expect.assertions(5);
     // console.log((axios.create({ url: 'test' }) as any)(1, 2, 3), Req);
     const res = await get<{ username: string; id: number }>('/user');
     expect(res).toEqual({ code: 200, data: { username: 'get', id: 1 }, msg: 'success' });
@@ -91,6 +91,10 @@ describe('AxiosRequestTemplate', () => {
     } catch (e) {
       expect(e).toEqual({ code: 0, msg: '账号或密码错误' });
     }
+
+    const res5 = await post('/user');
+
+    expect(res5).toEqual({ code: 200, data: { username: 'post', id: 2 }, msg: 'success' });
   });
 
   describe('AxiosWrapper Cache', () => {

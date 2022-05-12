@@ -375,7 +375,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       data = {},
       customConfig = {} as DynamicCustomConfig<CC, RC>,
     ) => {
-      const requestConfig: AxiosRequestConfig = {};
+      const requestConfig: AxiosRequestConfig = { method };
       if (method === 'get') {
         requestConfig.params = data;
       } else {
