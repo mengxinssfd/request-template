@@ -623,6 +623,85 @@ get('/test', {}, { loading: false });
 
 如果你的`loading`不是单例的，那么你需要自己处理一下多个`loading`存在可能导致的问题
 
+## 全局请求显示信息弹窗
+
+很多时候提交数据到服务器都需要显示操作是否成功的信息给用户，比如说创建文章，更新文章(当然不是所有的都是，比如掘金就是直接跳页面，视业务而定)，这时候直接写到api文件上就好了
+
+```ts
+import { AxiosRequestTemplate, Context, CustomConfig } from 'request-template';
+import { Method } from 'axios';
+import { statusHandlers } from './statusHandlers';
+
+// 扩展自定义配置
+export interface PrimaryCustomConfig extends CustomConfig {
+  showSuccessMsg?: boolean;
+  successMsg?: string;
+}
+
+export class PrimaryRequest<
+  CC extends PrimaryCustomConfig = PrimaryCustomConfig,
+> extends AxiosRequestTemplate<CC> {
+  static readonly ins = new PrimaryRequest();
+
+  private constructor() {
+    super({
+      requestConfig: { baseURL: import.meta.env.VITE_BASE_URL },
+      customConfig: {
+        statusHandlers,
+        showSuccessMsg: undefined,
+      } as CC,
+    });
+  }
+
+  protected beforeRequest(ctx: Context<CC>) {
+    // 复用基础模板逻辑
+    super.beforeRequest(ctx);
+
+    // 未设置showSuccessMsg时，且非get请求则全部显示请求成功信息
+    if (ctx.requestConfig.method !== 'get' && ctx.customConfig.showSuccessMsg === undefined) {
+      ctx.customConfig.showSuccessMsg = true;
+    }
+  }
+}
+export const [Get, Post, Patch, Delete] = PrimaryRequest.ins.methodsWithUrl(
+  ['get', 'post', 'patch', 'delete'],
+  '',
+);
+```
+
+在相应的成功 code 回调上写上处理
+
+```ts
+import { PrimaryCustomConfig } from '@/http/primary/index';
+import { HttpStatus, StatusHandler, StatusHandlers } from 'request-template';
+import { ElMessage } from 'element-plus';
+
+export const statusHandlers: StatusHandlers<PrimaryCustomConfig> = {
+  [HttpStatus.OK]: ({ customConfig }, res, data) => {
+    customConfig.showSuccessMsg &&
+      ElMessage({ type: 'success', message: customConfig.successMsg || data.msg });
+    return customConfig.returnRes ? res : data;
+  },
+  default: errorHandler,
+};
+```
+
+api 调用
+
+```ts
+// 更新文章
+export function updateArticle(articleId: number | string, data: {}) {
+  // 默认开启，也可以使用showSuccessMsg: false关闭
+  return Patch(`/${articleId}`, data, { successMsg: '更新成功' });
+}
+// 编辑文章
+export function createArticle(data: {}) {
+  return Post<{ articleId: number }>('', data, { showSuccessMsg: true, successMsg: '添加成功' });
+}
+```
+
+这样信息弹窗就不需要你写到你的api调用的组件上了，我只要数据，其他弹窗什么的我一概不管，不过比较复杂的场景还是需要关闭该弹窗而手动实现的
+
 ## 全局请求带上`token`
 
 `token`操作封装，默认保存到`localStorage`,可以按照自己喜欢保存到`sectionStorage`或`cookie`上
