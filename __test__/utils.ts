@@ -1,5 +1,5 @@
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ResType } from '../types';
+import { ResType } from '../src';
 
 export async function sleep(delay: number) {
   return new Promise<void>((res) => {
