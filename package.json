@@ -1,6 +1,6 @@
 {
   "name": "request-template",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "description": "请求模板封装",
   "main": "dist/index.js",
   "typings": "./types/",
@@ -23,7 +23,6 @@
     "prettier-check": "prettier src __test__ --check",
     "lint-check": "run-p eslint prettier-check",
     "check-all": "run-p lint-check type-check",
-    "publish": "npm publish",
     "prepublish": "tsc --build tsconfig.build.json"
   },
   "repository": {
