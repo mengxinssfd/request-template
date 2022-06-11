@@ -27,16 +27,16 @@ const mockCreate = (/*config: AxiosRequestConfig*/) => {
 
 describe('AxiosRequestTemplate', () => {
   const statusHandlers: StatusHandlers = {
-    200: (ctx, res, data) => {
+    200: async (ctx, res, data) => {
       return ctx.customConfig.returnRes ? res : data;
     },
-    default: (ctx, res, data) => {
+    default: async (ctx, res, data) => {
       return ctx.customConfig.returnRes ? res : data;
     },
   };
   const req = new AxiosRequestTemplate<CustomConfig>({
     requestConfig: { baseURL: '/' },
-    customConfig: { statusHandlers },
+    customConfig: {},
   });
   const get = req.methodFactory('get');
   const post = req.methodFactory('post');
@@ -209,7 +209,7 @@ describe('AxiosRequestTemplate', () => {
     const res = await get<{ username: string; id: number }>(
       { url: '/user' },
       {
-        statusHandlers: { '200': (ctx, res) => res },
+        statusHandlers: { '200': async (ctx, res) => res },
       },
     );
     expect(res).toEqual({
@@ -223,7 +223,7 @@ describe('AxiosRequestTemplate', () => {
       // methodFactory的method优先级更高，除了method，url，data其他的axios配置优先级都是这里的高
       { url: '/user', method: 'post' } as any, // method已经从methodFactory剔除出去，不设置为any将会报错
       {
-        statusHandlers: { '200': (_, res) => res },
+        statusHandlers: { '200': async (_, res) => res },
       },
     );
     expect(res1).toEqual({
@@ -235,7 +235,7 @@ describe('AxiosRequestTemplate', () => {
     const res2 = await req.request<{ username: string; id: number }>(
       { url: '/user' },
       {
-        statusHandlers: { '200': (_, res) => res },
+        statusHandlers: { '200': async (_, res) => res },
       },
     );
 
@@ -247,7 +247,7 @@ describe('AxiosRequestTemplate', () => {
     const res3 = await req.request<{ username: string; id: number }>(
       { url: '/user', method: 'post' },
       {
-        statusHandlers: { '200': (_, res) => res },
+        statusHandlers: { '200': async (_, res) => res },
       },
     );
     expect(res3).toEqual({
@@ -360,7 +360,7 @@ describe('AxiosRequestTemplate', () => {
             requestConfig = { ...requestConfig };
             delete customConfig.statusHandlers;
             delete requestConfig.cancelToken;
-            return customConfig.returnRes ? res : { requestConfig, customConfig };
+            return Promise.resolve(customConfig.returnRes ? res : { requestConfig, customConfig });
           },
         },
       },

@@ -1,4 +1,11 @@
-import type { ResType, CustomConfig, DynamicCustomConfig, RetryConfig, Configs } from './types';
+import type {
+  ResType,
+  CustomConfig,
+  DynamicCustomConfig,
+  RetryConfig,
+  Configs,
+  StatusHandlers,
+} from './types';
 import axios, {
   AxiosInstance,
   AxiosPromise,
@@ -152,21 +159,27 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   // 处理响应结果
-  protected handleStatus<T>(
+  protected handleStatus(
     ctx: Context<CC>,
     response: AxiosResponse<ResType<any>>,
     data: ResType<any>,
-  ): Promise<ResType<T>> {
+  ): Promise<any> | AxiosResponse<ResType<any>> | ResType<any> {
     const { customConfig } = ctx;
     const code = data?.code ?? 'default';
-    const handlers = {
-      default: ({ customConfig }, res, data) => (customConfig.returnRes ? res : data),
+    const handlers: StatusHandlers = {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      default() {},
       ...this.globalConfigs.customConfig.statusHandlers,
       ...customConfig.statusHandlers,
     };
 
     const statusHandler = handlers[code] || handlers.default;
-    return statusHandler(ctx, response, data);
+    const handleResult = statusHandler(ctx, response, data);
+
+    if (handleResult !== undefined) {
+      return handleResult;
+    }
+    return customConfig.returnRes ? response : data;
   }
 
   // 请求

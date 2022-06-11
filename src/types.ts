@@ -5,7 +5,7 @@ export type StatusHandler<CC extends CustomConfig> = (
   ctx: Context<CC>,
   res: AxiosResponse<ResType<any>>,
   data: ResType<any>,
-) => any;
+) => void | Promise<any>;
 
 // StatusHandlers
 export type StatusHandlers<CC extends CustomConfig = CustomConfig> = Record<

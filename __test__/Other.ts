@@ -7,7 +7,7 @@ interface MyCustomConfig extends CustomConfig {
 }
 
 const statusHandlers: StatusHandlers<MyCustomConfig> = {
-  200: (config, res, data) => {
+  200: async (config, res, data) => {
     return config.customConfig.returnRes ? res : data;
   },
 };
