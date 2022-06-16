@@ -12,18 +12,17 @@
   "scripts": {
     "test": "jest",
     "cov": "jest --coverage",
-    "compile": "tsc --build tsconfig.build.json",
+    "build": "tsc --build tsconfig.build.json",
     "babel": "babel dist --out-dir dist",
-    "build": "run-s compile babel pub",
     "type-check": "tsc --noEmit",
     "pub": "npm publish",
-    "compub": "run-s check-all compile pub",
     "eslint": "eslint src __test__",
     "prettier-fix": "prettier src __test__ --write",
     "prettier-check": "prettier src __test__ --check",
     "lint-check": "run-p eslint prettier-check",
     "check-all": "run-p lint-check type-check",
-    "prepublish": "tsc --build tsconfig.build.json"
+    "prepublish": "tsc --build tsconfig.build.json",
+    "realease": "run-s check-all build babel pub"
   },
   "repository": {
     "type": "git",
