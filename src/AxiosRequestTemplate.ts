@@ -19,19 +19,38 @@ import { Cache } from './Cache';
 import { Context, CustomCacheConfig, RetryContext } from './types';
 import { mergeObj } from './utils';
 
-// 使用模板方法模式处理axios请求, 具体类可实现protected的方法替换掉原有方法
+/**
+ * 使用模板方法模式处理axios请求, 具体类可实现protected的方法替换掉原有方法
+ * 自定义配置可继承CustomConfig实现
+ */
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
-  // 实例
+  /**
+   * axios实例
+   */
   protected axiosIns!: AxiosInstance;
+
+  /**
+   * 缓存
+   */
   protected cache!: Cache<AxiosPromise>;
 
-  // 全局配置
+  /**
+   * 全局配置
+   */
   protected globalConfigs!: Configs<CC>;
 
-  // cancel函数缓存
+  /**
+   * cancel函数缓存
+   */
   protected readonly cancelerSet = new Set<Canceler>();
+  /**
+   * tag cancel函数缓存
+   */
   protected readonly tagCancelMap = new Map<CustomConfig['tag'], Canceler[]>();
 
+  /**
+   * 取消当前请求
+   */
   cancelCurrentRequest?: Canceler;
 
   constructor(globalConfigs: Partial<Configs<CC>> = {}) {
@@ -40,6 +59,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     this.setInterceptors();
   }
 
+  /**
+   * 初始化
+   */
   protected init() {
     // 1、保存基础配置
     this.axiosIns = axios.create(this.globalConfigs.requestConfig);
@@ -47,23 +69,32 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     this.cache = new Cache();
   }
 
-  // 根据配置生成key
+  /**
+   * 根据配置生成key
+   */
   protected generateRequestKey(ctx: Omit<Context<CC>, 'requestKey'>): string {
     const { requestConfig } = ctx;
     const { url, headers, method, params, data } = requestConfig;
     return JSON.stringify({ url, data, headers, method, params });
   }
 
-  // 转换数据结构为ResType
+  /**
+   * 转换数据结构为ResType
+   */
   protected handleResponse<T>(ctx: Context<CC>, response: AxiosResponse): ResType<T> {
     return response?.data as ResType;
   }
 
-  // 获取拦截器
+  /**
+   * 获取拦截器
+   */
   protected get interceptors() {
     return this.axiosIns.interceptors;
   }
 
+  /**
+   * 设置拦截器
+   */
   protected setInterceptors() {
     // 重写此函数会在Request中调用
     // example
@@ -72,7 +103,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     // });
   }
 
-  // 设置取消handler
+  /**
+   * 设置取消handler
+   */
   protected handleCanceler(ctx: Context<CC>) {
     const { requestConfig, customConfig, clearSet } = ctx;
     const { cancel, token } = axios.CancelToken.source();
@@ -108,7 +141,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
   }
 
-  // 处理requestConfig
+  /**
+   * 处理requestConfig
+   */
   protected handleRequestConfig(requestConfig: AxiosRequestConfig): AxiosRequestConfig {
     // globalConfigs.requestConfig在axios内部会处理，不需要再手动处理
     const finalConfig: AxiosRequestConfig = { ...requestConfig };
@@ -116,7 +151,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     return finalConfig;
   }
 
-  // 合并缓存配置
+  /**
+   * 合并缓存配置
+   */
   protected mergeCacheConfig(cacheConfig: CustomConfig['cache']): CustomCacheConfig {
     function merge(cache: CustomConfig['cache'], base: CustomCacheConfig = {}) {
       switch (typeof cache) {
@@ -135,6 +172,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     return merge(cacheConfig, merge(this.globalConfigs.customConfig.cache));
   }
 
+  /**
+   * 合并retry配置
+   */
   protected mergeRetryConfig(retryConfig: CustomConfig['retry']): RetryConfig {
     function merge(retry: CustomConfig['retry'], base: RetryConfig = {}) {
       switch (typeof retry) {
@@ -150,7 +190,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     return merge(retryConfig, merge(this.globalConfigs.customConfig.retry));
   }
 
-  // 处理CustomConfig
+  /**
+   * 处理CustomConfig
+   */
   protected handleCustomConfig(customConfig: CC) {
     const config = { ...this.globalConfigs.customConfig, ...customConfig };
     config.cache = this.mergeCacheConfig(customConfig.cache);
@@ -158,7 +200,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     return config;
   }
 
-  // 处理响应结果
+  /**
+   * 处理响应结果
+   */
   protected handleStatus(
     ctx: Context<CC>,
     response: AxiosResponse<ResType<any>>,
@@ -182,7 +226,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     return customConfig.returnRes ? response : data;
   }
 
-  // 请求
+  /**
+   * 使用缓存
+   */
   protected useCache(ctx: Context<CC>, request: () => Promise<any>) {
     const { customConfig, requestKey } = ctx;
 
@@ -208,11 +254,16 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     return request();
   }
 
-  // 请求
+  /**
+   * 请求
+   */
   protected fetch(ctx: RetryContext<CC>) {
     return this.axiosIns(ctx.requestConfig);
   }
 
+  /**
+   * 处理重试
+   */
   protected handleRetry(ctx: Context<CC>) {
     // 太长了  以后可优化
     const { customConfig, clearSet } = ctx;
@@ -262,20 +313,32 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
   }
 
+  /**
+   * 执行请求前回调
+   */
   protected beforeExecRequest(ctx: Context<CC>) {
     this.handleCanceler(ctx);
   }
 
+  /**
+   * 请求前回调
+   */
   protected beforeRequest(ctx: Context<CC>) {
     this.handleRetry(ctx);
   }
 
+  /**
+   * 请求后回调
+   */
   protected afterRequest(ctx: Context<CC>) {
     // 处理清理canceler等操作
     ctx.clearSet.forEach((clear) => clear());
     ctx.clearSet.clear();
   }
 
+  /**
+   * 生成上下文
+   */
   protected generateContext(customConfig: CC, requestConfig: AxiosRequestConfig) {
     // 处理配置
     requestConfig = this.handleRequestConfig(requestConfig);
@@ -290,6 +353,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     return ctx;
   }
 
+  /**
+   * 执行请求，重试会调用该方法
+   */
   protected async execRequest(ctx: RetryContext<CC>) {
     try {
       this.beforeExecRequest(ctx);
@@ -308,16 +374,23 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }
   }
 
-  // 使isCancel支持子类覆盖
+  /**
+   * 使isCancel支持子类覆盖
+   */
   protected isCancel(value: any) {
     return axios.isCancel(value);
   }
 
-  // 模板方法，请求入口。
+  /**
+   * 模板方法，请求入口，重试不会执行该方法
+   */
   request<T = never, RC extends boolean = false>(
     requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & { url: string },
     customConfig?: DynamicCustomConfig<CC, RC>,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
+  /**
+   * 模板方法，请求入口，重试不会执行该方法
+   */
   async request(requestConfig: AxiosRequestConfig, customConfig = {} as CC): Promise<any> {
     const ctx = this.generateContext(customConfig, requestConfig);
     this.beforeRequest(ctx);
@@ -330,6 +403,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }
   }
 
+  /**
+   * 请求失败回调
+   */
   protected handleError(ctx: Context<CC>, e: AxiosError<ResType<any>>) {
     // 错误处理
     const response = e.response as AxiosResponse<ResType<any>>;
@@ -342,7 +418,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     return Promise.reject(e);
   }
 
-  // 取消所有请求
+  /**
+   * 取消所有请求
+   */
   cancelAll(msg?: string) {
     this.cancelerSet.forEach((canceler) => {
       canceler(msg);
@@ -351,7 +429,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     this.tagCancelMap.clear();
   }
 
-  // 根据tag标签取消请求
+  /**
+   * 根据tag标签取消请求
+   */
   cancelWithTag(tag: CustomConfig['tag'], msg?: string) {
     const cancelers = this.tagCancelMap.get(tag);
     if (!cancelers) return;
@@ -363,7 +443,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     this.tagCancelMap.delete(tag);
   }
 
-  // 简单工厂：生成get post delete等method
+  /**
+   * 简单工厂：生成get post delete等method
+   */
   methodFactory(method: Method, handler?: (configs: Configs) => void) {
     return <T = never, RC extends boolean = false>(
       requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url' | 'method'> & { url: string },
@@ -381,7 +463,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
   }
 
-  // 简化版请求方法工厂 忽略data还是params；url前缀；只改axios的url，data/params，method,及自定义配置
+  /**
+   * 简化版请求方法工厂 忽略data还是params；url前缀；只改axios的url，data/params，method,及自定义配置
+   */
   simplifyMethodFactory(method: Method, urlPrefix = '') {
     return <T = never, RC extends boolean = false>(
       url: string,
@@ -399,7 +483,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     };
   }
 
-  // 本质上跟methodFactory是一样的
+  /**
+   * 本质上跟methodFactory是一样的
+   */
   use(configs: Partial<Configs<CC>>) {
     const { customConfig: custom = {}, requestConfig: request = {} } = configs;
     return <T = never, RC extends boolean = false>(

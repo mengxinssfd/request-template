@@ -14,30 +14,61 @@ export type StatusHandlers<CC extends CustomConfig = CustomConfig> = Record<
 > & { default?: StatusHandler<CC> };
 
 export interface CustomCacheConfig {
+  /**
+   * 开关
+   */
   enable?: boolean;
+  /**
+   * 单位：毫秒
+   */
   timeout?: number;
-  // 是否缓存失败的请求 false时清理
+  /**
+   * 是否缓存失败的请求 false时清理
+   */
   failedReq?: boolean;
 }
 export interface RetryConfig {
+  /**
+   * 失败次数
+   */
   times?: number;
+  /**
+   * 失败重试间隔，单位：毫秒
+   */
   interval?: number;
+  /**
+   * 第一次请求失败后是否立即重试
+   */
   immediate?: boolean;
 }
 
-// 自定义配置
+/**
+ * 自定义配置
+ */
 export interface CustomConfig {
-  // 是否返回axios的response
+  /**
+   *  是否返回axios的response
+   */
   returnRes?: boolean;
-  // 报错不弹窗，需要自己实现
+  /**
+   * 报错不弹窗，需要自己实现
+   */
   silent?: boolean;
-  // 状态处理
+  /**
+   * 状态处理
+   */
   statusHandlers?: StatusHandlers;
-  // 缓存配置
+  /**
+   * 缓存配置
+   */
   cache?: boolean | CustomCacheConfig;
-  // 标签，用于取消请求
+  /**
+   * 标签，用于取消请求
+   */
   tag?: string | symbol;
-  // 失败重试次数
+  /**
+   * 失败重试次数
+   */
   retry?: number | RetryConfig;
 }
 
