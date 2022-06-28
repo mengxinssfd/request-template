@@ -397,7 +397,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     try {
       return await this.useCache(ctx, () => this.execRequest(ctx));
     } catch (e: any) {
-      return await this.handleError(ctx, e);
+      return this.handleError(ctx, e);
     } finally {
       this.afterRequest(ctx);
     }
