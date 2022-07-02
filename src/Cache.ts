@@ -1,3 +1,6 @@
+/**
+ * @public
+ */
 export class Cache<V> {
   constructor(protected readonly cache = new Map<any, { value: V; expires: number }>()) {}
 

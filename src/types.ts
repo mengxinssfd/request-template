@@ -1,18 +1,26 @@
 import type { AxiosPromise, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { AxiosError } from 'axios';
 
+/**
+ * @public
+ */
 export type StatusHandler<CC extends CustomConfig> = (
   ctx: Context<CC>,
   res: AxiosResponse<ResType<any>>,
   data: ResType<any>,
 ) => void | Promise<any>;
 
-// StatusHandlers
+/**
+ * @public
+ */
 export type StatusHandlers<CC extends CustomConfig = CustomConfig> = Record<
   number,
   StatusHandler<CC>
 > & { default?: StatusHandler<CC> };
 
+/**
+ * @public
+ */
 export interface CustomCacheConfig {
   /**
    * 开关
@@ -27,6 +35,9 @@ export interface CustomCacheConfig {
    */
   failedReq?: boolean;
 }
+/**
+ * @public
+ */
 export interface RetryConfig {
   /**
    * 失败次数
@@ -43,6 +54,7 @@ export interface RetryConfig {
 }
 
 /**
+ * @public
  * 自定义配置
  */
 export interface CustomConfig {
@@ -72,29 +84,44 @@ export interface CustomConfig {
   retry?: number | RetryConfig;
 }
 
+/**
+ * @public
+ */
 export interface ResType<T = never> {
   code: number;
   msg: string;
   data: T;
 }
 
+/**
+ * @public
+ */
 export type DynamicCustomConfig<CC extends CustomConfig, RC extends boolean> = Omit<
   CC,
   'returnRes'
 > &
   (RC extends false ? { returnRes?: RC } : { returnRes: true });
 
+/**
+ * @public
+ */
 export interface Configs<CC extends CustomConfig = CustomConfig> {
   customConfig: CC;
   requestConfig: AxiosRequestConfig;
 }
 
+/**
+ * @public
+ */
 export interface Context<CC> extends Configs<CC> {
   clearSet: Set<Function>;
   requestKey: string;
   retry?: (e: AxiosError<ResType<any>>) => AxiosPromise;
 }
 
+/**
+ * @public
+ */
 export interface RetryContext<CC> extends Context<CC> {
   isRetry?: boolean;
 }

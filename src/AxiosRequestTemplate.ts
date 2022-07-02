@@ -20,6 +20,7 @@ import { Context, CustomCacheConfig, RetryContext } from './types';
 import { mergeObj } from './utils';
 
 /**
+ * @public
  * 使用模板方法模式处理axios请求, 具体类可实现protected的方法替换掉原有方法
  * 自定义配置可继承CustomConfig实现
  */
@@ -273,7 +274,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
     const maxTimex = retryConfig.times;
     let times = 0;
-    let timer: NodeJS.Timer;
+    let timer: number;
     let reject = (): any => undefined;
     const stop = () => {
       clearTimeout(timer);

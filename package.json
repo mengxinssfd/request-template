@@ -22,7 +22,8 @@
     "lint-check": "run-p eslint prettier-check",
     "check-all": "run-p lint-check type-check",
     "prepublish": "tsc --build tsconfig.build.json",
-    "realease": "run-s check-all build babel pub"
+    "realease": "run-s check-all build babel pub",
+    "apie": "api-extractor run"
   },
   "repository": {
     "type": "git",

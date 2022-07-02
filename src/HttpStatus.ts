@@ -1,4 +1,7 @@
 // 来源于nestjs  @nestjs/common/enums/http-status.enum.d.ts
+/**
+ * @public
+ */
 export enum HttpStatus {
   CONTINUE = 100,
   SWITCHING_PROTOCOLS = 101,
