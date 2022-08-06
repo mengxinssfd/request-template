@@ -1,3 +1,11 @@
+# 1.0.0-beta.5 (2022-08-06)
+
+
+### Bug Fixes
+
+* build:cjs es版本太高导致class里面的属性不被小程序识别 ([a2245db](https://github.com/mengxinssfd/request-template/commit/a2245db091625fedcf1115ae34ee2dfe0d3f641e))
+
+
 # 1.0.0-beta.1 (2022-08-06)
 
 
