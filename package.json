@@ -23,7 +23,8 @@
     "check-all": "run-p lint-check type-check",
     "prepublish": "tsc --build tsconfig.build.json",
     "realease": "run-s check-all build babel pub",
-    "apie": "api-extractor run"
+    "apie": "api-extractor run",
+    "build:cjs": "esbuild --bundle src/index.ts --minify --format=cjs --outfile=dist/index.cjs.js"
   },
   "repository": {
     "type": "git",
@@ -46,6 +47,7 @@
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
     "babel-plugin-transform-remove-console": "^6.9.4",
+    "esbuild": "^0.14.53",
     "eslint": "^8.13.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
