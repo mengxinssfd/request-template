@@ -1,7 +1,7 @@
 import { useMockAxios, routers } from './mock-server';
 useMockAxios(routers);
 import { AxiosRequestTemplate, CustomConfig } from '../src';
-
+import './utils';
 describe('mock cacheConfig', () => {
   test('empty global', async () => {
     const req = new AxiosRequestTemplate();

@@ -1,5 +1,6 @@
 // 其他域名请求
 import { StatusHandlers, AxiosRequestTemplate, CustomConfig } from '../src';
+import './utils';
 
 interface MyCustomConfig extends CustomConfig {
   p1?: number;

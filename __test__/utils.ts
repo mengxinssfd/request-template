@@ -1,6 +1,7 @@
-import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ResType } from '../src';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { ResType, AxiosRequestTemplate } from '../src';
 
+AxiosRequestTemplate.useAxios(axios);
 export async function sleep(delay: number) {
   return new Promise<void>((res) => {
     setTimeout(() => res(), delay);
@@ -17,6 +18,7 @@ export function mockAxiosResponse(
     status,
   };
 }
+
 /*export function mockAxiosError(
   requestConfig: AxiosRequestConfig,
   data: any,

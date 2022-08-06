@@ -6,7 +6,7 @@ import type {
   Configs,
   StatusHandlers,
 } from './types';
-import axios, {
+import type {
   AxiosInstance,
   AxiosPromise,
   AxiosRequestConfig,
@@ -14,6 +14,7 @@ import axios, {
   Method,
   Canceler,
   AxiosError,
+  AxiosStatic,
 } from 'axios';
 import { Cache } from './Cache';
 import { Context, CustomCacheConfig, RetryContext } from './types';
@@ -25,6 +26,12 @@ import { mergeObj } from './utils';
  * 自定义配置可继承CustomConfig实现
  */
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
+  protected static axios: AxiosStatic;
+
+  static useAxios(axios: AxiosStatic) {
+    AxiosRequestTemplate.axios = axios;
+  }
+
   /**
    * axios实例
    */
@@ -65,7 +72,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
    */
   protected init() {
     // 1、保存基础配置
-    this.axiosIns = axios.create(this.globalConfigs.requestConfig);
+    this.axiosIns = AxiosRequestTemplate.axios.create(this.globalConfigs.requestConfig);
     // 2、缓存初始化
     this.cache = new Cache();
   }
@@ -109,7 +116,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
    */
   protected handleCanceler(ctx: Context<CC>) {
     const { requestConfig, customConfig, clearSet } = ctx;
-    const { cancel, token } = axios.CancelToken.source();
+    const { cancel, token } = AxiosRequestTemplate.axios.CancelToken.source();
     requestConfig.cancelToken = token;
     const tag = customConfig.tag;
 
@@ -379,7 +386,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
    * 使isCancel支持子类覆盖
    */
   protected isCancel(value: any) {
-    return axios.isCancel(value);
+    return AxiosRequestTemplate.axios.isCancel(value);
   }
 
   /**

@@ -3,6 +3,8 @@ import { routers } from './mock-server';
 import { StatusHandlers, AxiosRequestTemplate, CustomConfig } from '../src';
 
 jest.mock('axios');
+import './utils';
+
 const map = new Map<string, Function>();
 const mockCreate = (/*config: AxiosRequestConfig*/) => {
   // console.log(config);
