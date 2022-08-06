@@ -1,6 +1,6 @@
 {
   "name": "request-template",
-  "version": "0.1.8",
+  "version": "1.0.0-beta.0",
   "description": "请求模板封装",
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",
@@ -27,7 +27,7 @@
     "lint-check": "run-p eslint prettier-check",
     "check-all": "run-p lint-check type-check",
     "prepublish": "tsc --build tsconfig.build.json",
-    "realease": "run-s check-all build babel pub",
+    "realease": "run-s check-all build babel changelog pub",
     "apie": "api-extractor run",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
   },
