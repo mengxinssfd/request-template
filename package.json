@@ -7,8 +7,7 @@
   "typings": "./types/",
   "sideEffects": false,
   "files": [
-    "dist/*.js",
-    "types/*",
+    "dist/*",
     "CHANGELOG.md"
   ],
   "scripts": {
