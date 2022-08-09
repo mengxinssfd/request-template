@@ -112,41 +112,49 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   }
 
   /**
-   * 设置取消handler
+   * 注册canceler
    */
-  protected handleCanceler(ctx: Context<CC>) {
-    const { requestConfig, customConfig, clearSet } = ctx;
-    const { cancel, token } = AxiosRequestTemplate.axios.CancelToken.source();
-    requestConfig.cancelToken = token;
+  protected registerCanceler(ctx: Context<CC>, canceler: Canceler) {
+    const { customConfig, clearSet } = ctx;
     const tag = customConfig.tag;
-
     // 设置tag取消
     if (tag) {
       if (!this.tagCancelMap.has(tag)) {
         this.tagCancelMap.set(tag, []);
       }
-      (this.tagCancelMap.get(tag) as Canceler[]).push(cancel);
+      (this.tagCancelMap.get(tag) as Canceler[]).push(canceler);
       clearSet.add(() => {
         const cancelers = this.tagCancelMap.get(tag);
         if (!cancelers || !cancelers.length) return;
-        const index = cancelers.indexOf(cancel);
+        const index = cancelers.indexOf(canceler);
         cancelers.splice(index, 1);
       });
     }
 
     // 设置取消
-    this.cancelerSet.add(cancel);
+    this.cancelerSet.add(canceler);
     // 清理取消
     const clearCanceler = () => {
-      this.cancelerSet.delete(cancel);
+      this.cancelerSet.delete(canceler);
     };
     clearSet.add(clearCanceler);
     // 取消
     // 注意：对于retry的无效，无法判断时机
     this.cancelCurrentRequest = (msg) => {
-      cancel(msg);
+      canceler(msg);
       clearCanceler();
     };
+  }
+
+  /**
+   * 设置取消handler
+   */
+  protected handleCanceler(ctx: Context<CC>) {
+    // 专属axios的取消功能
+    const { requestConfig } = ctx;
+    const { cancel, token } = AxiosRequestTemplate.axios.CancelToken.source();
+    requestConfig.cancelToken = token;
+    this.registerCanceler(ctx, cancel);
   }
 
   /**
