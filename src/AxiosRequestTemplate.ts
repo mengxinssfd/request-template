@@ -28,6 +28,9 @@ import { mergeObj } from './utils';
 export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   protected static axios: AxiosStatic;
 
+  /**
+   * 用axios作为请求工具时必须调用该方法
+   */
   static useAxios(axios: AxiosStatic) {
     AxiosRequestTemplate.axios = axios;
   }
