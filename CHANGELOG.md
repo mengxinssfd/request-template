@@ -1,3 +1,11 @@
+# 1.0.0-beta.7 (2022-08-09)
+
+
+### Features
+
+* 完善模块加载方式 ([daf40ca](https://github.com/mengxinssfd/request-template/commit/daf40cafe5eb80a9d31a6f7be61a618a3b7e3d3c))
+
+
 # 1.0.0-beta.6 (2022-08-09)
 
 

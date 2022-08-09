@@ -61,7 +61,6 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     use(configs: Partial<Configs<CC>>): <T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & {
         url: string;
     }, customConfig?: DynamicCustomConfig<CC, RC> | undefined) => Promise<ResType<T>>;
-    // (undocumented)
     static useAxios(axios: AxiosStatic): void;
     protected useCache(ctx: Context<CC>, request: () => Promise<any>): Promise<any>;
 }
