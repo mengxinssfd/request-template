@@ -5,6 +5,12 @@
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",
   "typings": "dist",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs.js"
+    }
+  },
   "sideEffects": false,
   "files": [
     "dist/*",
