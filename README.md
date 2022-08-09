@@ -1,12 +1,21 @@
 # 前言
 
+可复用可扩展的请求封装。
+
+不与框架绑定：你可以用 vue 写的请求，也能在 react 甚至小程序上使用；
+
+也不与请求工具绑定：你可以用`axios`做为请求工具，也可以用`fetch`或`wx.request`；
+
+像模版也像适配器。
+
+
 # `request-template`
 
-基于 `axios` 的请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展，配置可复用。
+基于 `axios` 的请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展，配置可复用；
 
-你也可以使用`fetch`来请求，只需要重写使用到`axios`的关键步骤。
+这不是一个最终方案，不是说用了这个库就能什么都不用写了，但它能极大减少你的代码复杂度，提高代码的复用性，为你的最终方案提供支持；也方便移植。
 
-这不是一个最终方案，不是说用了这个库就能什么都不用写了，但它能极大减少你的代码复杂度，提高代码的复用性，为你的最终方案提供支持。
+配置相对来说会繁琐一点，但是之后使用和移植就会很方便了。
 
 面向继承开放，面向使用关闭，封装但不封闭。
 
@@ -16,6 +25,13 @@ GitHub 地址：[https://github.com/mengxinssfd/request-template](https://github
 
 # 主要实现
 
+- [x] 多模块支持
+  - [x] `esm` 模块
+  - [x] `cjs` 模块
+- [x] 多环境支持
+  - [x] `浏览器`
+  - [x] `小程序`
+  - [x] `node`
 - [x] 开放式封装
   - [x] 对于继承扩展开放
   - [x] 对于使用时修改关闭
@@ -47,6 +63,7 @@ GitHub 地址：[https://github.com/mengxinssfd/request-template](https://github
   - [x] 延时重试
   - [x] 第一次重试立即启动（可选）
   - [x] 可中断重试
+- [x] 测试覆盖率100%
 
 # 流程
 
@@ -95,7 +112,7 @@ retry? --> |是| 添加清理钩子 --> 请求开始
 
 # 安装
 
-可以使用`npm` `cnpm` `yarn` `pnpm`等方式安装，推荐使用`pnpm`安装减少`node_module`体积
+可以使用`npm` `cnpm` `yarn` `pnpm`等方式安装
 
 ```shell
 pnpm add request-template
@@ -108,7 +125,11 @@ pnpm add request-template
 这时约等于`axios({url})`
 
 ```ts
+import axios from 'axios';
 import { AxiosRequestTemplate } from 'request-template';
+
+// 从v1.0.0开始不再内置axios，需要把axios传进去
+AxiosRequestTemplate.useAxios(axios);
 // new一个实例
 const template = new AxiosRequestTemplate();
 
@@ -160,6 +181,8 @@ const res = await post<{ username: string; id: number }>({
   data: { param1: 1, param2: 2 },
 });
 ```
+
+自定义参数也支持范型约束以及提示，在此就不一一展示了
 
 ![type-support.png](./docs/type-support.png)
 
@@ -623,7 +646,7 @@ get('/test', {}, { loading: false });
 
 ## 全局请求显示信息弹窗
 
-很多时候提交数据到服务器都需要显示操作是否成功的信息给用户，比如说创建文章，更新文章(当然不是所有的都是，比如掘金就是直接跳页面，视业务而定)，这时候直接写到api文件上就好了
+很多时候提交数据到服务器都需要显示操作是否成功的信息给用户，比如说创建文章，更新文章(当然不是所有的都是，比如掘金就是直接跳页面，视业务而定)，这时候直接写到 api 文件上就好了
 
 ```ts
 import { AxiosRequestTemplate, Context, CustomConfig } from 'request-template';
@@ -698,7 +721,7 @@ export function createArticle(data: {}) {
 }
 ```
 
-这样信息弹窗就不需要你写到你的api调用的组件上了，我只要数据，其他弹窗什么的我一概不管，不过比较复杂的场景还是需要关闭该弹窗而手动实现的
+这样信息弹窗就不需要你写到你的 api 调用的组件上了，我只要数据，其他弹窗什么的我一概不管，不过比较复杂的场景还是需要关闭该弹窗而手动实现的
 
 ## 全局请求带上`token`
 
@@ -1171,7 +1194,99 @@ export function getTags() {
 }
 ```
 
+## 在微信小程序中使用
+
+在微信小程序中使用也很简单，只要以下几个步骤
+
+1. 安装依赖（`npm install request-template`）
+2. 使用开发者工具的`构建npm`功能
+3. 修改`primary.ts`并重写部分方法
+
+   ```ts
+   export class PrimaryRequest<
+     CC extends PrimaryCustomConfig = PrimaryCustomConfig,
+   > extends AxiosRequestTemplate<CC> {
+
+    ...
+
+     // 覆盖原有的方法
+     // use $fetch
+     protected init() {
+       this.cache = new Cache();
+     }
+
+     // 使用小程序的取消请求判断逻辑
+     protected isCancel(value: any) {
+       return value?.errMsg === 'request:fail abort';
+     }
+
+     // 使用小程序的请求方法
+     protected fetch(ctx) {
+       const baseConfig = this.globalConfigs.requestConfig;
+       const config = ctx.requestConfig;
+
+       // 转换成小程序的请求配置
+       const method = config.method || baseConfig.method;
+       return new Promise((resolve, reject) => {
+         const task = wx.request({
+           url: (config.baseURL || baseConfig.baseURL) + (config.url || baseConfig.url),
+           method,
+           data:
+             method === 'get'
+               ? { ...baseConfig.params, ...config.params }
+               : { ...baseConfig.data, ...config.data },
+           header: { ...baseConfig.headers, ...config.headers },
+           success: resolve,
+           fail: reject,
+         });
+         // 注册取消事件
+         this.registerCanceler(ctx, task.abort.bind(task));
+       }) as any;
+     }
+
+     // 覆盖原来的方法
+     // eslint-disable-next-line
+     protected handleCanceler(_ctx) {}
+
+     ...
+
+   }
+   ```
+
+4. `token.ts`重写`token` `get` `set`
+
+   ```ts
+   export class Token {
+     private static KEY = 'token';
+
+     static set key(key: string) {
+       Token.KEY = key;
+     }
+     static get key(): string {
+       return Token.KEY;
+     }
+
+     static get(): string {
+       return wx.getStorageSync(Token.KEY) || '';
+     }
+     static set(token: string) {
+       wx.setStorageSync(Token.KEY, token);
+     }
+
+     static clear() {
+       wx.removeStorageSync(Token.KEY);
+     }
+     static exists(): boolean {
+       return !!Token.get();
+     }
+   }
+   ```
+
+其他层面如`api`层是完全不需要改的，调用方式也一样不需要改动;
+
+避免了环境一遍就需要到处查找更改。
+
 # 结尾
 
-如果有错欢迎指出...  
-或者如果文章、库对你有帮助，那么请记得点赞或 star 哦 😬
+如果有错欢迎指出...
+如果文章、库对你有帮助，那么请记得点赞或 star 哦 😬
