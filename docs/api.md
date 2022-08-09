@@ -51,6 +51,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     methodFactory(method: Method, handler?: (configs: Configs) => void): <T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url' | 'method'> & {
         url: string;
     }, customConfig?: DynamicCustomConfig<CC, RC> | undefined) => Promise<RC extends true ? AxiosResponse<ResType<T>, any> : ResType<T>>;
+    protected registerCanceler(ctx: Context<CC>, canceler: Canceler): void;
     request<T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & {
         url: string;
     }, customConfig?: DynamicCustomConfig<CC, RC>): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;

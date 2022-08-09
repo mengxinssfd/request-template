@@ -1,3 +1,13 @@
+# 1.0.0-beta.6 (2022-08-09)
+
+
+### Features
+
+* 从`handleCanceler`中抽离出`registerCanceler`,方便不用`axios`的项目重写 ([92ac4f7](https://github.com/mengxinssfd/request-template/commit/92ac4f73acac42a045f6deac8978011c865a9b50))
+
+
+
+
 # 1.0.0-beta.5 (2022-08-06)
 
 
