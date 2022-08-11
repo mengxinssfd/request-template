@@ -3,32 +3,9 @@ const chalk = require('chalk');
 const fs = require('fs');
 const esbuild = require('esbuild');
 const rimraf = require('rimraf');
-const execa = require('execa');
+const { dist, exec, src, root, useLog } = require('./utils');
 
-const root = (p = '') => path.resolve(__dirname, '../' + p);
-const dist = (p = '') => root('dist/' + p);
-const src = (p = '') => root('src/' + p);
-
-const logStart = (desc = '') => console.log(chalk.bold(chalk.yellow(`\n ${desc} \n`)));
-const logEnd = (desc = '') => console.log(chalk.bold(chalk.green(`\n ${desc} finished\n`)));
-/**
- * @param {string} desc
- * @param {Promise|void|function} doing
- * @return {Promise<void>}
- */
-const useLog = async (desc, doing) => {
-  logStart(desc);
-  await (typeof doing === 'function' ? doing() : doing);
-  logEnd(desc);
-};
-
-/**
- * @param {string} bin
- * @param {string[]?} args
- * @param {{}} opts
- * @returns Promise<any>
- */
-const exec = (bin, args, opts = {}) => execa(bin, args, { stdio: 'inherit', cwd: root(), ...opts });
+const args = require('minimist')(process.argv.slice(2));
 
 async function buildTypes() {
   rimraf.sync(dist());
@@ -59,25 +36,29 @@ async function buildTypes() {
 /**
  * @param {'esm'|'cjs'} format
  */
-async function build(format) {
-  console.log(chalk.bold(chalk.yellow(`\n 打包${format} \n`)));
+async function buildOne(format) {
   const entryFile = src('index.ts');
   const outfile = dist(`index${format === 'cjs' ? '.cjs' : ''}.js`);
   const tsconfig = root('tsconfig.build.json');
   await esbuild.build({ entryPoints: [entryFile], bundle: true, outfile, format, tsconfig });
-  console.log(chalk.bold(chalk.green(`\n 打包${format}完成 \n`)));
 }
 
-async function setup() {
-  await useLog('lint check', exec('pnpm', ['lint-check']));
+async function build() {
   await useLog('打包types', buildTypes());
-  await useLog('打包模块', Promise.all([build('esm'), build('cjs')]));
-
+  await Promise.all([useLog('打包esm', buildOne('esm')), useLog('打包cjs', buildOne('cjs'))]);
   await useLog('cp index.js index.mjs', () => {
     fs.copyFileSync(dist('index.js'), dist('index.mjs'));
   });
 }
 
-setup();
+async function setup() {
+  const { skipCheck = false } = args;
+  !skipCheck && (await useLog('lint check', exec('pnpm', ['lint-check'])));
+  await useLog('打包模块', build());
+}
 
-module.exports = setup;
+if (args.run) {
+  setup();
+}
+
+module.exports = build;
