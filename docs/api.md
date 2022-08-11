@@ -35,7 +35,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     protected globalConfigs: Configs<CC>;
     protected handleCanceler(ctx: Context<CC>): void;
     protected handleCustomConfig(customConfig: CC): CC;
-    protected handleError(ctx: Context<CC>, e: AxiosError<ResType<any>>): ResType<any> | AxiosResponse<ResType<any>, any> | Promise<any>;
+    protected handleError(ctx: Context<CC>, e: AxiosError<ResType<any>>): Promise<any> | ResType<any> | AxiosResponse<ResType<any>, any>;
     protected handleRequestConfig(requestConfig: AxiosRequestConfig): AxiosRequestConfig;
     protected handleResponse<T>(ctx: Context<CC>, response: AxiosResponse): ResType<T>;
     protected handleRetry(ctx: Context<CC>): void;
