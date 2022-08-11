@@ -161,8 +161,7 @@ async function setup() {
   await actions.release(config);
   console.log(config);
 
-  return Promise.reject('1111');
-  //  return config;
+  return config;
 }
 
 setup().then(
