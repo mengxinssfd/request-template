@@ -5,6 +5,7 @@ import type {
   RetryConfig,
   Configs,
   StatusHandlers,
+  Tag,
 } from './types';
 import type {
   AxiosInstance,
@@ -265,7 +266,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       // 请求
       const promise = request();
       // 存储缓存
-      this.cache.set(requestKey, promise, cacheConfig);
+      this.cache.set(requestKey, promise, { ...cacheConfig, tag: customConfig.tag });
       // 如果该请求是被取消的话，就清理掉该缓存
       promise.catch((reason) => {
         if (!cacheConfig.failedReq || this.isCancel(reason)) {
@@ -527,5 +528,15 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
       return this.request<T>(requestConfig, customConfig as any);
     };
+  }
+
+  /**
+   * 根据tag移除缓存
+   *
+   * 为什么要做这个功能：因为在移动端这类无限上拉下一页分页场景，如果下拉刷新了缓存，
+   * 那么必须清除这一url下所有分页的缓存，然而分页场景下每一页都会生成一个key，不好删除缓存
+   */
+  deleteCacheByTag(tag: Tag) {
+    this.cache.deleteByTag(tag);
   }
 }
