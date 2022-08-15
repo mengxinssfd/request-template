@@ -35,6 +35,9 @@ export const routers = {
   '/nocode'() {
     return Promise.resolve({ status: 200, data: '1' });
   },
+  '/data'(data) {
+    return Promise.resolve({ status: 200, data });
+  },
 };
 jest.mock('axios');
 export function useMockAxios(routers: any) {
