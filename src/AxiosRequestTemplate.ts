@@ -255,8 +255,13 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 
     // 缓存
     if (cacheConfig.enable) {
-      const cache = this.cache.get(requestKey);
-      if (cache) return cache;
+      if (cacheConfig.refresh) {
+        // 只要刷新一次缓存，那么之前的相同key的缓存就作废
+        this.cache.delete(requestKey);
+      } else {
+        const cache = this.cache.get(requestKey);
+        if (cache) return cache;
+      }
       // 请求
       const promise = request();
       // 存储缓存

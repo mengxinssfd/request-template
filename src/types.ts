@@ -34,6 +34,10 @@ export interface CustomCacheConfig {
    * 是否缓存失败的请求 false时清理
    */
   failedReq?: boolean;
+  /**
+   * 是否刷新缓存
+   */
+  refresh?: boolean;
 }
 /**
  * @public
