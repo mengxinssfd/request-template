@@ -56,7 +56,7 @@ export interface RetryConfig {
    */
   immediate?: boolean;
 }
-
+export type Tag = string | symbol;
 /**
  * @public
  * 自定义配置
@@ -81,7 +81,7 @@ export interface CustomConfig {
   /**
    * 标签，用于取消请求
    */
-  tag?: string | symbol;
+  tag?: Tag;
   /**
    * 失败重试次数
    */
