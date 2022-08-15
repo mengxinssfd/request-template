@@ -539,4 +539,11 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   deleteCacheByTag(tag: Tag) {
     this.cache.deleteByTag(tag);
   }
+
+  /**
+   *  清理所有缓存
+   */
+  clearCache() {
+    this.cache.clear();
+  }
 }
