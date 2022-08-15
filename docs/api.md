@@ -113,6 +113,7 @@ export interface Context<CC> extends Configs<CC> {
 export interface CustomCacheConfig {
     enable?: boolean;
     failedReq?: boolean;
+    refresh?: boolean;
     timeout?: number;
 }
 
