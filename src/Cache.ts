@@ -53,6 +53,10 @@ export class Cache<V> {
     this.tagMap.delete(tag);
   }
 
+  clear() {
+    this.cache.clear();
+  }
+
   has(key: any): boolean {
     return this.get(key) !== null;
   }
