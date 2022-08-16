@@ -93,4 +93,36 @@ describe('Cache', () => {
     expect(cache.get(key)).toEqual(null);
     expect(cache.get(key2)).toEqual({ b: 222 });
   });
+  test('deleteByTag', async () => {
+    const cache = new Cache<object>();
+    const tag = Symbol('1');
+    cache.set(1, { a: 123 }, { timeout: 200, tag });
+    cache.set(2, { b: 222 }, { timeout: 200, tag });
+
+    cache.set(3, { c: 333 }, { timeout: 200, tag: 'other' });
+
+    expect((cache as any).cache.size).toBe(3);
+    expect((cache as any).tagMap.size).toBe(2);
+
+    cache.deleteByTag(tag);
+    expect((cache as any).cache.size).toBe(1);
+    expect((cache as any).tagMap.size).toBe(1);
+
+    cache.deleteByTag('other');
+    expect((cache as any).cache.size).toBe(0);
+    expect((cache as any).tagMap.size).toBe(0);
+
+    // 测试自动清理
+    cache.set(1, { a: 123 }, { timeout: 200, tag });
+    expect(cache.get(1)).toEqual({ a: 123 });
+    expect((cache as any).cache.size).toBe(1);
+    expect((cache as any).tagMap.size).toBe(1);
+    expect((cache as any).tagMap.get(tag).size).toBe(1);
+
+    await sleep(350);
+    expect(cache.get(1)).toBe(null);
+    expect((cache as any).cache.size).toBe(0);
+    expect((cache as any).tagMap.size).toBe(0);
+    expect((cache as any).tagMap.get(tag)).toBe(undefined);
+  });
 });
