@@ -125,4 +125,18 @@ describe('Cache', () => {
     expect((cache as any).tagMap.size).toBe(0);
     expect((cache as any).tagMap.get(tag)).toBe(undefined);
   });
+  test('clear', async () => {
+    const cache = new Cache<object>();
+    const key = { a: 123 };
+    cache.set(key, { a: 123 }, { timeout: 200 });
+
+    const key2 = { b: 123 };
+    cache.set(key2, { b: 222 }, { timeout: 200 });
+    expect(cache.get(key)).toEqual(key);
+    expect(cache.get(key2)).toEqual({ b: 222 });
+
+    expect((cache as any).cache.size).toBe(2);
+    cache.clear();
+    expect((cache as any).cache.size).toBe(0);
+  });
 });
