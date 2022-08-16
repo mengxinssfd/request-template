@@ -41,7 +41,12 @@ export class Cache<V> {
     const value = this.cache.get(key);
     this.cache.delete(key);
     if (value?.tag) {
-      this.tagMap.get(value.tag)?.delete(key);
+      const tagSet = this.tagMap.get(value.tag);
+      if (tagSet) {
+        tagSet.delete(key);
+        // 如果有空的set就清理掉这个tag
+        if (!tagSet.size) this.tagMap.delete(value.tag);
+      }
     }
   }
 
