@@ -1,3 +1,16 @@
+# [1.0.0-beta.10](https://github.com/mengxinssfd/request-template/compare/v1.0.0-beta.9...v1.0.0-beta.10) (2022-08-16)
+
+
+### Features
+
+* **AxiosRequestTemplate.ts:** 新增`clearCache`删除所有缓存的功能 ([9600200](https://github.com/mengxinssfd/request-template/commit/9600200a0be337e16656f289eb5062e3b0ee6ad7))
+* **AxiosRequestTemplate.ts:** 新增`deleteCacheByTag`通过tag删除缓存的功能 ([b4509ca](https://github.com/mengxinssfd/request-template/commit/b4509ca183063ea6d6c8170b2d89f3c930bb2012))
+* **Cache.ts:** 新增`clear`删除所有缓存的功能 ([81b0bfd](https://github.com/mengxinssfd/request-template/commit/81b0bfda54b93cec742405c060cd39c6f9c45e0f))
+* **Cache.ts:** 新增`deleteByTag`通过tag删除缓存的功能 ([fcea8fc](https://github.com/mengxinssfd/request-template/commit/fcea8fc7a180c3576df5ea5e2a0a75e5f8c05f05))
+* **types.ts:** Tag抽取出来做为一个独立的类型 ([087230f](https://github.com/mengxinssfd/request-template/commit/087230ff9a0343ebd9d832605cf1d18f8c01e1ed))
+
+
+
 # 1.0.0-beta.9 (2022-08-15)
 
 

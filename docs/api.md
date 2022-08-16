@@ -28,6 +28,8 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     cancelCurrentRequest?: Canceler;
     protected readonly cancelerSet: Set<Canceler>;
     cancelWithTag(tag: CustomConfig['tag'], msg?: string): void;
+    clearCache(): void;
+    deleteCacheByTag(tag: Tag): void;
     protected execRequest(ctx: RetryContext<CC>): Promise<any>;
     protected fetch(ctx: RetryContext<CC>): AxiosPromise<any>;
     protected generateContext(customConfig: CC, requestConfig: AxiosRequestConfig): Context<CC>;
@@ -57,7 +59,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     }, customConfig?: DynamicCustomConfig<CC, RC>): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
     protected setInterceptors(): void;
     simplifyMethodFactory(method: Method, urlPrefix?: string): <T = never, RC extends boolean = false>(url: string, data?: {}, customConfig?: DynamicCustomConfig<CC, RC>) => Promise<RC extends true ? AxiosResponse<ResType<T>, any> : ResType<T>>;
-    protected readonly tagCancelMap: Map<string | symbol | undefined, Canceler[]>;
+    protected readonly tagCancelMap: Map<Tag | undefined, Canceler[]>;
     use(configs: Partial<Configs<CC>>): <T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & {
         url: string;
     }, customConfig?: DynamicCustomConfig<CC, RC> | undefined) => Promise<ResType<T>>;
@@ -69,25 +71,34 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
 class Cache_2<V> {
     constructor(cache?: Map<any, {
         value: V;
+        tag?: Tag | undefined;
         expires: number;
-    }>);
+    }>, tagMap?: Map<Tag, Set<string>>);
     // (undocumented)
     protected readonly cache: Map<any, {
         value: V;
+        tag?: Tag | undefined;
         expires: number;
     }>;
+    // (undocumented)
+    clear(): void;
     // (undocumented)
     clearDeadCache(): void;
     // (undocumented)
     delete(key: any): void;
     // (undocumented)
+    deleteByTag(tag: Tag): void;
+    // (undocumented)
     get(key: any): V | null;
     // (undocumented)
     has(key: any): boolean;
     // (undocumented)
-    set(key: any, value: V, { timeout }?: {
+    set(key: any, value: V, { timeout, tag }?: {
         timeout?: number;
+        tag?: Tag;
     }): void;
+    // (undocumented)
+    protected readonly tagMap: Map<Tag, Set<string>>;
 }
 export { Cache_2 as Cache }
 
@@ -124,7 +135,7 @@ export interface CustomConfig {
     returnRes?: boolean;
     silent?: boolean;
     statusHandlers?: StatusHandlers;
-    tag?: string | symbol;
+    tag?: Tag;
 }
 
 // @public (undocumented)
@@ -262,6 +273,9 @@ export type StatusHandler<CC extends CustomConfig> = (ctx: Context<CC>, res: Axi
 export type StatusHandlers<CC extends CustomConfig = CustomConfig> = Record<number, StatusHandler<CC>> & {
     default?: StatusHandler<CC>;
 };
+
+// @public (undocumented)
+export type Tag = string | symbol;
 
 // (No @packageDocumentation comment for this package)
 
