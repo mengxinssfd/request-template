@@ -19,6 +19,9 @@
     "dist/*",
     "CHANGELOG.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "jest",
     "cov": "jest --coverage",
