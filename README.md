@@ -1,25 +1,40 @@
 # 前言
 
-可复用可扩展的请求封装。
+请求封装在网上很多，大致分为以下几种封装风格：
 
-不与框架绑定：你可以用 vue 写的请求，也能在 react 甚至小程序上使用；
+- 普通封装
+- 类封装
+- 装饰器封装
+- 插件式封装
+- hook式封装
 
-也不与请求工具绑定：你可以用`axios`做为请求工具，也可以用`fetch`或`wx.request`；
+网上最多的是普通封装，功能比较齐全，可以任意修改，但在我看来这种方式只是把一些代码写到一起，比较散乱缺少统合，用的时候需要复制粘贴代码，不太算真正意义上的封装。
 
-像模版也像适配器。
+类封装也挺常见的，而我所使用的也即是类封装。类封装有个优点：可以通过继承复用方法，且替换原类方法或在原类方法上添加逻辑也很方便。
+
+装饰器封装比较少见，类似于`nestjs`那种使用方式，在类封装的基础上加上装饰器，不过这种方式有点局限性——只能在`ts`或构建环境中使用，不过如果你确定你的项目一定是在构建环境中写的话那也可以放心的使用。
+
+插件式封装也挺少见的了，这种方式拓展性很强，模块相对独立，我也写了插件式封装，不过总感觉有点使用起来不是很方便，便不了了之了，或许以后可以优化一下。
+
+hook式封装多见于`react`或`vue3`项目中，与框架和业务绑定较深，在`vue2`或原生微信小程序下就不好使用了，不过它与上面几个封装并不冲突，可以叠加使用。
 
 
 # `request-template`
 
-基于 `axios` 的请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展，配置可复用；
+`request-template`是一款可复用可扩展的请求封装库。
 
-这不是一个最终方案，不是说用了这个库就能什么都不用写了，但它能极大减少你的代码复杂度，提高代码的复用性，为你的最终方案提供支持；也方便移植。
+- 基于 `axios` 的请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展，配置可复用；
 
-配置相对来说会繁琐一点，但是之后使用和移植就会很方便了。
+- 它也像一个适配器：
+  - 不与框架绑定：你可以用 vue 写的请求，也能在 react 甚至小程序上使用；
+  - 也不与请求工具绑定：你可以用`axios`做为请求工具，也可以用`fetch`或`wx.request`；
 
-面向继承开放，面向使用关闭，封装但不封闭。
+- 这不是一个最终方案，不是说用了它就能什么都不用写了，但它能极大减少你的代码复杂度，提高代码的复用性，为你的最终方案提供支持；也方便移植。
 
-GitHub 地址：[https://github.com/mengxinssfd/request-template](https://github.com/mengxinssfd/request-template)
+它的配置可能相对来说会繁琐一点，但是之后修改和移植就会很方便了。
+
+
+GitHub：[https://github.com/mengxinssfd/request-template](https://github.com/mengxinssfd/request-template)
 
 欢迎 star、issue、pr
 
@@ -1285,6 +1300,229 @@ export function getTags() {
 其他层面如`api`层是完全不需要改的，调用方式也一样不需要改动;
 
 避免了环境一遍就需要到处查找更改。
+
+## hooks
+
+### useRequest
+
+添加文件`hooks/useRequest.ts`
+
+```plaintext
+src
+├── api
+|  ├── user.ts // 具体的api
+|  ├── tag.ts // 具体的api
+|  └── ....
+├── http
+|  ├─── primary // 主请求模板
+|  |   ├── index.ts // 请求模板
+|  |   ├── token.ts // token操作工具类
+|  |   └── statusHandlers.ts // 状态处理
+|  └─── other  // 其他规则模板
+|      ├── index.ts // 请求模板
+|      └── statusHandlers.ts // 状态处理
+└── hooks // 状态处理
+    ├─── useRequset
+```
+
+`hooks/useRequest.ts`
+
+```typescript
+import { reactive, toRefs, isReactive, watch, isRef } from 'vue';
+// import User from '@/api/User';
+
+type FN = (...args: any[]) => Promise<any>;
+
+interface State<T extends FN> {
+  loading: boolean;
+  data: Awaited<ReturnType<T>>['data'] | null;
+  error: any | null;
+}
+
+type Options<A extends string, D extends object | void = void> = D extends void
+  ? { requestAlias?: A; immediate?: boolean }
+  : {
+      immediate?: boolean;
+      data?: D;
+      dataDriver?: boolean;
+    };
+
+/**
+ * 请求hooks
+ *
+ * @example
+ *
+ * // 手动请求 request不带参数
+ * const res = useRequest(User.getSelf, { requestAlias: 'getSelf', immediate: true });
+ * res.getSelf();
+ * console.log(res.data.value?.user);
+ *
+ * const formModel = reactive({ username: '', password: '' });
+ *
+ * // 手动请求 request带参数
+ * const res2 = useRequest(User.login);
+ * res2.request(formModel);
+ * console.log(res2.data.value?.token);
+ *
+ * formModel.username = '1';
+ * formModel.password = '1';
+ *
+ * // 数据驱动
+ * const res3 = useRequest(User.login, {
+ *   data: formModel,
+ *   immediate: true,
+ *   dataDriver: true,
+ * });
+ * // res3.request(formModel); // error Property 'request' does not exist
+ * // 修改formModel自动触发请求
+ * formModel.username = '2';
+ * formModel.password = '2';
+ * console.log(res3.data.value?.token);
+ *
+ * @param  requestFn
+ * @param  options
+ * @param  defaultData
+ */
+export function useRequest<
+  REQ extends FN,
+  ALIAS extends string = 'request',
+  DATA extends object | void = void,
+>(
+  requestFn: REQ,
+  options: Options<ALIAS, DATA> = {} as any,
+  defaultData: Awaited<ReturnType<REQ>>['data'] | null = null,
+) {
+  const state = reactive<State<REQ>>({
+    loading: false,
+    data: defaultData,
+    error: null,
+  });
+
+  const refs = toRefs(state);
+
+  const request = (...args: any[]) => {
+    // computed变量不能JSON.stringfy
+    args = args.map((item) => (isRef(item) ? item.value : item));
+    state.loading = true;
+    requestFn(...args)
+      .then(
+        (res) => {
+          state.data = res.data;
+        },
+        (err) => (state.error = err),
+      )
+      .finally(() => {
+        state.loading = false;
+      });
+  };
+
+  const {
+    requestAlias = 'request',
+    immediate = false,
+    data,
+    dataDriver = false,
+  } = options as Options<ALIAS, {}> & Options<ALIAS>;
+
+  // 数据驱动
+  if (dataDriver && data && (isReactive(data) || isRef(data))) {
+    watch(
+      data,
+      (n) => {
+        request(n);
+      },
+      { deep: true },
+    );
+  }
+
+  if (immediate) {
+    request(data);
+  }
+
+  return {
+    ...refs,
+    // 数据驱动时as any一下还是能用的
+    [requestAlias]: request,
+  } as typeof refs &
+    (DATA extends void
+      ? { [k in keyof Record<ALIAS, void>]: (...args: Parameters<REQ>) => void }
+      : void);
+}
+```
+
+`useRequest`分为`数据驱动`和`普通请求`两种方式。如果你的请求是每次数据改动就请求，那么可以使用`数据驱动`，否则可以`立即`或`手动`请求
+
+### 使用useRequest
+获取文章列表。
+
+添加`api/article.ts`
+```typescript
+import type User from './User';
+import { Get } from '@/http/primary';
+
+export interface Article {
+  author: User;
+  categoryId: number;
+  content: string;
+  cover: string;
+  createAt: string;
+  description: string;
+  id: number;
+  status: number;
+  title: string;
+  updateAt: string;
+  viewCount: number;
+  commentLock: boolean;
+  commentCount?: number;
+
+  like: { count: number; checked: number };
+}
+
+export interface GetArticleListRes {
+  list: Article[];
+  count: number;
+}
+export function getArticleList(data: {}) {
+  return Get<GetArticleListRes>('/api/article', data, { cache: true });
+}
+```
+
+数据驱动：根据路由变化获取数据
+```html
+<script setup lang="ts">
+import { useRequest } from '@/hooks/useRequest';
+import { useRoute, useRouter } from 'vue-router';
+import { getArticleList } from '@/api/article';
+import { computed, watch } from 'vue';
+
+const route = useRoute();
+const router = useRouter();
+
+// pagination handler
+const onPageChange = (page: number) => {
+  const query: any = { ...route.query };
+  query.page = page;
+  router.replace({ path: route.path, query });
+};
+
+// 只要路由变化就会更新params
+const params = computed(() => {
+  const q = route.query;
+  return {
+    keyword: q.query || '',
+    sort: q.sort ? Number(q.sort) : 3,
+    category: q.cate ? Number(q.cate) : '',
+    tag: ((q.tag as string) || '').split(',').filter(Boolean).map(Number),
+    page: q.page ? Number(q.page) : 1,
+  };
+});
+
+// 会根据params变化自动请求列表数据，不需要再手动调用
+const { data, loading } = useRequest(getArticleList, { data: params });
+watch(loading, () => {
+  console.log(data.value?.list, data.value?.count);
+});
+</script>
+```
 
 # 结尾
 
