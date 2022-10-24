@@ -1,6 +1,5 @@
-import type { CustomConfig } from './types';
+import type { CustomConfig, Context, RetryContext } from './types';
 import type { AxiosInstance, AxiosStatic } from 'axios';
-import { Context, RetryContext } from './types';
 import { RequestTemplate } from './RequestTemplate';
 
 /**

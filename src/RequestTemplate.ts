@@ -6,6 +6,9 @@ import type {
   Configs,
   StatusHandlers,
   Tag,
+  Context,
+  CustomCacheConfig,
+  RetryContext,
 } from './types';
 import type {
   AxiosPromise,
@@ -16,7 +19,6 @@ import type {
   AxiosError,
 } from 'axios';
 import { Cache } from './Cache';
-import { Context, CustomCacheConfig, RetryContext } from './types';
 import { mergeObj } from './utils';
 import { Canceler } from './Canceler';
 
