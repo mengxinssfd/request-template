@@ -117,7 +117,7 @@ export interface Configs<CC extends CustomConfig = CustomConfig> {
 /**
  * @public
  */
-export interface Context<CC> extends Configs<CC> {
+export interface Context<CC extends CustomConfig> extends Configs<CC> {
   clearSet: Set<Function>;
   requestKey: string;
   retry?: (e: AxiosError<ResType<any>>) => AxiosPromise;
@@ -126,6 +126,6 @@ export interface Context<CC> extends Configs<CC> {
 /**
  * @public
  */
-export interface RetryContext<CC> extends Context<CC> {
+export interface RetryContext<CC extends CustomConfig> extends Context<CC> {
   isRetry?: boolean;
 }
