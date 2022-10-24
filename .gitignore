@@ -116,11 +116,5 @@ dist
 *.sw?
 
 
-# lock
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-
 types
 temp
