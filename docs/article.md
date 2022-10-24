@@ -1,31 +1,50 @@
 # 前言
 
-关于 axios 的封装不胜枚举。
+请求封装在网上很多，大致分为以下几种封装风格：
 
-但看上去大部分都是单独的函数：如单独的取消请求，缓存，自动带上 token 等等。
+- 普通封装
+- 类封装
+- 装饰器封装
+- 插件式封装
+- hook 式封装
 
-结构过于松散，不够封装，需要手动复制过来，过于麻烦，且一旦业务改了又得重写一堆；又或封装了但扩展性太低，无法根据业务调整而调整；复用性太低等等。
+网上最多的是普通封装，功能比较齐全，可以任意修改，但在我看来这种方式只是把一些代码写到一起，比较散乱缺少统合，用的时候需要复制粘贴代码，缺少基本盘，每次业务更改都会把封装给改一次，可能导致代码稳定性降低，无法避免修改核心代码。不太算真正意义上的封装。
 
-缺乏关于一整套完整的方案。
+类封装也挺常见的，而我所使用的也即是类封装。类封装有个优点：可以通过继承复用方法，且替换原类方法或在原类方法上添加逻辑也很方便，类似复制了一份快照，修改业务不会修改到核心代码。
+
+装饰器封装比较少见，类似于`nestjs`那种使用方式，在 api 层嵌套装饰器的方式添加数据，不过这种方式有点局限性——只能在`ts`或构建环境中使用，不过如果你确定你的项目一定是在构建环境中写的话那也可以放心的使用。
+
+插件式封装也挺少见的了，这种方式拓展性很强，模块相对独立，不过缺点也是独立，模块之间不好联系；而且使用时要导入一堆功能模块，较繁琐。我之前也写了插件式封装，使用起来感觉没类封装方便，便不了了之了，不过这种方式更加工程化一点，挺看好的，或许以后可以优化一下。
+
+hook 式封装多见于`react`或`vue3`项目中，与框架和业务绑定较深，在`vue2`或原生微信小程序下就不好使用了，不过它与上面几个封装并不冲突，可以叠加使用。
 
 # `request-template`
 
-针对以上问题，我实现了该库[`request-template`](https://github.com/mengxinssfd/request-template)。
+`request-template`是一款可复用可扩展的请求封装库。
 
-基于 `axios` 的请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展，配置可复用。
+- 基于 `axios` 的请求封装，该库使用模板方法模式实现，每一个步骤都可以被子类覆盖方便扩展，配置可复用；
+- 它也像一个适配器：
 
-你也可以使用`fetch`来请求，只需要重写使用到`axios`的关键步骤。
+  - 不与框架绑定：你可以用 vue 写的请求，也能在 react 甚至小程序上使用；
+  - 也不与请求工具绑定：你可以用`axios`做为请求工具，也可以用`fetch`或`wx.request`；
 
-这不是一个最终方案，不是说用了这个库就能什么都不用写了，但它能极大减少你的代码复杂度，提高代码的复用性，为你的最终方案提供支持。
+- 这不是一个最终方案，不是说用了它就能什么都不用写了，但它能极大减少你的代码复杂度，提高代码的复用性，为你的最终方案提供支持；也方便移植。
 
-面向继承开放，面向使用关闭，封装但不封闭。
+它的配置可能相对来说会繁琐一点，但是之后修改和移植就会很方便了。
 
-GitHub地址：[https://github.com/mengxinssfd/request-template](https://github.com/mengxinssfd/request-template)
+GitHub：[https://github.com/mengxinssfd/request-template](https://github.com/mengxinssfd/request-template)
 
 欢迎 star、issue、pr
 
 # 主要实现
 
+- [x] 多模块支持
+  - [x] `esm` 模块
+  - [x] `cjs` 模块
+- [x] 多环境支持
+  - [x] `浏览器`
+  - [x] `小程序`
+  - [x] `node`
 - [x] 开放式封装
   - [x] 对于继承扩展开放
   - [x] 对于使用时修改关闭
@@ -57,8 +76,11 @@ GitHub地址：[https://github.com/mengxinssfd/request-template](https://github.
   - [x] 延时重试
   - [x] 第一次重试立即启动（可选）
   - [x] 可中断重试
+- [x] 测试覆盖率 100%
 
-# 生命周期
+# 流程
+
+先看个流程图，让我们知道封装做了什么
 
 ```mermaid
 flowchart
@@ -88,10 +110,10 @@ request --> MergeConfig --> 使用缓存?
 
 
 请求成功? --> |是| 处理请求结果
-请求成功? --> |否| 请求被取消? --> |是| 清理该请求缓存 --> 结束retry --> 请求完成
-请求被取消? --> |否| retry?
+请求成功? --> |否| 接口error --> 请求被手动取消? --> |是| 清理该请求缓存 --> 结束retry --> 请求完成
+请求被手动取消? --> |否| retry?
 
-retry? --> |否| 处理请求结果
+retry? --> |否| 请求失败 --> 处理请求结果
 retry? --> |是| 添加清理钩子 --> 请求开始
 
 
@@ -105,7 +127,7 @@ retry? --> |是| 添加清理钩子 --> 请求开始
 
 # 安装
 
-可以使用`npm` `cnpm` `yarn` `pnpm`等方式安装，推荐使用`pnpm`安装减少`node_module`体积
+可以使用`npm` `cnpm` `yarn` `pnpm`等方式安装
 
 ```shell
 pnpm add request-template
@@ -118,7 +140,11 @@ pnpm add request-template
 这时约等于`axios({url})`
 
 ```ts
+import axios from 'axios';
 import { AxiosRequestTemplate } from 'request-template';
+
+// 从v1.0.0开始不再内置axios，需要把axios传进去
+AxiosRequestTemplate.useAxios(axios);
 // new一个实例
 const template = new AxiosRequestTemplate();
 
@@ -173,32 +199,34 @@ const res = await post<{ username: string; id: number }>({
 
 ![type-support.png](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/3aac24813ad044d686528a1ef5c6902c~tplv-k3u1fbpfcp-watermark.image?)
 
+自定义参数也支持范型约束以及提示，在此就不一一展示了
+
 ## 使用缓存
 
 命中缓存时，该次请求结果会直接从缓存中拿，不会发起新的请求，被取消的请求不会进入缓存
 
-注意：缓存时拿到请求结果最好深拷贝一下，否则可能会因为数据被前面操作而导致出问题；缓存不是银弹要注意场合使用。
+注意：缓存时拿到请求结果最好深拷贝一下，否则可能会因为数据被前面操作而导致出问题；缓存很好用但不是银弹要注意场合使用。
 
 ### 默认 5 秒内使用缓存
 
 ```ts
 // 代码复用自'零配置直接使用'
-export function login(data: { username: string; password: string }) {
+export function getGoodsList(params: {}) {
   // 5秒内都会是同样的数据
-  return post<{ token: string }>({ url: '/user/login', data }, { cache: true });
+  return get<{ list: Goods[]; total: number }>({ url: '/goods', params }, { cache: true });
 }
 ```
 
-注意：因避免使用过长的缓存时间，否则有内存溢出的风险。
+> 如果是多操作的列表数据型请求(类似电商的商品搜索，里面有很多类目可操作)，应避免使用过长的缓存时间，否则有内存溢出的风险(如果缓存时间过长且类目多、并长时间未命中缓存；容易命中的缓存不会有这种风险)。
 
 ### 自定义过期时间
 
 ```ts
 // 代码复用自'零配置直接使用'
-export function login(data: { username: string; password: string }) {
+export function getGoodsList(params: {}) {
   // timeout单位为毫秒
-  return post<{ token: string }>(
-    { url: '/user/login', data },
+  return get<{ list: Goods[]; total: number }>(
+    { url: '/goods', params },
     { cache: { timeout: 30 * 60 * 1000 } },
   );
 }
@@ -206,15 +234,19 @@ export function login(data: { username: string; password: string }) {
 
 ### 缓存失败请求
 
+一般很少会缓存失败请求
+
 ```ts
 // 代码复用自'零配置直接使用'
-export function login(data: { username: string; password: string }) {
-  return post<{ token: string }>(
-    { url: '/user/login', data },
+export function getGoodsList(params: {}) {
+  return get<{ list: Goods[]; total: number }>(
+    { url: '/goods', params },
     { cache: { timeout: 30 * 60 * 1000, failedReq: true } },
   );
 }
 ```
+
+这时候如果请求失败该请求也会被缓存，所以你上次请求失败接口返回什么错误信息，如果你不改数据再次命中缓存还是会提示一样的错误信息。
 
 ### 自定义缓存命中策略
 
@@ -307,7 +339,7 @@ try {
   await req;
 } catch (e: { message: string }) {
   // 会捕获该报错
-  // message: "test"
+  // message: "cancel message"
 }
 ```
 
@@ -318,6 +350,8 @@ try {
 还能取消正在执行中的失败重试
 
 ## 失败重试
+
+失败重试算是比较少用到的功能了，但是秉持着`我可以不用，你不能没有`的想法把这功能给内置了
 
 ### 重试
 
@@ -462,8 +496,6 @@ post({ url: '/test' }, { cache: true }).then((res) => {
 });
 ```
 
-
-
 > 全局`cache`有一个小技巧，可以先设置`{ timeout: 30 * 60 * 1000, enable: false }`，把`enable`设置为`false`，只设置`timeout`
 >
 > 然后请求时，把`cache`设置为`true`，那么就可以全局不使用缓存，只使用缓存时间，请求时只需要开启请求缓存功能就好了，简化了操作
@@ -581,6 +613,7 @@ get('/path', { page: 1 }, { cache: true }); // 实际url为 https://test.com/1/t
 import { ElLoading, ILoadingInstance } from 'element-plus';
 import { AxiosRequestTemplate, Context, CustomConfig } from 'request-template';
 
+// 扩展自定义配置，令api的时候有ts类型提示
 interface MyConfig extends CustomConfig {
   loading?: boolean;
 }
@@ -588,13 +621,14 @@ interface MyConfig extends CustomConfig {
 class RequestWithLoading<CC extends MyConfig = MyConfig> extends AxiosRequestTemplate<CC> {
   private loading?: ILoadingInstance;
 
+  // 调起loading
   protected beforeRequest(ctx: Context<CC>) {
     super.beforeRequest(ctx); // 复用基础模板逻辑
     if (ctx.customConfig.loading) {
       this.loading = ElLoading.service({ fullscreen: true });
     }
   }
-
+  // 关闭loading
   protected afterRequest(ctx) {
     super.afterRequest(ctx); // 复用基础模板逻辑
     // 加个定时器避免请求太快，loading一闪而过
@@ -624,6 +658,85 @@ get('/test', {}, { loading: false });
 > 需要注意的是，以服务的方式调用的全屏 Loading 是单例的。 若在前一个全屏 Loading 关闭前再次调用全屏 Loading，并不会创建一个新的 Loading 实例，而是返回现有全屏 Loading 的实例
 
 如果你的`loading`不是单例的，那么你需要自己处理一下多个`loading`存在可能导致的问题
+
+## 全局请求显示信息弹窗
+
+很多时候提交数据到服务器都需要显示操作是否成功的信息给用户，比如说创建文章，更新文章(当然不是所有的都是，比如掘金就是直接跳页面，视业务而定)，这时候直接写到 api 文件上就好了
+
+```ts
+import { AxiosRequestTemplate, Context, CustomConfig } from 'request-template';
+import { Method } from 'axios';
+import { statusHandlers } from './statusHandlers';
+
+// 扩展自定义配置
+export interface PrimaryCustomConfig extends CustomConfig {
+  showSuccessMsg?: boolean;
+  successMsg?: string;
+}
+
+export class PrimaryRequest<
+  CC extends PrimaryCustomConfig = PrimaryCustomConfig,
+> extends AxiosRequestTemplate<CC> {
+  static readonly ins = new PrimaryRequest();
+
+  private constructor() {
+    super({
+      requestConfig: { baseURL: import.meta.env.VITE_BASE_URL },
+      customConfig: {
+        statusHandlers,
+        showSuccessMsg: undefined,
+      } as CC,
+    });
+  }
+
+  protected beforeRequest(ctx: Context<CC>) {
+    // 复用基础模板逻辑
+    super.beforeRequest(ctx);
+
+    // 未设置showSuccessMsg时，且非get请求则全部显示请求成功信息
+    if (ctx.requestConfig.method !== 'get' && ctx.customConfig.showSuccessMsg === undefined) {
+      ctx.customConfig.showSuccessMsg = true;
+    }
+  }
+}
+export const [Get, Post, Patch, Delete] = PrimaryRequest.ins.methodsWithUrl(
+  ['get', 'post', 'patch', 'delete'],
+  '',
+);
+```
+
+在相应的成功 code 回调上写上处理
+
+```ts
+import { PrimaryCustomConfig } from '@/http/primary/index';
+import { HttpStatus, StatusHandler, StatusHandlers } from 'request-template';
+import { ElMessage } from 'element-plus';
+
+export const statusHandlers: StatusHandlers<PrimaryCustomConfig> = {
+  [HttpStatus.OK]: ({ customConfig }, res, data) => {
+    customConfig.showSuccessMsg &&
+      ElMessage({ type: 'success', message: customConfig.successMsg || data.msg });
+    return customConfig.returnRes ? res : data;
+  },
+  default: errorHandler,
+};
+```
+
+api 调用
+
+```ts
+// 更新文章
+export function updateArticle(articleId: number | string, data: {}) {
+  // 默认开启，也可以使用showSuccessMsg: false关闭
+  return Patch(`/${articleId}`, data, { successMsg: '更新成功' });
+}
+// 编辑文章
+export function createArticle(data: {}) {
+  return Post<{ articleId: number }>('', data, { showSuccessMsg: true, successMsg: '添加成功' });
+}
+```
+
+这样信息弹窗就不需要你写到你的 api 调用的组件上了，我只要数据，其他弹窗什么的我一概不管，不过比较复杂的场景还是需要关闭该弹窗而手动实现的
 
 ## 全局请求带上`token`
 
@@ -700,7 +813,7 @@ export class PrimaryRequest extends AxiosRequestTemplate {
 ## 页面频繁操作数据缓存
 
 > 比如在一个列表页面，可以选择分类以及标签，还有排序方式（其实就是我的博客 😄）。
-> 这些可操作区域可能会经常点来点去，但是其实数据不会刷新那么快，很容易产生冗余的数据，我们完全可以把数据缓存起来。
+> 这些可操作区域可能会经常点来点去，但是其实数据不会刷新那么快，很容易产生冗余的请求，我们完全可以把请求缓存起来，并阻止新请求发出。
 
 ```ts
 const req = new AxiosRequestTemplate();
@@ -712,13 +825,13 @@ export function getArticleList(params: { cate: number; tags: number[]; sort: num
 }
 ```
 
-然后只要`{url,headers,data,method}`这些参数是一样的话就不会发起请求了，而是直接从缓存中拿数据，不过按`f5`刷新的话还是会发起请求的。
+然后只要`{url,headers,data,method,params}`这些配置是一样的话就不会发起新请求了，而是直接从缓存中拿数据，不过按`f5`刷新的话还是会发起请求的。
 
-实现保存缓存到本地存储的功能也很简单，只要继承`AxiosRequestTemplate` `Cache`，并重写`Cache`的`getter` `setter`以及`AxiosRequestTemplate`的`init`方法就可以实现。
+如果要实现按`f5`也还是从缓存中取数据，实现请求缓存到本地存储的功能也很简单：只要继承`AxiosRequestTemplate` `Cache`，并重写`Cache`的`getter` `setter`以及`AxiosRequestTemplate`的`init`方法就可以实现。
 
 ## post 请求参数序列化
 
-> 有时候后端要求`Content-Type`必须以`application/x-www-form-urlencoded`形式，这时候我们需要处理一下`headers`和`data`Caz
+> 有时候后端要求`Content-Type`必须以`application/x-www-form-urlencoded`形式，这时候我们需要处理一下`headers`和`data`
 
 自定义模板
 
@@ -731,7 +844,7 @@ export default class MyTemplate extends AxiosRequestTemplate {
     if (!requestConfig.headers) requestConfig.headers = {};
     requestConfig.headers['Content-Type'] = 'application/x-www-form-urlencoded';
 
-    // qs序列化
+    // 使用qs序列化参数
     if (
       String(requestConfig.method).toLowerCase() === 'post' &&
       !(requestConfig.data instanceof FormData)
@@ -768,7 +881,7 @@ export default class MyTemplate extends AxiosRequestTemplate {
 }
 ```
 
-
+也可以用`requestMethod`或`use`来复用这些配置，具体要使用哪个需要视复用广度而定。
 
 ## 分页场景快速切换页码时中断请求
 
@@ -776,7 +889,7 @@ export default class MyTemplate extends AxiosRequestTemplate {
 
 这种场景挺常见的，跟上面的页面频繁操作类似，不过从缓存拿数据很快，用户点击不可能会比从缓存拿数据快。
 
-我们可以很简单的实现该功能
+这是属于前面请求数据作废场景，我们可以很简单的实现该功能
 
 ```ts
 const req = new AxiosRequestTemplate();
@@ -806,7 +919,7 @@ export function getXXList(p: number) {
 
 这个问题刚开始时看岔了，被 10 个请求误导了，以为 10 次以后就用失败的。
 
-仔细看后其实说起来还是缓存问题，就是失败的不缓存，有成功的就用成功的结果。
+仔细看后其实说起来还是缓存问题，就是失败的不缓存，有请求成功的就请求用成功的数据，并且请求成功后后续同类请求不再发出。
 
 跟我上面的缓存场景类似，直接用缓存功能就是
 
@@ -819,7 +932,7 @@ export function request() {
 }
 ```
 
-# 完整 demo
+# 完整用法
 
 这是我博客前台的`api`使用封装
 
@@ -827,14 +940,14 @@ export function request() {
 
 目录结构
 
-```text
+```plaintext
 src
 ├── api
 |  ├── user.ts // 具体的api
 |  ├── tag.ts // 具体的api
 |  └── ....
 ├── http
-|  ├─── primary // 主模板
+|  ├─── primary // 主请求模板
 |  |   ├── index.ts // 请求模板
 |  |   ├── token.ts // token操作工具类
 |  |   └── statusHandlers.ts // 状态处理
@@ -845,7 +958,16 @@ src
 
 ## 主模板封装
 
-### src/primary/token.ts
+此模版分3个部分：
+
+1. api封装模块（业务模块）
+2. 业务逻辑底层处理模块，底层处理又包含：
+   1. 请求模版处理（如通用loading，信息tan c等）
+   2. 通用token处理
+   3. 通用状态处理
+3. 以及实际调用
+
+### src/http/primary/token.ts
 
 `token`封装类
 
@@ -876,7 +998,7 @@ export class Token {
 }
 ```
 
-### src/primary/statusHandlers.ts
+### src/http/primary/statusHandlers.ts
 
 给用户提示错误信息，`token`的保存、清理、刷新等操作的通用处理
 
@@ -884,7 +1006,6 @@ export class Token {
 import { HttpStatus, StatusHandler, StatusHandlers, CustomConfig, Context } from 'request-template';
 import { ElMessage } from 'element-plus';
 import { Token } from './token';
-import Store from '@/store/index';
 
 // 通用错误Handler
 const commonErrorHandler: StatusHandler<CustomConfig> = ({ customConfig }, res, data) => {
@@ -896,19 +1017,17 @@ const commonErrorHandler: StatusHandler<CustomConfig> = ({ customConfig }, res, 
 export const statusHandlers: StatusHandlers = {
   //  401 token失效或者未登录
   [HttpStatus.UNAUTHORIZED]: (ctx, res, data) => {
-    // 从vuex或pinia中删除用户信息
-    // Store.commit('clearUser');
     Token.clear();
     return commonErrorHandler(ctx, res, data);
   },
   // token刷新时
   207: ({ customConfig }, res, data) => {
     data.data.token && Token.set(data.data.token);
-    return customConfig.returnRes ? res : data;
   },
   // 200 普通成功请求
   [HttpStatus.OK]: ({ customConfig }, res, data) => {
-    return customConfig.returnRes ? res : data;
+    customConfig.showSuccessMsg &&
+    ElMessage({ type: 'success', message: customConfig.successMsg || data.msg });
   },
   // ...
   // 其余状态全部走错误处理
@@ -916,7 +1035,7 @@ export const statusHandlers: StatusHandlers = {
 };
 ```
 
-### src/primary/index.ts
+### src/http/primary/index.ts
 
 实现自定义请求模板，添加全局`loading`、`token`、`uuid`等, 并生成`Get`、`Post`、`Patch`、`Delete`等常用`method`
 
@@ -929,7 +1048,7 @@ import { Method } from 'axios';
 
 let uuid = localStorage.getItem('uuid');
 
-// 扩展自定义配置
+// 扩展自定义配置，令api使用的时候有ts类型提示
 interface LoadingCustomConfig extends CustomConfig {
   loading?: boolean;
 }
@@ -1095,3 +1214,324 @@ export function getTags() {
   return Get<Tag[]>(url);
 }
 ```
+
+## 在微信小程序中使用
+
+在微信小程序中使用也很简单，只要以下几个步骤
+
+1. 安装依赖（`npm install request-template`）
+2. 使用开发者工具的`构建npm`功能
+3. 修改`primary.ts`并重写部分方法
+
+   ```ts
+   export class PrimaryRequest<
+     CC extends PrimaryCustomConfig = PrimaryCustomConfig,
+   > extends AxiosRequestTemplate<CC> {
+     // ...
+
+     // 覆盖原有的方法
+     protected init() {
+       this.cache = new Cache();
+     }
+
+     // 使用小程序的取消请求判断逻辑
+     protected isCancel(value: any) {
+       return value?.errMsg === 'request:fail abort';
+     }
+
+     // 使用小程序的请求方法
+     protected fetch(ctx) {
+       const baseConfig = this.globalConfigs.requestConfig;
+       const config = ctx.requestConfig;
+
+       // 转换成小程序的请求配置
+       const method = config.method || baseConfig.method;
+       return new Promise((resolve, reject) => {
+         const task = wx.request({
+           url: (config.baseURL || baseConfig.baseURL) + (config.url || baseConfig.url),
+           method,
+           data:
+             method === 'get'
+               ? { ...baseConfig.params, ...config.params }
+               : { ...baseConfig.data, ...config.data },
+           header: { ...baseConfig.headers, ...config.headers },
+           success: resolve,
+           fail: reject,
+         });
+         // 注册取消事件
+         this.registerCanceler(ctx, task.abort.bind(task));
+       }) as any;
+     }
+
+     // 覆盖原来的方法
+     // eslint-disable-next-line
+     protected handleCanceler(_ctx) {}
+
+     // ...
+   }
+   ```
+
+4. `token.ts`重写`token`的`get` `set`
+
+   ```ts
+   export class Token {
+     private static KEY = 'token';
+   
+     static set key(key: string) {
+       Token.KEY = key;
+     }
+     static get key(): string {
+       return Token.KEY;
+     }
+   
+     static get(): string {
+       return wx.getStorageSync(Token.KEY) || '';
+     }
+     static set(token: string) {
+       wx.setStorageSync(Token.KEY, token);
+     }
+   
+     static clear() {
+       wx.removeStorageSync(Token.KEY);
+     }
+     static exists(): boolean {
+       return !!Token.get();
+     }
+   }
+   ```
+
+其他层面如`api`层是完全不需要改的，调用方式也一样不需要改动;
+
+避免了环境一遍就需要到处查找更改。
+
+## hooks
+
+### useRequest
+
+添加文件`hooks/useRequest.ts`
+
+```plaintext
+src
+├── api
+|  ├── user.ts // 具体的api
+|  ├── tag.ts // 具体的api
+|  └── ....
+├── http
+|  ├─── primary // 主请求模板
+|  |   ├── index.ts // 请求模板
+|  |   ├── token.ts // token操作工具类
+|  |   └── statusHandlers.ts // 状态处理
+|  └─── other  // 其他规则模板
+|      ├── index.ts // 请求模板
+|      └── statusHandlers.ts // 状态处理
+└── hooks // 状态处理
+    ├─── useRequset
+```
+
+`hooks/useRequest.ts`
+
+```typescript
+import { reactive, toRefs, isReactive, watch, isRef } from 'vue';
+// import User from '@/api/User';
+
+type FN = (...args: any[]) => Promise<any>;
+
+interface State<T extends FN, D extends any, TD = Awaited<ReturnType<T>>['data']> {
+  loading: boolean;
+  data: D extends TD ? TD : TD | null;
+  error: any | null;
+}
+
+type Options<A extends string, D extends object | void = void> = D extends void
+  ? { requestAlias?: A; immediate?: boolean }
+  : {
+      immediate?: boolean;
+      data?: D;
+      dataDriver?: boolean;
+    };
+
+/**
+ * 请求hooks
+ *
+ * @example
+ *
+ * // 手动请求 request不带参数
+ * const res = useRequest(User.getSelf, { requestAlias: 'getSelf', immediate: true });
+ * res.getSelf();
+ * console.log(res.data.value?.user);
+ *
+ * const formModel = reactive({ username: '', password: '' });
+ *
+ * // 手动请求 request带参数
+ * const res2 = useRequest(User.login);
+ * res2.request(formModel);
+ * console.log(res2.data.value?.token);
+ *
+ * formModel.username = '1';
+ * formModel.password = '1';
+ *
+ * // 数据驱动
+ * const res3 = useRequest(User.login, {
+ *   data: formModel,
+ *   immediate: true,
+ *   dataDriver: true,
+ * });
+ * // res3.request(formModel); // error Property 'request' does not exist
+ * // 修改formModel自动触发请求
+ * formModel.username = '2';
+ * formModel.password = '2';
+ * console.log(res3.data.value?.token);
+ *
+ * @param  requestFn
+ * @param  options
+ * @param  defaultData
+ */
+export function useRequest<
+  REQ extends FN,
+  ALIAS extends string = 'request',
+  DATA extends object | void = void,
+  DF extends Awaited<ReturnType<REQ>>['data'] | null = null,
+>(requestFn: REQ, options: Options<ALIAS, DATA> = {} as any, defaultData: DF = null as DF) {
+  const state = reactive<State<REQ, DF>>({
+    loading: false,
+    data: defaultData,
+    error: null,
+  });
+
+  const refs = toRefs(state);
+
+  const request = (...args: any[]) => {
+    // computed变量不能JSON.stringfy
+    args = args.map((item) => (isRef(item) ? item.value : item));
+    state.loading = true;
+    requestFn(...args)
+      .then(
+        (res) => {
+          state.data = res.data;
+        },
+        (err) => (state.error = err),
+      )
+      .finally(() => {
+        state.loading = false;
+      });
+  };
+
+  const {
+    requestAlias = 'request',
+    immediate = false,
+    data,
+    dataDriver = false,
+  } = options as Options<ALIAS, {}> & Options<ALIAS>;
+
+  // 数据驱动
+  if (dataDriver && data && (isReactive(data) || isRef(data))) {
+    watch(
+      data,
+      (n) => {
+        request(n);
+      },
+      { deep: true },
+    );
+  }
+
+  if (immediate) {
+    request(data);
+  }
+
+  return {
+    ...refs,
+    // 数据驱动时as any一下还是能用的
+    [requestAlias]: request,
+  } as typeof refs &
+    (DATA extends void
+      ? { [k in keyof Record<ALIAS, void>]: (...args: Parameters<REQ>) => void }
+      : void);
+}
+```
+
+`useRequest`分为`数据驱动`和`普通请求`两种方式。如果你的请求是每次数据改动就请求，那么可以使用`数据驱动`，否则可以`立即`或`手动`请求
+
+### 使用 useRequest
+
+获取文章列表。
+
+添加`api/article.ts`
+
+```typescript
+import type User from './User';
+import { Get } from '@/http/primary';
+
+export interface Article {
+  author: User;
+  categoryId: number;
+  content: string;
+  cover: string;
+  createAt: string;
+  description: string;
+  id: number;
+  status: number;
+  title: string;
+  updateAt: string;
+  viewCount: number;
+  commentLock: boolean;
+  commentCount?: number;
+
+  like: { count: number; checked: number };
+}
+
+export interface GetArticleListRes {
+  list: Article[];
+  count: number;
+}
+export function getArticleList(data: {}) {
+  return Get<GetArticleListRes>('/api/article', data, { cache: true });
+}
+```
+
+数据驱动：根据路由变化获取数据
+
+```html
+<script setup lang="ts">
+  import { useRequest } from '@/hooks/useRequest';
+  import { useRoute, useRouter } from 'vue-router';
+  import { getArticleList } from '@/api/article';
+  import { computed, watch } from 'vue';
+
+  const route = useRoute();
+  const router = useRouter();
+
+  // pagination handler
+  const onPageChange = (page: number) => {
+    const query: any = { ...route.query };
+    query.page = page;
+    router.replace({ path: route.path, query });
+  };
+
+  // 只要路由变化就会更新params
+  const params = computed(() => {
+    const q = route.query;
+    return {
+      keyword: q.query || '',
+      sort: q.sort ? Number(q.sort) : 3,
+      category: q.cate ? Number(q.cate) : '',
+      tag: ((q.tag as string) || '').split(',').filter(Boolean).map(Number),
+      page: q.page ? Number(q.page) : 1,
+    };
+  });
+
+  // 会根据params变化自动请求列表数据，不需要再手动调用
+  const { data, loading } = useRequest(getArticleList, {
+    data: params,
+    dataDriver: true,
+    immediate: true,
+  });
+  watch(loading, () => {
+    console.log(data.value?.list, data.value?.count);
+  });
+</script>
+```
+
+# 结尾
+
+如果有错欢迎指出...
+如果文章、库对你有帮助，那么请记得点赞或 [star](https://github.com/mengxinssfd/request-template) 哦 😬
