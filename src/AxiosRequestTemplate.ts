@@ -121,12 +121,16 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   protected registerCanceler(ctx: Context<CC>, canceler: Canceler) {
     const { customConfig, clearSet } = ctx;
     const tag = customConfig.tag;
-    // 设置tag取消
+
+    // 设置 通过tag取消
     if (tag) {
+      // 初始化tag Map
       if (!this.tagCancelMap.has(tag)) {
         this.tagCancelMap.set(tag, []);
       }
       (this.tagCancelMap.get(tag) as Canceler[]).push(canceler);
+
+      // 添加 取消时顺便取消掉tag Map
       clearSet.add(() => {
         const cancelers = this.tagCancelMap.get(tag);
         if (!cancelers || !cancelers.length) return;
@@ -142,8 +146,9 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       this.cancelerSet.delete(canceler);
     };
     clearSet.add(clearCanceler);
-    // 取消
-    // 注意：对于retry的无效，无法判断时机
+
+    // 取消当前请求
+    // 注意：请求多的时候无法判断取消的就是你要取消的请求
     this.cancelCurrentRequest = (msg) => {
       canceler(msg);
       clearCanceler();
@@ -291,7 +296,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
    */
   protected handleRetry(ctx: Context<CC>) {
     // 太长了  以后可优化
-    const { customConfig, clearSet } = ctx;
+    const { customConfig } = ctx;
     const retryConfig = customConfig.retry as RetryConfig;
 
     if (retryConfig.times === undefined || retryConfig.times < 1) return;
@@ -305,11 +310,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
       reject();
     };
 
-    if (customConfig.tag) {
-      this.tagCancelMap.get(customConfig.tag)?.push(stop);
-    }
-    this.cancelerSet.add(stop);
-    clearSet.add(stop);
+    this.registerCanceler(ctx, stop);
 
     ctx.retry = (e: AxiosError<ResType<any>>) => {
       return new Promise((res, rej) => {
