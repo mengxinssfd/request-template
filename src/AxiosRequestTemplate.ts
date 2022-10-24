@@ -13,13 +13,14 @@ import type {
   AxiosRequestConfig,
   AxiosResponse,
   Method,
-  Canceler,
+  Canceler as AxiosCanceler,
   AxiosError,
   AxiosStatic,
 } from 'axios';
 import { Cache } from './Cache';
 import { Context, CustomCacheConfig, RetryContext } from './types';
 import { mergeObj } from './utils';
+import { Canceler } from './Canceler';
 
 /**
  * @public
@@ -51,19 +52,7 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
    */
   protected globalConfigs!: Configs<CC>;
 
-  /**
-   * cancel函数缓存
-   */
-  protected readonly cancelerSet = new Set<Canceler>();
-  /**
-   * tag cancel函数缓存
-   */
-  protected readonly tagCancelMap = new Map<CustomConfig['tag'], Canceler[]>();
-
-  /**
-   * 取消当前请求
-   */
-  cancelCurrentRequest?: Canceler;
+  protected cancelerManager!: Canceler;
 
   constructor(globalConfigs: Partial<Configs<CC>> = {}) {
     this.globalConfigs = { customConfig: {} as CC, requestConfig: {}, ...globalConfigs };
@@ -79,6 +68,8 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
     this.axiosIns = AxiosRequestTemplate.axios.create(this.globalConfigs.requestConfig);
     // 2、缓存初始化
     this.cache = new Cache();
+    // 3、初始化Canceler
+    this.cancelerManager = new Canceler<CustomConfig>();
   }
 
   /**
@@ -118,41 +109,8 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
   /**
    * 注册canceler
    */
-  protected registerCanceler(ctx: Context<CC>, canceler: Canceler) {
-    const { customConfig, clearSet } = ctx;
-    const tag = customConfig.tag;
-
-    // 设置 通过tag取消
-    if (tag) {
-      // 初始化tag Map
-      if (!this.tagCancelMap.has(tag)) {
-        this.tagCancelMap.set(tag, []);
-      }
-      (this.tagCancelMap.get(tag) as Canceler[]).push(canceler);
-
-      // 添加 取消时顺便取消掉tag Map
-      clearSet.add(() => {
-        const cancelers = this.tagCancelMap.get(tag);
-        if (!cancelers || !cancelers.length) return;
-        const index = cancelers.indexOf(canceler);
-        cancelers.splice(index, 1);
-      });
-    }
-
-    // 设置取消
-    this.cancelerSet.add(canceler);
-    // 清理取消
-    const clearCanceler = () => {
-      this.cancelerSet.delete(canceler);
-    };
-    clearSet.add(clearCanceler);
-
-    // 取消当前请求
-    // 注意：请求多的时候无法判断取消的就是你要取消的请求
-    this.cancelCurrentRequest = (msg) => {
-      canceler(msg);
-      clearCanceler();
-    };
+  protected registerCanceler(ctx: Context<CC>, canceler: AxiosCanceler) {
+    this.cancelerManager.register(ctx, canceler);
   }
 
   /**
@@ -448,25 +406,18 @@ export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
    * 取消所有请求
    */
   cancelAll(msg?: string) {
-    this.cancelerSet.forEach((canceler) => {
-      canceler(msg);
-    });
-    this.cancelerSet.clear();
-    this.tagCancelMap.clear();
+    this.cancelerManager.cancelAll(msg);
   }
 
   /**
    * 根据tag标签取消请求
    */
   cancelWithTag(tag: CustomConfig['tag'], msg?: string) {
-    const cancelers = this.tagCancelMap.get(tag);
-    if (!cancelers) return;
-    cancelers.forEach((canceler) => {
-      canceler(msg);
-      this.cancelerSet.delete(canceler);
-    });
+    this.cancelerManager.cancelWithTag(tag, msg);
+  }
 
-    this.tagCancelMap.delete(tag);
+  get cancelCurrentRequest() {
+    return this.cancelerManager.cancelCurrentRequest;
   }
 
   /**
