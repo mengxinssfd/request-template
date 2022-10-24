@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // jest必须要明确的版本，否则类继承结果会不符合预期
+    // 像esnext就不行
+    "target": "es2021"
+  },
+}
