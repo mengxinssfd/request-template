@@ -22,7 +22,7 @@ import { Canceler } from './Canceler';
 
 /**
  * @public
- * 使用模板方法模式处理axios请求, 具体类可实现protected的方法替换掉原有方法
+ * 使用模板方法模式处理请求封装抽象类, 具体类可实现protected的方法替换掉原有方法，需要实现抽象方法
  * 自定义配置可继承CustomConfig实现
  */
 export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
