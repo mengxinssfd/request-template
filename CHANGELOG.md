@@ -1,3 +1,12 @@
+# [1.0.0-beta.11](https://github.com/mengxinssfd/request-template/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2022-10-24)
+
+
+### Features
+
+* 从AxiosRequestTemplate类中抽象出RequestTemplate类，以后非axios可以直接继承实现RequestTemplate ([e66947f](https://github.com/mengxinssfd/request-template/commit/e66947f4d55e38c160f03c5962e303d02a5a7fbc))
+
+
+
 # [1.0.0-beta.10](https://github.com/mengxinssfd/request-template/compare/v1.0.0-beta.9...v1.0.0-beta.10) (2022-08-16)
 
 

@@ -7,64 +7,29 @@
 import { AxiosError } from 'axios';
 import type { AxiosInstance } from 'axios';
 import { AxiosInterceptorManager } from 'axios';
-import type { AxiosPromise } from 'axios';
-import type { AxiosRequestConfig } from 'axios';
-import type { AxiosResponse } from 'axios';
+import { AxiosPromise } from 'axios';
+import { AxiosRequestConfig } from 'axios';
+import { AxiosResponse } from 'axios';
 import type { AxiosStatic } from 'axios';
-import type { Canceler } from 'axios';
+import type { Canceler as Canceler_2 } from 'axios';
 import type { Method } from 'axios';
 
 // @public
-export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> {
-    constructor(globalConfigs?: Partial<Configs<CC>>);
-    protected afterRequest(ctx: Context<CC>): void;
+export class AxiosRequestTemplate<CC extends CustomConfig = CustomConfig> extends RequestTemplate<CC> {
     // (undocumented)
     protected static axios: AxiosStatic;
     protected axiosIns: AxiosInstance;
-    protected beforeExecRequest(ctx: Context<CC>): void;
-    protected beforeRequest(ctx: Context<CC>): void;
-    protected cache: Cache_2<AxiosPromise>;
-    cancelAll(msg?: string): void;
-    cancelCurrentRequest?: Canceler;
-    protected readonly cancelerSet: Set<Canceler>;
-    cancelWithTag(tag: CustomConfig['tag'], msg?: string): void;
-    clearCache(): void;
-    deleteCacheByTag(tag: Tag): void;
-    protected execRequest(ctx: RetryContext<CC>): Promise<any>;
     protected fetch(ctx: RetryContext<CC>): AxiosPromise<any>;
-    protected generateContext(customConfig: CC, requestConfig: AxiosRequestConfig): Context<CC>;
-    protected generateRequestKey(ctx: Omit<Context<CC>, 'requestKey'>): string;
-    protected globalConfigs: Configs<CC>;
     protected handleCanceler(ctx: Context<CC>): void;
-    protected handleCustomConfig(customConfig: CC): CC;
-    protected handleError(ctx: Context<CC>, e: AxiosError<ResType<any>>): Promise<any> | ResType<any> | AxiosResponse<ResType<any>, any>;
-    protected handleRequestConfig(requestConfig: AxiosRequestConfig): AxiosRequestConfig;
-    protected handleResponse<T>(ctx: Context<CC>, response: AxiosResponse): ResType<T>;
-    protected handleRetry(ctx: Context<CC>): void;
-    protected handleStatus(ctx: Context<CC>, response: AxiosResponse<ResType<any>>, data: ResType<any>): Promise<any> | AxiosResponse<ResType<any>> | ResType<any>;
+    // (undocumented)
     protected init(): void;
     protected get interceptors(): {
         request: AxiosInterceptorManager<AxiosRequestConfig<any>>;
         response: AxiosInterceptorManager<AxiosResponse<any, any>>;
     };
     protected isCancel(value: any): boolean;
-    protected mergeCacheConfig(cacheConfig: CustomConfig['cache']): CustomCacheConfig;
-    protected mergeRetryConfig(retryConfig: CustomConfig['retry']): RetryConfig;
-    methodFactory(method: Method, handler?: (configs: Configs) => void): <T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url' | 'method'> & {
-        url: string;
-    }, customConfig?: DynamicCustomConfig<CC, RC> | undefined) => Promise<RC extends true ? AxiosResponse<ResType<T>, any> : ResType<T>>;
-    protected registerCanceler(ctx: Context<CC>, canceler: Canceler): void;
-    request<T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & {
-        url: string;
-    }, customConfig?: DynamicCustomConfig<CC, RC>): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
     protected setInterceptors(): void;
-    simplifyMethodFactory(method: Method, urlPrefix?: string): <T = never, RC extends boolean = false>(url: string, data?: {}, customConfig?: DynamicCustomConfig<CC, RC>) => Promise<RC extends true ? AxiosResponse<ResType<T>, any> : ResType<T>>;
-    protected readonly tagCancelMap: Map<Tag | undefined, Canceler[]>;
-    use(configs: Partial<Configs<CC>>): <T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & {
-        url: string;
-    }, customConfig?: DynamicCustomConfig<CC, RC> | undefined) => Promise<ResType<T>>;
     static useAxios(axios: AxiosStatic): void;
-    protected useCache(ctx: Context<CC>, request: () => Promise<any>): Promise<any>;
 }
 
 // @public (undocumented)
@@ -103,6 +68,17 @@ class Cache_2<V> {
 export { Cache_2 as Cache }
 
 // @public (undocumented)
+export class Canceler<CC extends CustomConfig = CustomConfig> {
+    cancelAll(msg?: string): void;
+    // (undocumented)
+    cancelCurrentRequest?: Canceler_2;
+    protected readonly cancelerSet: Set<Canceler_2>;
+    cancelWithTag(tag: CustomConfig['tag'], msg?: string): void;
+    register(ctx: Context<CC>, canceler: Canceler_2): void;
+    protected readonly tagCancelMap: Map<Tag | undefined, Canceler_2[]>;
+}
+
+// @public (undocumented)
 export interface Configs<CC extends CustomConfig = CustomConfig> {
     // (undocumented)
     customConfig: CC;
@@ -111,7 +87,7 @@ export interface Configs<CC extends CustomConfig = CustomConfig> {
 }
 
 // @public (undocumented)
-export interface Context<CC> extends Configs<CC> {
+export interface Context<CC extends CustomConfig> extends Configs<CC> {
     // (undocumented)
     clearSet: Set<Function>;
     // (undocumented)
@@ -243,6 +219,51 @@ export enum HttpStatus {
     URI_TOO_LONG = 414
 }
 
+// @public
+export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
+    constructor(globalConfigs?: Partial<Configs<CC>>);
+    protected afterRequest(ctx: Context<CC>): void;
+    protected beforeExecRequest(ctx: Context<CC>): void;
+    protected beforeRequest(ctx: Context<CC>): void;
+    protected cache: Cache_2<AxiosPromise>;
+    cancelAll(msg?: string): void;
+    // (undocumented)
+    get cancelCurrentRequest(): Canceler_2 | undefined;
+    // (undocumented)
+    protected cancelerManager: Canceler;
+    cancelWithTag(tag: CustomConfig['tag'], msg?: string): void;
+    clearCache(): void;
+    deleteCacheByTag(tag: Tag): void;
+    protected execRequest(ctx: RetryContext<CC>): Promise<any>;
+    protected abstract fetch(ctx: RetryContext<CC>): Promise<any>;
+    protected generateContext(customConfig: CC, requestConfig: AxiosRequestConfig): Context<CC>;
+    protected generateRequestKey(ctx: Omit<Context<CC>, 'requestKey'>): string;
+    protected globalConfigs: Configs<CC>;
+    protected abstract handleCanceler(ctx: Context<CC>): void;
+    protected handleCustomConfig(customConfig: CC): CC;
+    protected handleError(ctx: Context<CC>, e: AxiosError<ResType<any>>): Promise<any> | ResType<any> | AxiosResponse<ResType<any>, any>;
+    protected handleRequestConfig(requestConfig: AxiosRequestConfig): AxiosRequestConfig;
+    protected handleResponse<T>(ctx: Context<CC>, response: AxiosResponse): ResType<T>;
+    protected handleRetry(ctx: Context<CC>): void;
+    protected handleStatus(ctx: Context<CC>, response: AxiosResponse<ResType<any>>, data: ResType<any>): Promise<any> | AxiosResponse<ResType<any>> | ResType<any>;
+    protected init(): void;
+    protected abstract isCancel(value: any): boolean;
+    protected mergeCacheConfig(cacheConfig: CustomConfig['cache']): CustomCacheConfig;
+    protected mergeRetryConfig(retryConfig: CustomConfig['retry']): RetryConfig;
+    methodFactory(method: Method, handler?: (configs: Configs) => void): <T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url' | 'method'> & {
+        url: string;
+    }, customConfig?: DynamicCustomConfig<CC, RC> | undefined) => Promise<RC extends true ? AxiosResponse<ResType<T>, any> : ResType<T>>;
+    protected registerCanceler(ctx: Context<CC>, canceler: Canceler_2): void;
+    request<T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & {
+        url: string;
+    }, customConfig?: DynamicCustomConfig<CC, RC>): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
+    simplifyMethodFactory(method: Method, urlPrefix?: string): <T = never, RC extends boolean = false>(url: string, data?: {}, customConfig?: DynamicCustomConfig<CC, RC>) => Promise<RC extends true ? AxiosResponse<ResType<T>, any> : ResType<T>>;
+    use(configs: Partial<Configs<CC>>): <T = never, RC extends boolean = false>(requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & {
+        url: string;
+    }, customConfig?: DynamicCustomConfig<CC, RC> | undefined) => Promise<ResType<T>>;
+    protected useCache(ctx: Context<CC>, request: () => Promise<any>): Promise<any>;
+}
+
 // @public (undocumented)
 export interface ResType<T = never> {
     // (undocumented)
@@ -261,7 +282,7 @@ export interface RetryConfig {
 }
 
 // @public (undocumented)
-export interface RetryContext<CC> extends Context<CC> {
+export interface RetryContext<CC extends CustomConfig> extends Context<CC> {
     // (undocumented)
     isRetry?: boolean;
 }
