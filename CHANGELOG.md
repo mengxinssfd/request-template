@@ -1,3 +1,13 @@
+# [1.0.0-beta.13](https://github.com/mengxinssfd/request-template/compare/v1.0.0-beta.12...v1.0.0-beta.13) (2022-10-27)
+
+
+### Features
+
+* **AxiosRequestTemplate:** useAxios内'AxiosRequestTemplate.axios = axios;'改为'this.axios = axios;'也就是说子类也可以设置axios能够覆盖父类的axios，init时如果检测到未传入axios将抛出错误 ([ad0f9dd](https://github.com/mengxinssfd/request-template/commit/ad0f9dd921ef014eb4445de258e0494ba09819fd))
+* peerDependencies axios ([48f872c](https://github.com/mengxinssfd/request-template/commit/48f872cdac8ebec1c4c913437507b7b56c48e66e))
+
+
+
 # [1.0.0-beta.12](https://github.com/mengxinssfd/request-template/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2022-10-27)
 
 
