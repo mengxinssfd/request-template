@@ -16,7 +16,7 @@ export class AxiosRequestTemplate<
    * 用axios作为请求工具时必须调用该方法
    */
   static useAxios(axios: AxiosStatic) {
-    AxiosRequestTemplate.axios = axios;
+    this.axios = axios;
   }
 
   /**
@@ -25,8 +25,14 @@ export class AxiosRequestTemplate<
   protected axiosIns!: AxiosInstance;
 
   protected init() {
+    const proto = Object.getPrototypeOf(this).constructor;
+    const axios = proto.axios;
+    if (!axios || typeof axios.create !== 'function') {
+      throw new Error('使用前必须先传入axios，调用useAxios(axios)');
+    }
+
     // 1、保存基础配置
-    this.axiosIns = AxiosRequestTemplate.axios.create(this.globalConfigs.requestConfig);
+    this.axiosIns = axios.create(this.globalConfigs.requestConfig);
     super.init();
     this.setInterceptors();
   }
@@ -35,7 +41,7 @@ export class AxiosRequestTemplate<
    * 获取拦截器
    */
   protected get interceptors() {
-    return this.axiosIns?.interceptors;
+    return this.axiosIns.interceptors;
   }
 
   /**
