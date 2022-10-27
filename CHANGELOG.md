@@ -1,3 +1,7 @@
+# [1.0.0-beta.12](https://github.com/mengxinssfd/request-template/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2022-10-27)
+
+
+
 # [1.0.0-beta.11](https://github.com/mengxinssfd/request-template/compare/v1.0.0-beta.10...v1.0.0-beta.11) (2022-10-24)
 
 
