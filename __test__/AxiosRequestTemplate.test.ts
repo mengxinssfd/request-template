@@ -43,6 +43,26 @@ describe('AxiosRequestTemplate', () => {
   const get = req.methodFactory('get');
   const post = req.methodFactory('post');
 
+  test('useAxios throw', () => {
+    expect.assertions(2);
+    class ART<CC extends CustomConfig> extends AxiosRequestTemplate<CC> {}
+    ART.useAxios(null as any);
+    expect(() => {
+      new ART<CustomConfig>({
+        requestConfig: { baseURL: '/' },
+        customConfig: {},
+      });
+    }).toThrow();
+
+    ART.useAxios({} as any);
+    expect(() => {
+      new ART<CustomConfig>({
+        requestConfig: { baseURL: '/' },
+        customConfig: {},
+      });
+    }).toThrow();
+  });
+
   test('base', async () => {
     expect.assertions(4);
     // console.log((axios.create({ url: 'test' }) as any)(1, 2, 3), Req);
