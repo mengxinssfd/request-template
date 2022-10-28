@@ -2,37 +2,97 @@ const path = require('path');
 const fs = require('fs');
 const pkg = require('../package.json');
 const { prompt } = require('enquirer');
+const execa = require('execa');
 const semver = require('semver');
 const chalk = require('chalk');
-const { bin, root, exec } = require('./utils');
-const build = require('./build');
 
 const args = require('minimist')(process.argv.slice(2));
 
 const npmTool = 'pnpm';
-const pkgPath = root('package.json');
 
+const bin = (name) => path.resolve(__dirname, '../node_modules/.bin/' + name);
 const step = (msg) => console.log(chalk.cyan(msg));
 
+/**
+ * @param {string} bin
+ * @param {string[]} args
+ * @param {{}} opts
+ */
+const exec = (
+  bin,
+  args,
+  opts = {
+    /*execPath: path.resolve(__dirname, '../')*/
+  },
+) => execa(bin, args, { stdio: 'inherit', ...opts });
+
+const getPkgPath = (pkg) => path.resolve(__dirname, `../packages/${pkg}`);
 const actions = {
-  lintCheck: () => exec(npmTool, ['lint-check']),
+  lintCheck: () => exec(npmTool, ['lint']),
   jestCheck: () => exec(bin('jest'), ['--no-cache']),
-  build: () => build(),
-  updateVersion(version) {
-    const pkgPath = path.resolve(__dirname, `../package.json`);
-    const file = fs.readFileSync(pkgPath).toString();
-    const json = JSON.parse(file);
-    json.version = version;
-    fs.writeFileSync(pkgPath, JSON.stringify(json, null, 2));
+  build: () => exec(npmTool, ['build']),
+  updateVersions(pkgs, version) {
+    function updateDeps(json, depType, version) {
+      const dep = json[depType];
+      for (const k in dep) {
+        if (k.startsWith('@mxssfd')) {
+          console.log(chalk.yellow(`${json.name} -> ${depType} -> ${k}@${version}`));
+          dep[k] = version;
+        }
+      }
+    }
+    function updatePackage(pkgPath, version) {
+      const file = fs.readFileSync(pkgPath).toString();
+      const json = JSON.parse(file);
+      json.version = version;
+      updateDeps(json, 'devDependencies', version);
+      updateDeps(json, 'dependencies', version);
+      updateDeps(json, 'peerDependencies', version);
+      fs.writeFileSync(pkgPath, JSON.stringify(json, null, 2));
+    }
+    for (const pkg of pkgs) {
+      updatePackage(path.resolve(getPkgPath(pkg), 'package.json'), version);
+    }
+    updatePackage(path.resolve(__dirname, `../package.json`), version);
   },
   async release(config) {
-    async function publishPkg(pkgPath) {
-      const json = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+    async function publishPkg(pkg) {
+      if (config.skippedPackages.includes(pkg)) return;
+      const pkgPath = getPkgPath(pkg);
+      const json = JSON.parse(fs.readFileSync(path.resolve(pkgPath, 'package.json'), 'utf-8'));
       if (json.private) return;
+
+      /*let releaseTag = null;
+      if (config.tag) {
+        releaseTag = config.tag;
+      } else if (config.targetVersion.includes('alpha')) {
+        releaseTag = 'alpha';
+      } else if (config.targetVersion.includes('beta')) {
+        releaseTag = 'beta';
+      } else if (config.targetVersion.includes('rc')) {
+        releaseTag = 'rc';
+      }*/
 
       step(`Publishing ${json.name}...`);
       try {
-        await exec('npm', ['publish', '--access=public'], { cwd: root(), stdio: 'pipe' });
+        /*await exec(
+          // note: use of yarn is intentional here as we rely on its publishing
+          // behavior.
+          'yarn',
+          [
+            'publish',
+            '--new-version',
+            config.targetVersion,
+            ...(releaseTag ? ['--tag', releaseTag] : []),
+            '--access',
+            'public',
+          ],
+          {
+            cwd: pkgPath,
+            stdio: 'pipe',
+          },
+        );*/
+        await exec('npm', ['publish', '--access=public'], { cwd: pkgPath, stdio: 'pipe' });
         console.log(chalk.green(`Successfully published ${json.name}@${config.targetVersion}`));
       } catch (e) {
         if (e.stderr.match(/previously published/)) {
@@ -42,7 +102,9 @@ const actions = {
         }
       }
     }
-    await publishPkg(pkgPath);
+    for (const pkg of config.pkgs) {
+      await publishPkg(pkg);
+    }
   },
   genChangeLog: () => exec(npmTool, ['changelog']),
   async gitCommit(targetVersion) {
@@ -64,6 +126,7 @@ const actions = {
 };
 
 const baseConfig = {
+  pkgs: fs.readdirSync(path.resolve(__dirname, '../packages')),
   targetVersion: args._[0],
   skipTest: args.skipTest,
   skipBuild: args.skipBuild,
@@ -140,7 +203,7 @@ async function setup() {
   }
 
   step('\nRunning update versions...');
-  await actions.updateVersion(config.targetVersion);
+  await actions.updateVersions(config.pkgs, config.targetVersion);
 
   step('\nRunning build...');
   if (!config.skipBuild) {
@@ -151,7 +214,11 @@ async function setup() {
 
   // generate changelog
   step('\nGenerating changelog...');
-  await actions.genChangeLog();
+  actions.genChangeLog();
+
+  // update pnpm-lock.yaml
+  step('\nUpdating lockfile...');
+  await exec(npmTool, ['install', '--prefer-offline']);
 
   step('\ngit commit...');
   await actions.gitCommit(config.targetVersion);
@@ -173,6 +240,6 @@ setup().then(
   },
   (e) => {
     console.log('error', e);
-    actions.updateVersion(baseConfig.currentVersion);
+    actions.updateVersions(baseConfig.pkgs, baseConfig.currentVersion);
   },
 );

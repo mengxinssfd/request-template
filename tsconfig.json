@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "rootDir": ".",
     // "outDir": "lib-es",
     // "module": "commonjs",
     // "target": "es5",
@@ -27,6 +28,9 @@
     "strict": true,
     // "incremental": true // 增量编译tsc，除第一次编译全部之外，其余时候只编译有改动部分，但不会删除掉改名前的文件和d.ts
     // "allowSyntheticDefaultImports": true,
+    "paths": {
+      "request-template": ["packages/request-template/src"]
+    }
   },
-  "include": ["src", "__test__"]
+  "include": ["packages/*/src", "packages/*/__tests__"]
 }

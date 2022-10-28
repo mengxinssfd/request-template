@@ -223,7 +223,7 @@ export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
 
     const maxTimex = retryConfig.times;
     let times = 0;
-    let timer: number;
+    let timer: ReturnType<typeof setTimeout>;
     let reject = (): any => undefined;
     const stop = () => {
       clearTimeout(timer);

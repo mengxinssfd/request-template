@@ -1,4 +1,5 @@
-import { AxiosRequestTemplate, Context, CustomConfig } from '../src';
+import { Context, CustomConfig } from 'request-template';
+import { AxiosRequestTemplate } from '../src';
 // 用于检查ts类型是否正确
 interface MyConfig extends CustomConfig {
   loading?: boolean;

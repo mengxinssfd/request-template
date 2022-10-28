@@ -1,0 +1,15 @@
+{
+  "name": "build-test",
+  "version": "2.0.0-beta.0",
+  "description": "测试作为 npm 包时的打包情况",
+  "private": true,
+  "scripts": {
+    "build-test": "vue-tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "@request-template/axios": "^1.0.0",
+    "request-template": "^1.0.0",
+    "axios": "^0.26.1"
+  },
+  "author": "dyh"
+}

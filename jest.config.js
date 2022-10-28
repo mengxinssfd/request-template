@@ -9,7 +9,7 @@ module.exports = {
       statements: 50,
     },
   },
-  collectCoverageFrom: ['**/src/**.ts'],
+  collectCoverageFrom: ['packages/**/src/**.ts', '!**/packages/**/dist/**'],
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
@@ -18,6 +18,10 @@ module.exports = {
       },
     ],
   },
-  testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$',
+  testRegex: '(/__tests__/.*\\.(test|spec))\\.(jsx?|tsx?)$',
+  moduleNameMapper: {
+    '^request-template$': '<rootDir>/packages/request-template/src',
+    '^@request-template/(.*?)$': '<rootDir>/packages/$1/src',
+  },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 };

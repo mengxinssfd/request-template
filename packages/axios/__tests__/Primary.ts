@@ -1,5 +1,6 @@
 // 主域名请求
-import { StatusHandlers, AxiosRequestTemplate } from '../src';
+import { AxiosRequestTemplate } from '../src';
+import { StatusHandlers } from 'request-template';
 import './utils';
 
 const statusHandlers: StatusHandlers = {

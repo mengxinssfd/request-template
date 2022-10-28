@@ -1,0 +1,46 @@
+{
+  "name": "request-template",
+  "version": "2.0.0-beta.0",
+  "description": "请求模板封装",
+  "main": "dist/request-template.cjs.js",
+  "module": "dist/request-template.esm-browser.js",
+  "typings": "src",
+  "types": "dist/request-template.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "node": "./dist/request-template.cjs.js",
+        "default": "./dist/request-template.esm-browser.js"
+      },
+      "require": "./dist/request-template.cjs.js"
+    }
+  },
+  "buildOptions": {
+    "name": "RequestTemplate",
+    "formats": [
+      "esm-bundler",
+      "esm-browser",
+      "cjs",
+      "global"
+    ]
+  },
+  "sideEffects": false,
+  "files": [
+    "dist/*",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mengxinssfd/request-template.git"
+  },
+  "author": "DYH",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mengxinssfd/request-template/issues"
+  },
+  "homepage": "https://github.com/mengxinssfd/request-template#readme"
+}

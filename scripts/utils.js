@@ -1,6 +1,7 @@
 const path = require('path');
 const chalk = require('chalk');
 const execa = require('execa');
+const fs = require('fs');
 
 const root = (p = '') => path.resolve(__dirname, '../' + p);
 const dist = (p = '') => root('dist/' + p);
@@ -29,4 +30,21 @@ const exec = (bin, args, opts = {}) => execa(bin, args, { stdio: 'inherit', cwd:
 
 const bin = (name) => path.resolve(__dirname, '../node_modules/.bin/' + name);
 
-module.exports = { root, dist, src, useLog, exec, bin };
+const targets = fs.readdirSync(path.resolve(__dirname, '../packages')).filter((f) => {
+  if (!fs.statSync(path.resolve(__dirname, `../packages/${f}`)).isDirectory()) {
+    return false;
+  }
+  const pkg = require(`../packages/${f}/package.json`);
+  return !(pkg.private && !pkg.buildOptions);
+});
+
+function checkFileSize(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return;
+  }
+  const file = fs.readFileSync(filePath);
+  const minSize = (file.length / 1024).toFixed(2) + 'kb';
+  console.log(`${chalk.gray(chalk.bold(path.basename(filePath)))} min:${minSize}`);
+}
+
+module.exports = { root, dist, src, useLog, exec, bin, targets, checkFileSize };
