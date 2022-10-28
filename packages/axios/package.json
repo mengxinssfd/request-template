@@ -1,0 +1,55 @@
+{
+  "name": "@request-template/axios",
+  "version": "1.0.0",
+  "description": "axios请求模板封装",
+  "main": "dist/axios-request-template.cjs.js",
+  "module": "dist/axios-request-template.esm-bundler.js",
+  "types": "dist/axios-request-template.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "node": "./dist/axios-request-template.cjs.js",
+        "default": "./dist/axios-request-template.esm-bundler.js"
+      },
+      "require": "./dist/axios-request-template.cjs.js"
+    }
+  },
+  "buildOptions": {
+    "name": "AxiosRequestTemplate",
+    "filename": "axios-request-template",
+    "formats": [
+      "esm-bundler",
+      "esm-browser",
+      "cjs",
+      "global"
+    ]
+  },
+  "sideEffects": false,
+  "files": [
+    "dist/*",
+    "CHANGELOG.md",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mengxinssfd/request-template.git"
+  },
+  "author": "DYH",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mengxinssfd/request-template/issues"
+  },
+  "homepage": "https://github.com/mengxinssfd/request-template#readme",
+  "devDependencies": {
+    "axios": "^0.26.1",
+    "request-template": "^1.0.0"
+  },
+  "peerDependencies": {
+    "axios": ">=0.26.1",
+    "request-template": ">=1.0.0"
+  }
+}

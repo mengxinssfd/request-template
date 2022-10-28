@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { AxiosRequestTemplate, Cache } from '../src';
+import { AxiosRequestTemplate } from '../src';
+import { Cache } from 'request-template';
 import { mockAxiosResponse, sleep } from './utils';
 
 jest.mock('axios');

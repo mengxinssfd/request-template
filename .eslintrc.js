@@ -28,7 +28,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['**/scripts/**.[jt]s'],
+      files: ['**/scripts/**.[jt]s', 'rollup.config.js'],
       rules: {
         '@typescript-eslint/no-var-requires': 'off',
       },

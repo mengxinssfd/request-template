@@ -1,7 +1,6 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ResType, AxiosRequestTemplate } from '../src';
+import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { ResType } from '../src';
 
-AxiosRequestTemplate.useAxios(axios);
 export async function sleep(delay: number) {
   return new Promise<void>((res) => {
     setTimeout(() => res(), delay);

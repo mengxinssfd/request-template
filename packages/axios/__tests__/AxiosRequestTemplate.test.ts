@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { routers } from './mock-server';
-import { StatusHandlers, AxiosRequestTemplate, CustomConfig } from '../src';
+import { StatusHandlers, CustomConfig } from 'request-template';
+import { AxiosRequestTemplate } from '../src';
 
 jest.mock('axios');
 import './utils';

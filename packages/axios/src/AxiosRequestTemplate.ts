@@ -1,6 +1,5 @@
-import type { CustomConfig, Context, RetryContext } from './types';
 import type { AxiosInstance, AxiosStatic } from 'axios';
-import { RequestTemplate } from './RequestTemplate';
+import { RequestTemplate, CustomConfig, Context, RetryContext } from 'request-template';
 
 /**
  * @public

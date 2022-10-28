@@ -1,5 +1,7 @@
 import axios, { AxiosRequestConfig } from 'axios';
+import { AxiosRequestTemplate } from '../src';
 
+AxiosRequestTemplate.useAxios(axios);
 function buildRes(res: { code: number; data?: any; msg: string }) {
   return Promise.resolve({ data: res, status: 200 });
 }
