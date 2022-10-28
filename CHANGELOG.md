@@ -1,3 +1,17 @@
+# [2.0.0-beta.0](https://github.com/mengxinssfd/request-template/compare/v1.0.0...v2.0.0-beta.0) (2022-10-28)
+
+
+### Code Refactoring
+
+* 使用monorepo结构重构项目 ([82cf611](https://github.com/mengxinssfd/request-template/commit/82cf61167265e7da10e942f56f3a054d2b35b936))
+
+
+### BREAKING CHANGES
+
+* AxiosRequestTemplate从request-template包独立出来为@request-template/axios包
+
+
+
 # [1.0.0](https://github.com/mengxinssfd/request-template/compare/v1.0.0-beta.13...v1.0.0) (2022-10-27)
 
 

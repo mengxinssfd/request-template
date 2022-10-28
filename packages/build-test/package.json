@@ -1,6 +1,6 @@
 {
   "name": "build-test",
-  "version": "0.0.0",
+  "version": "2.0.0-beta.0",
   "description": "测试作为 npm 包时的打包情况",
   "private": true,
   "scripts": {

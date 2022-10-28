@@ -74,7 +74,7 @@ importers:
       request-template: ^1.0.0
     devDependencies:
       axios: 0.26.1
-      request-template: link:../request-template
+      request-template: 1.0.0_axios@0.26.1
 
   packages/build-test:
     specifiers:
@@ -82,9 +82,9 @@ importers:
       axios: ^0.26.1
       request-template: ^1.0.0
     dependencies:
-      '@request-template/axios': link:../axios
+      '@request-template/axios': 1.0.0_mafdmkpp2bcrn4yqfgfk4m6iwq
       axios: 0.26.1
-      request-template: link:../request-template
+      request-template: 1.0.0_axios@0.26.1
 
   packages/request-template:
     specifiers: {}
@@ -857,6 +857,16 @@ packages:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.13.0
     dev: true
+
+  /@request-template/axios/1.0.0_mafdmkpp2bcrn4yqfgfk4m6iwq:
+    resolution: {integrity: sha512-2wg48gsg617xiIUbPk+U+pn5YZHAZ0XADERRr+UQtkdpI22yV+Lj+3KtlmqSOP+SfEfQSXCntJkP6uc2/p8Acg==}
+    peerDependencies:
+      axios: '>=0.26.1'
+      request-template: '>=1.0.0'
+    dependencies:
+      axios: 0.26.1
+      request-template: 1.0.0_axios@0.26.1
+    dev: false
 
   /@rollup/plugin-json/5.0.1_rollup@3.2.3:
     resolution: {integrity: sha512-QCwhZZLvM8nRcTHyR1vOgyTMiAnjiNj1ebD/BMRvbO1oc/z14lZH6PfxXeegee2B6mky/u9fia4fxRM4TqrUaw==}
@@ -4103,6 +4113,13 @@ packages:
     resolution: {integrity: sha512-pq2bWo9mVD43nbts2wGv17XLiNLya+GklZ8kaDLV2Z08gDCsGpnKn9BFMepvWuHCbyVvY7J5o5+BVvoQbmlJLg==}
     engines: {node: '>=8'}
     dev: true
+
+  /request-template/1.0.0_axios@0.26.1:
+    resolution: {integrity: sha512-Kkm4NOZpm0sOfpLljYWZBIXCFDf0WWOFNDE9DM+duyT/cD4N0YS6RiWbq3kyvDPGxcWazxv5RttRxQZChZVOVw==}
+    peerDependencies:
+      axios: '>=0.26.1'
+    dependencies:
+      axios: 0.26.1
 
   /require-directory/2.1.1:
     resolution: {integrity: sha1-jGStX9MNqxyXbiNE/+f3kqam30I=}
