@@ -11,7 +11,8 @@ const args = require('minimist')(process.argv.slice(2));
 const npmTool = 'pnpm';
 
 const bin = (name) => path.resolve(__dirname, '../node_modules/.bin/' + name);
-const step = (msg) => console.log(chalk.cyan(msg));
+const logStep = (msg) => console.log(chalk.cyan(msg));
+const logSkip = (msg) => console.log(chalk.underline(chalk.cyan(msg)));
 
 /**
  * @param {string} bin
@@ -31,34 +32,50 @@ const actions = {
   lintCheck: () => exec(npmTool, ['lint']),
   jestCheck: () => exec(bin('jest'), ['--no-cache']),
   build: () => exec(npmTool, ['build']),
+  /**
+   * @param {string[]} pkgs
+   * @param {string} version
+   */
   updateVersions(pkgs, version) {
     function updateDeps(json, depType, version) {
       const dep = json[depType];
       for (const k in dep) {
-        if (pkgJsonList.some((js) => js.name === k)) {
+        if (pkgJsonList.some((js) => js.json.name === k)) {
           console.log(chalk.yellow(`${json.name} -> ${depType} -> ${k}@${version}`));
           dep[k] = version;
         }
       }
     }
-    function updatePackage(pkgPath, version, json) {
+
+    /**
+     * @param {string} pkgPath
+     * @param {string} version
+     * @param {object} json
+     * @param {string[]?} deps
+     */
+    function updatePackage(pkgPath, version, json, deps = []) {
       json.version = version;
-      updateDeps(json, 'devDependencies', version);
-      updateDeps(json, 'dependencies', version);
-      updateDeps(json, 'peerDependencies', version);
-      fs.writeFileSync(pkgPath, JSON.stringify(json, null, 2));
+      deps.forEach((dep) => updateDeps(json, dep, version));
+      // updateDeps(json, 'peerDependencies', version); // peerDependencies不需要自动更新
+      fs.writeFileSync(pkgPath, JSON.stringify(json, null, 2), {});
     }
     const pkgJsonList = pkgs.map((pkg) => {
       const pkgPath = path.resolve(getPkgPath(pkg), 'package.json');
       const file = fs.readFileSync(pkgPath).toString();
       const json = JSON.parse(file);
-      return { path: pkgPath, json, pkg };
+      return { pkgPath, json, pkg, deps: ['devDependencies', 'dependencies'] };
     });
-    for (const { pkgPath, json } of pkgJsonList) {
-      pkgJsonList.push(json);
-      updatePackage(pkgPath, version, json);
+
+    const rootPkgPath = path.resolve(__dirname, `../package.json`);
+    pkgJsonList.push({
+      pkgPath: rootPkgPath,
+      json: JSON.parse(fs.readFileSync(rootPkgPath).toString()),
+      pkg: 'root',
+    });
+
+    for (const { pkgPath, json, deps } of pkgJsonList) {
+      updatePackage(pkgPath, version, json, deps);
     }
-    updatePackage(path.resolve(__dirname, `../package.json`), version);
   },
   async release(config) {
     async function publishPkg(pkg) {
@@ -78,7 +95,7 @@ const actions = {
         releaseTag = 'rc';
       }*/
 
-      step(`Publishing ${json.name}...`);
+      logStep(`Publishing ${json.name}...`);
       try {
         /*await exec(
           // note: use of yarn is intentional here as we rely on its publishing
@@ -115,7 +132,7 @@ const actions = {
   async gitCommit(targetVersion) {
     const { stdout } = await exec('git', ['diff'], { stdio: 'pipe' });
     if (stdout) {
-      step('\nCommitting changes...');
+      logStep('\nCommitting changes...');
       await exec('git', ['add', '-A']);
       await exec('git', ['commit', '-m', `release: v${targetVersion}`]);
     } else {
@@ -135,6 +152,7 @@ const baseConfig = {
   targetVersion: args._[0],
   skipTest: args.skipTest,
   skipBuild: args.skipBuild,
+  skipGit: args.skipGit,
   currentVersion: pkg.version,
   // semver.prerelease('1.2.3-alpha.3') -> [ 'alpha', 3 ]
   preId: args.preid || semver.prerelease(pkg.version)?.[0],
@@ -199,38 +217,46 @@ async function setup() {
 
   const config = await getConfig();
 
-  step('\nRunning tests...');
+  logStep('\nRunning tests...');
   if (!config.skipTest) {
     await actions.lintCheck();
     await actions.jestCheck();
   } else {
-    console.log(`(skipped)`);
+    logSkip(`(skipped tests)`);
   }
 
-  step('\nRunning update versions...');
+  logStep('\nRunning update versions...');
   await actions.updateVersions(config.pkgs, config.targetVersion);
 
-  step('\nRunning build...');
+  logStep('\nRunning build...');
   if (!config.skipBuild) {
     await actions.build();
   } else {
-    console.log(`(skipped)`);
+    logSkip(`(skipped build)`);
   }
 
   // generate changelog
-  step('\nGenerating changelog...');
+  logStep('\nGenerating changelog...');
   actions.genChangeLog();
 
   // update pnpm-lock.yaml
-  step('\nUpdating lockfile...');
+  logStep('\nUpdating lockfile...');
   await exec(npmTool, ['install', '--prefer-offline']);
 
-  step('\ngit commit...');
-  await actions.gitCommit(config.targetVersion);
+  logStep('\ngit commit...');
+  if (!config.skipGit) {
+    await actions.gitCommit(config.targetVersion);
+  } else {
+    logSkip(`(skipped commit)`);
+  }
 
   // publish packages
-  step('\nPublishing packages...');
-  await actions.release(config);
+  logStep('\nPublishing packages...');
+  if (!config.skipGit) {
+    await actions.release(config);
+  } else {
+    logSkip(`(skipped Publishing)`);
+  }
   console.log(config);
 
   return config;
@@ -239,8 +265,12 @@ async function setup() {
 setup().then(
   async (config) => {
     // push to GitHub
-    step('\nPushing to GitHub...');
-    await actions.gitPush(config.targetVersion);
+    logStep('\nPushing to GitHub...');
+    if (!config.skipGit) {
+      await actions.gitPush(config.targetVersion);
+    } else {
+      logSkip(`(skipped Pushing to GitHub)`);
+    }
     console.log('end');
   },
   (e) => {
