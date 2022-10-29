@@ -8,8 +8,10 @@
   },
   "dependencies": {
     "@request-template/axios": "^1.0.0",
+    "@request-template/vue3-hooks": "^2.0.0-beta.0",
     "request-template": "^1.0.0",
-    "axios": "^0.26.1"
+    "axios": "^0.26.1",
+    "vue": "^3.2.41"
   },
   "author": "dyh"
 }
