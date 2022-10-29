@@ -13,6 +13,7 @@
   },
   "sideEffects": false,
   "files": [
+    "src",
     "dist/*",
     "CHANGELOG.md",
     "README.md"
