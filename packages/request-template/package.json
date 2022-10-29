@@ -1,6 +1,6 @@
 {
   "name": "request-template",
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0-beta.3",
   "description": "请求模板封装",
   "main": "dist/request-template.cjs.js",
   "module": "dist/request-template.esm-browser.js",

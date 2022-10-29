@@ -73,17 +73,17 @@ importers:
   packages/axios:
     specifiers:
       axios: ^0.26.1
-      request-template: 2.0.0-beta.2
+      request-template: 2.0.0-beta.3
     devDependencies:
       axios: 0.26.1
       request-template: link:../request-template
 
   packages/build-test:
     specifiers:
-      '@request-template/axios': 2.0.0-beta.2
-      '@request-template/vue3-hooks': 2.0.0-beta.2
+      '@request-template/axios': 2.0.0-beta.3
+      '@request-template/vue3-hooks': 2.0.0-beta.3
       axios: ^0.26.1
-      request-template: 2.0.0-beta.2
+      request-template: 2.0.0-beta.3
       vue: ^3.2.41
     dependencies:
       '@request-template/axios': link:../axios
