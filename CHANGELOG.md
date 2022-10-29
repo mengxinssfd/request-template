@@ -1,3 +1,12 @@
+# [2.0.0-beta.1](https://github.com/mengxinssfd/request-template/compare/v2.0.0-beta.0...v2.0.0-beta.1) (2022-10-29)
+
+
+### Features
+
+* vue3-hooks ([15bd965](https://github.com/mengxinssfd/request-template/commit/15bd965280498de4ceb8aed616b8f1adc8bba5d8))
+
+
+
 # [2.0.0-beta.0](https://github.com/mengxinssfd/request-template/compare/v1.0.0...v2.0.0-beta.0) (2022-10-28)
 
 
