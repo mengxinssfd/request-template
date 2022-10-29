@@ -1,3 +1,12 @@
+# [2.0.0](https://github.com/mengxinssfd/request-template/compare/v2.0.0-beta.3...v2.0.0) (2022-10-29)
+
+
+### Bug Fixes
+
+* 移除dataDriver ([3f4a1aa](https://github.com/mengxinssfd/request-template/commit/3f4a1aa332008c8e051d71f0938428baa4fac60d))
+
+
+
 # [2.0.0-beta.3](https://github.com/mengxinssfd/request-template/compare/v2.0.0-beta.2...v2.0.0-beta.3) (2022-10-29)
 
 
