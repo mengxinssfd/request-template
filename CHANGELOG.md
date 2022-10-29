@@ -1,3 +1,12 @@
+# [2.0.0-beta.2](https://github.com/mengxinssfd/request-template/compare/v2.0.0-beta.1...v2.0.0-beta.2) (2022-10-29)
+
+
+### Bug Fixes
+
+* types ([03722d2](https://github.com/mengxinssfd/request-template/commit/03722d2a5a549f288b5074ffc916b81c236b11e5))
+
+
+
 # [2.0.0-beta.1](https://github.com/mengxinssfd/request-template/compare/v2.0.0-beta.0...v2.0.0-beta.1) (2022-10-29)
 
 
