@@ -4,7 +4,6 @@
   "description": "请求模板封装",
   "main": "dist/request-template.cjs.js",
   "module": "dist/request-template.esm-browser.js",
-  "typings": "src",
   "types": "dist/request-template.d.ts",
   "exports": {
     ".": {

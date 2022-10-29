@@ -4,7 +4,6 @@
   "description": "axios请求模板封装",
   "main": "dist/axios-request-template.cjs.js",
   "module": "dist/axios-request-template.esm-bundler.js",
-  "typings": "src",
   "types": "dist/axios-request-template.d.ts",
   "exports": {
     ".": {
