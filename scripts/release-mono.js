@@ -35,23 +35,28 @@ const actions = {
     function updateDeps(json, depType, version) {
       const dep = json[depType];
       for (const k in dep) {
-        if (pkgs.includes(k)) {
+        if (pkgJsonList.some((js) => js.name === k)) {
           console.log(chalk.yellow(`${json.name} -> ${depType} -> ${k}@${version}`));
           dep[k] = version;
         }
       }
     }
-    function updatePackage(pkgPath, version) {
-      const file = fs.readFileSync(pkgPath).toString();
-      const json = JSON.parse(file);
+    function updatePackage(pkgPath, version, json) {
       json.version = version;
       updateDeps(json, 'devDependencies', version);
       updateDeps(json, 'dependencies', version);
       updateDeps(json, 'peerDependencies', version);
       fs.writeFileSync(pkgPath, JSON.stringify(json, null, 2));
     }
-    for (const pkg of pkgs) {
-      updatePackage(path.resolve(getPkgPath(pkg), 'package.json'), version);
+    const pkgJsonList = pkgs.map((pkg) => {
+      const pkgPath = path.resolve(getPkgPath(pkg), 'package.json');
+      const file = fs.readFileSync(pkgPath).toString();
+      const json = JSON.parse(file);
+      return { path: pkgPath, json, pkg };
+    });
+    for (const { pkgPath, json } of pkgJsonList) {
+      pkgJsonList.push(json);
+      updatePackage(pkgPath, version, json);
     }
     updatePackage(path.resolve(__dirname, `../package.json`), version);
   },
