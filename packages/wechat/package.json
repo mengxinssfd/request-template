@@ -1,6 +1,6 @@
 {
   "name": "@request-template/wechat",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "请求模板封装-微信版",
   "main": "dist/request-template-wechat.esm-bundler.js",
   "types": "dist/request-template-wechat.d.ts",
