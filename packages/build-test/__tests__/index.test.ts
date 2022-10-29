@@ -2,7 +2,7 @@ import { ins } from '../src';
 
 describe('test', function () {
   test('base', () => {
-    // expect(ins).toBeCalled();
-    console.log(ins);
+    expect(typeof ins === 'object').toBeTruthy();
+    // console.log(ins);
   });
 });
