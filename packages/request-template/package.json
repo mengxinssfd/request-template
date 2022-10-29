@@ -27,7 +27,8 @@
   "sideEffects": false,
   "files": [
     "dist/*",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "README.md"
   ],
   "publishConfig": {
     "access": "public"
