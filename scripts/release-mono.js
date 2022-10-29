@@ -35,7 +35,7 @@ const actions = {
     function updateDeps(json, depType, version) {
       const dep = json[depType];
       for (const k in dep) {
-        if (k.startsWith('@mxssfd')) {
+        if (pkgs.includes(k)) {
           console.log(chalk.yellow(`${json.name} -> ${depType} -> ${k}@${version}`));
           dep[k] = version;
         }
