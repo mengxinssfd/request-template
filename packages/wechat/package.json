@@ -1,0 +1,41 @@
+{
+  "name": "@request-template/wechat",
+  "version": "1.0.0",
+  "description": "请求模板封装-微信版",
+  "main": "dist/request-template-wechat.esm-bundler.js",
+  "types": "dist/request-template-wechat.d.ts",
+  "buildOptions": {
+    "filename": "request-template-wechat",
+    "formats": [
+      "esm-bundler",
+      "cjs"
+    ]
+  },
+  "sideEffects": false,
+  "files": [
+    "dist/*",
+    "CHANGELOG.md",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mengxinssfd/request-template.git"
+  },
+  "author": "DYH",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mengxinssfd/request-template/issues"
+  },
+  "homepage": "https://github.com/mengxinssfd/request-template#readme",
+  "devDependencies": {
+    "axios": "^0.26.1",
+    "request-template": "^2.0.0"
+  },
+  "peerDependencies": {
+    "request-template": "^2.0.0"
+  }
+}

@@ -26,6 +26,7 @@ importers:
       fs-extra: ^10.1.0
       jest: ^29.2.1
       minimist: ^1.2.6
+      miniprogram-api-typings: ^3.6.0
       npm-run-all: ^4.1.5
       prettier: ^2.7.1
       rimraf: ^3.0.2
@@ -59,6 +60,7 @@ importers:
       fs-extra: 10.1.0
       jest: 29.2.1
       minimist: 1.2.6
+      miniprogram-api-typings: 3.6.0
       npm-run-all: 4.1.5
       prettier: 2.7.1
       rimraf: 3.0.2
@@ -102,6 +104,14 @@ importers:
     devDependencies:
       axios: 0.26.1
       vue: 3.2.41
+
+  packages/wechat:
+    specifiers:
+      axios: ^0.26.1
+      request-template: ^2.0.0
+    devDependencies:
+      axios: 0.26.1
+      request-template: link:../request-template
 
 packages:
 
@@ -3776,6 +3786,10 @@ packages:
 
   /minimist/1.2.6:
     resolution: {integrity: sha512-Jsjnk4bw3YJqYzbdyBiNsPWHPfO++UGG749Cxs6peCu5Xg4nrena6OVxOYxrQTqww0Jmwt+Ref8rggumkTLz9Q==}
+    dev: true
+
+  /miniprogram-api-typings/3.6.0:
+    resolution: {integrity: sha512-xwK3PzhhxnfWqDfBikHLdAbj7Wy4F887nBcQrzwuF758Fw2qC4ivpKPL9t0uJZk5QYnU28+NqA7Q3lzYGMHQnA==}
     dev: true
 
   /modify-values/1.0.1:

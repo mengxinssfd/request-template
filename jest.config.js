@@ -9,7 +9,7 @@ module.exports = {
       statements: 50,
     },
   },
-  collectCoverageFrom: ['packages/**/src/**.ts', '!**/packages/**/dist/**'],
+  collectCoverageFrom: ['packages/**/src/**.ts', '!**/packages/**/dist/**', '!**/packages/wechat/**'],
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
