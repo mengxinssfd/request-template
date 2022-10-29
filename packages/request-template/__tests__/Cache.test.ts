@@ -1,5 +1,5 @@
 import { Cache } from '../src';
-import { sleep } from './utils';
+import { sleep } from '@mxssfd/core';
 describe('Cache', () => {
   test('base', async () => {
     const cache = new Cache<object>();

@@ -54,6 +54,7 @@
     "@babel/cli": "^7.19.3",
     "@babel/core": "^7.19.6",
     "@microsoft/api-extractor": "7.20.1",
+    "@mxssfd/core": "5.0.1-beta.0",
     "@rollup/plugin-json": "^5.0.1",
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^29.2.0",
