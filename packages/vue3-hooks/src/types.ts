@@ -11,5 +11,4 @@ export type Options<A extends string, D extends object | void = void> = D extend
   : {
       immediate?: boolean;
       data?: D;
-      dataDriver?: boolean;
     };
