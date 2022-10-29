@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "request-template-monorepo",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0-beta.1",
   "description": "请求模板封装",
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",
@@ -54,6 +54,7 @@
     "@babel/cli": "^7.19.3",
     "@babel/core": "^7.19.6",
     "@microsoft/api-extractor": "7.20.1",
+    "@mxssfd/core": "5.0.1-beta.0",
     "@rollup/plugin-json": "^5.0.1",
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^29.2.0",

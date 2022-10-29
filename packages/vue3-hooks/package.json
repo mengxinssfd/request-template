@@ -1,0 +1,41 @@
+{
+  "name": "@request-template/vue3-hooks",
+  "version": "2.0.0-beta.1",
+  "description": "axios请求模板封装-vue3-hooks",
+  "main": "dist/request-template-vue3-hooks.esm-bundler.js",
+  "typings": "src",
+  "types": "dist/request-template-vue3-hooks.d.ts",
+  "buildOptions": {
+    "filename": "request-template-vue3-hooks",
+    "formats": [
+      "esm-bundler"
+    ]
+  },
+  "sideEffects": false,
+  "files": [
+    "dist/*",
+    "CHANGELOG.md",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mengxinssfd/request-template.git"
+  },
+  "author": "DYH",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mengxinssfd/request-template/issues"
+  },
+  "homepage": "https://github.com/mengxinssfd/request-template#readme",
+  "devDependencies": {
+    "axios": "^0.26.1",
+    "vue": "^3.2.41"
+  },
+  "peerDependencies": {
+    "vue": "^2.7.0 || >=3.0.0"
+  }
+}
