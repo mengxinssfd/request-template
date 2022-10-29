@@ -1,3 +1,26 @@
+# [2.0.0-beta.3](https://github.com/mengxinssfd/request-template/compare/v2.0.0-beta.2...v2.0.0-beta.3) (2022-10-29)
+
+
+### Bug Fixes
+
+* 移除"typings": "src",否则用的时候tsc检查会检查到包里面去 ([23ae676](https://github.com/mengxinssfd/request-template/commit/23ae676c4d9da8bff07ac7e38d0f6559a6b0ba75))
+
+
+### Reverts
+
+* Revert "fix: types" ([37c3f77](https://github.com/mengxinssfd/request-template/commit/37c3f77772a241c6bb148cf34a71296bab6e8ee3))
+
+
+
+# [2.0.0-beta.2](https://github.com/mengxinssfd/request-template/compare/v2.0.0-beta.1...v2.0.0-beta.2) (2022-10-29)
+
+
+### Bug Fixes
+
+* types ([03722d2](https://github.com/mengxinssfd/request-template/commit/03722d2a5a549f288b5074ffc916b81c236b11e5))
+
+
+
 # [2.0.0-beta.1](https://github.com/mengxinssfd/request-template/compare/v2.0.0-beta.0...v2.0.0-beta.1) (2022-10-29)
 
 

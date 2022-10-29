@@ -225,15 +225,15 @@ async function setup() {
     logSkip(`(skipped tests)`);
   }
 
-  logStep('\nRunning update versions...');
-  await actions.updateVersions(config.pkgs, config.targetVersion);
-
   logStep('\nRunning build...');
   if (!config.skipBuild) {
     await actions.build();
   } else {
     logSkip(`(skipped build)`);
   }
+
+  logStep('\nRunning update versions...');
+  await actions.updateVersions(config.pkgs, config.targetVersion);
 
   // generate changelog
   logStep('\nGenerating changelog...');
