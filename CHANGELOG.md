@@ -1,3 +1,18 @@
+## [2.0.1](https://github.com/mengxinssfd/request-template/compare/v2.0.0...v2.0.1) (2022-10-30)
+
+
+### Bug Fixes
+
+* **AxiosRequestTemplate:** isCancel和handleCanceler使用的不是子类的static axios，而是用的AxiosRequestTemplate的static axios ([c833a0b](https://github.com/mengxinssfd/request-template/commit/c833a0b3e3cefb32c8054c1bab5d4133fc7d1bbe))
+* **wechat:** types ([a9b5952](https://github.com/mengxinssfd/request-template/commit/a9b5952ce29ac0c8ea74788c9e62ae4913b1bb37))
+
+
+### Features
+
+* wechat ([64b23dc](https://github.com/mengxinssfd/request-template/commit/64b23dc2ba459e9a078fc81b89db61c7e8bebfc9))
+
+
+
 # [2.0.0](https://github.com/mengxinssfd/request-template/compare/v2.0.0-beta.3...v2.0.0) (2022-10-29)
 
 
