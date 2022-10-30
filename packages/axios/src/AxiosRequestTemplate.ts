@@ -19,19 +19,27 @@ export class AxiosRequestTemplate<
   }
 
   /**
-   * axios实例
+   * 获取axios，并判断是否已设置了axios
+   * @returns {AxiosStatic}
+   * @protected
    */
-  protected axiosIns!: AxiosInstance;
-
-  protected init() {
+  protected get axios(): AxiosStatic {
     const proto = Object.getPrototypeOf(this).constructor;
     const axios = proto.axios;
     if (!axios || typeof axios.create !== 'function') {
       throw new Error('使用前必须先传入axios，调用useAxios(axios)');
     }
+    return axios;
+  }
 
+  /**
+   * axios实例
+   */
+  protected axiosIns!: AxiosInstance;
+
+  protected init() {
     // 1、保存基础配置
-    this.axiosIns = axios.create(this.globalConfigs.requestConfig);
+    this.axiosIns = this.axios.create(this.globalConfigs.requestConfig);
     super.init();
     this.setInterceptors();
   }
@@ -65,7 +73,7 @@ export class AxiosRequestTemplate<
    * 使isCancel支持子类覆盖
    */
   protected isCancel(value: any) {
-    return AxiosRequestTemplate.axios.isCancel(value);
+    return this.axios.isCancel(value);
   }
 
   /**
@@ -74,7 +82,7 @@ export class AxiosRequestTemplate<
   protected handleCanceler(ctx: Context<CC>) {
     // 专属axios的取消功能
     const { requestConfig } = ctx;
-    const { cancel, token } = AxiosRequestTemplate.axios.CancelToken.source();
+    const { cancel, token } = this.axios.CancelToken.source();
     requestConfig.cancelToken = token;
     this.registerCanceler(ctx, cancel);
   }
