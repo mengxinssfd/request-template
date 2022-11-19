@@ -35,7 +35,8 @@
     // request-template-wechat 微信wx类型声明
     // 加上了微信的类型声明文件后，jest的全局声明就失效了，所以加上jest
     "types": ["miniprogram-api-typings", "jest"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true
   },
-  "include": ["packages/*/src", "packages/*/__tests__"]
+  "include": ["packages/*/src", "packages/*/__tests__", "docs/.vitepress"]
 }
