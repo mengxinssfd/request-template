@@ -32,6 +32,12 @@
   "publishConfig": {
     "access": "public"
   },
+  "typedoc": {
+    "entryPoint": "./src/index.ts",
+    "readmeFile": "./README.md",
+    "displayName": "request-template",
+    "tsconfig": "../../tsconfig.json"
+  },
   "scripts": {},
   "repository": {
     "type": "git",

@@ -24,6 +24,12 @@
       "global"
     ]
   },
+  "typedoc": {
+    "entryPoint": "./src/index.ts",
+    "readmeFile": "./README.md",
+    "displayName": "@request-template/axios",
+    "tsconfig": "../../tsconfig.json"
+  },
   "sideEffects": false,
   "files": [
     "dist/*",

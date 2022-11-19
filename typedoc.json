@@ -1,0 +1,9 @@
+{
+  "entryPointStrategy": "packages",
+  "entryPoints": [
+    "packages/request-template",
+    "packages/axios",
+    "packages/vue3-hooks",
+    "packages/wechat"
+  ]
+}
