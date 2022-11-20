@@ -38,5 +38,5 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["packages/*/src", "packages/*/__tests__", "docs/.vitepress"]
+  "include": ["packages/*/src", "packages/*/__tests__", "docs/.vitepress", "docs/vite.config.ts"]
 }
