@@ -41,6 +41,7 @@
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
     "typedoc:build": "typedoc",
     "typedoc:build-ast": "typedoc --json dist/typedoc-ast.json",
+    "docs:build-sidebar": "ts-node scripts/build-sidebar.ts",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs"
@@ -64,6 +65,7 @@
     "@rollup/plugin-json": "^5.0.1",
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^29.2.0",
+    "@types/node": "^18.11.9",
     "@typescript-eslint/eslint-plugin": "^5.40.1",
     "@typescript-eslint/parser": "^5.40.1",
     "axios": "^0.26.1",
@@ -89,6 +91,7 @@
     "rollup-plugin-typescript2": "^0.34.1",
     "semver": "^7.3.7",
     "ts-jest": "^29.0.3",
+    "ts-node": "^10.9.1",
     "tslib": "^2.3.1",
     "typedoc": "^0.23.21",
     "typescript": "^4.8.4",
