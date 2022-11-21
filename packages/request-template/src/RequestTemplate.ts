@@ -23,9 +23,34 @@ import { mergeObj } from './utils';
 import { Canceler } from './Canceler';
 
 /**
- * @public
+ * 请求封装基类
+ *
  * 使用模板方法模式处理请求封装抽象类, 具体类可实现protected的方法替换掉原有方法，需要实现抽象方法
- * 自定义配置可继承CustomConfig实现
+ *
+ * 可参考`@request-template/axios` `@request-template/wechat`
+ * @see https://github.com/mengxinssfd/request-template/tree/main/packages/axios
+ * @see https://github.com/mengxinssfd/request-template/tree/main/packages/wechat
+ *
+ * @example
+ *
+ * ```ts
+ * // 主请求封装类
+ * export class PrimaryRequest<CC extends CustomConfig = CustomConfig> extends RequestTemplate<CC> {
+ *   protected fetch(ctx: RetryContext<CC>): Promise<any> {
+ *     // 在此使用自己熟悉的请求工具重写fetch方法
+ *     return Promise.resolve(undefined);
+ *   }
+ *
+ *   protected handleCanceler(ctx: Context<CC>): void {
+ *     // 在此重写如何挂载canceler，可为空
+ *   }
+ *
+ *   protected isCancel(value: any): boolean {
+ *     // 在此重写如何判断是取消的请求
+ *     return false;
+ *   }
+ * }
+ * ```
  */
 export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
   /**
@@ -38,6 +63,9 @@ export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
    */
   protected globalConfigs!: Configs<CC>;
 
+  /**
+   * 缓存管理器
+   */
   protected cancelerManager!: Canceler;
 
   constructor(globalConfigs: Partial<Configs<CC>> = {}) {

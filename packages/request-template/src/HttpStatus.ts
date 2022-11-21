@@ -1,5 +1,6 @@
 // 来源于nestjs  @nestjs/common/enums/http-status.enum.d.ts
 /**
+ * http状态码枚举
  * @public
  */
 export enum HttpStatus {

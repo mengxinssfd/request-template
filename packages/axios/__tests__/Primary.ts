@@ -17,7 +17,7 @@ export default class Primary extends AxiosRequestTemplate {
     super({ requestConfig: { baseURL: 'http://test.test' }, customConfig: { statusHandlers } });
   }
 
-  protected handleRequestConfig(config) {
+  protected override handleRequestConfig(config) {
     if (config.method === 'get') {
       if (!config.params) config.params = {};
       config.params.token = 1;
@@ -28,7 +28,7 @@ export default class Primary extends AxiosRequestTemplate {
     return super.handleRequestConfig(config);
   }
 
-  protected setInterceptors() {
+  protected override setInterceptors() {
     this.interceptors.request.use((config) => {
       if (!config.headers) config.headers = {};
       const headers = config.headers;

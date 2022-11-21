@@ -9,7 +9,7 @@ class RequestWithLoading<CC extends MyConfig = MyConfig> extends AxiosRequestTem
   // private loading?: ILoadingInstance;
   private loading?: { close(): void };
 
-  protected beforeRequest(ctx: Context<CC>) {
+  protected override beforeRequest(ctx: Context<CC>) {
     super.beforeRequest(ctx); // 复用基础模板逻辑
     if (ctx.customConfig.loading) {
       // this.loading = ElLoading.service({ fullscreen: true });
@@ -21,7 +21,7 @@ class RequestWithLoading<CC extends MyConfig = MyConfig> extends AxiosRequestTem
     }
   }
 
-  protected afterRequest(ctx) {
+  protected override afterRequest(ctx) {
     super.afterRequest(ctx); // 复用基础模板逻辑
     // 加个定时器避免请求太快，loading一闪而过
     setTimeout(() => {

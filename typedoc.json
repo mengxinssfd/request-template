@@ -1,6 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPointStrategy": "packages",
+
   "entryPoints": [
     "packages/request-template",
     "packages/axios",
@@ -8,5 +9,19 @@
     "packages/wechat"
   ],
   "sort": ["static-first", "kind","enum-value-ascending"],
-  "out": "./docs-html"
+  "out": "./docs-html",
+  "categorizeByGroup": false,
+  "searchCategoryBoosts": {
+    "Component": 2,
+    "Model": 1.2
+  },
+  "searchGroupBoosts": {
+    "Classes": 1.5
+  },
+  "navigationLinks": {
+    "GitHub": "https://github.com/mengxinssfd/request-template"
+  },
+  "sidebarLinks": {
+    "API": "https://github.com/mengxinssfd/request-template"
+  }
 }

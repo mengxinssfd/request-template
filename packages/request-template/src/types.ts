@@ -2,7 +2,7 @@ import type { AxiosPromise, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { AxiosError } from 'axios';
 
 /**
- * @public
+ * 单个状态处理类型声明
  */
 export type StatusHandler<CC extends CustomConfig> = (
   ctx: Context<CC>,
@@ -11,7 +11,7 @@ export type StatusHandler<CC extends CustomConfig> = (
 ) => void | Promise<any>;
 
 /**
- * @public
+ * 多状态处理类型声明
  */
 export type StatusHandlers<CC extends CustomConfig = CustomConfig> = Record<
   number,
@@ -19,7 +19,7 @@ export type StatusHandlers<CC extends CustomConfig = CustomConfig> = Record<
 > & { default?: StatusHandler<CC> };
 
 /**
- * @public
+ * 自定义缓存配置项
  */
 export interface CustomCacheConfig {
   /**
@@ -40,6 +40,7 @@ export interface CustomCacheConfig {
   refresh?: boolean;
 }
 /**
+ * 重试配置项
  * @public
  */
 export interface RetryConfig {
@@ -56,6 +57,10 @@ export interface RetryConfig {
    */
   immediate?: boolean;
 }
+
+/**
+ * 标签，用于通过标签取消请求等功能
+ */
 export type Tag = string | symbol;
 /**
  * @public
@@ -89,15 +94,26 @@ export interface CustomConfig {
 }
 
 /**
+ * 请求返回值类型
  * @public
  */
 export interface ResType<T = never> {
+  /**
+   * 状态码
+   */
   code: number;
+  /**
+   * 提示信息
+   */
   msg: string;
+  /**
+   * 数据
+   */
   data: T;
 }
 
 /**
+ * 自动推导自定义类型，不推荐外部使用
  * @public
  */
 export type DynamicCustomConfig<CC extends CustomConfig, RC extends boolean> = Omit<
@@ -107,14 +123,22 @@ export type DynamicCustomConfig<CC extends CustomConfig, RC extends boolean> = O
   (RC extends false ? { returnRes?: RC } : { returnRes: true });
 
 /**
+ * 配置总项
  * @public
  */
 export interface Configs<CC extends CustomConfig = CustomConfig> {
+  /**
+   * 自定义配置
+   */
   customConfig: CC;
+  /**
+   * 请求配置
+   */
   requestConfig: AxiosRequestConfig;
 }
 
 /**
+ * 请求上下文
  * @public
  */
 export interface Context<CC extends CustomConfig> extends Configs<CC> {
@@ -124,6 +148,7 @@ export interface Context<CC extends CustomConfig> extends Configs<CC> {
 }
 
 /**
+ * 请求上下文+重试上下文
  * @public
  */
 export interface RetryContext<CC extends CustomConfig> extends Context<CC> {

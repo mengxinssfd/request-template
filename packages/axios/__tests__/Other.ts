@@ -23,7 +23,7 @@ export default class Other extends AxiosRequestTemplate<MyCustomConfig> {
     super({ requestConfig: { baseURL: 'http://test.test' }, customConfig: { statusHandlers } });
   }
 
-  protected setInterceptors() {
+  protected override setInterceptors() {
     this.interceptors.request.use((config) => {
       if (!config.headers) config.headers = {};
       const headers = config.headers;

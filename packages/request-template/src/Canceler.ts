@@ -1,6 +1,9 @@
 import type { Canceler as AxiosCanceler } from 'axios';
 import { Context, CustomConfig } from './types';
 
+/**
+ * Canceler管理类
+ */
 export class Canceler<CC extends CustomConfig = CustomConfig> {
   /**
    * cancel函数缓存

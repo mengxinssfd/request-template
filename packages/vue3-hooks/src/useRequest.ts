@@ -2,25 +2,33 @@ import { reactive, toRefs, isReactive, watch, isRef } from 'vue';
 import type { FN, State, Options } from './types';
 
 /**
- * 请求hooks
+ * vue3 请求hooks
+ *
+ * 不依赖RequestTemplate，可独立使用
  *
  * @example
- *
+ * ```ts
  * // 手动请求 request不带参数
  * const res = useRequest(User.getSelf, { requestAlias: 'getSelf', immediate: true });
  * res.getSelf();
  * console.log(res.data.value?.user);
+ *```
  *
- * const formModel = reactive({ username: '', password: '' });
- *
+ * @example
+ * ```ts
  * // 手动请求 request带参数
+ * const formModel = reactive({ username: '', password: '' });
  * const res2 = useRequest(User.login);
  * res2.request(formModel);
  * console.log(res2.data.value?.token);
  *
+ * // 改变数据不会触发请求
  * formModel.username = '1';
  * formModel.password = '1';
+ * ```
  *
+ * @example
+ * ```ts
  * // 数据驱动
  * const res3 = useRequest(User.login, {
  *   data: formModel, // 数据，注意：该数据一定要响应式的，例如ref，reactive,computed返回的数据
@@ -31,6 +39,7 @@ import type { FN, State, Options } from './types';
  * formModel.username = '2';
  * formModel.password = '2';
  * console.log(res3.data.value?.token);
+ *```
  *
  * @param  requestFn
  * @param  options
