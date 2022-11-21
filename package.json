@@ -39,12 +39,7 @@
     "realease": "node scripts/release-mono.js",
     "apie": "api-extractor run",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "typedoc:build": "typedoc",
-    "typedoc:build-ast": "typedoc --json dist/typedoc-ast.json",
-    "docs:build-sidebar": "ts-node scripts/build-sidebar.ts",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:serve": "vitepress serve docs"
+    "typedoc:build": "typedoc --plugin @mxssfd/typedoc-theme --theme my-theme"
   },
   "repository": {
     "type": "git",
@@ -62,6 +57,7 @@
     "@babel/core": "^7.19.6",
     "@microsoft/api-extractor": "7.20.1",
     "@mxssfd/core": "5.0.1-beta.0",
+    "@mxssfd/typedoc-theme": "^1.0.1",
     "@rollup/plugin-json": "^5.0.1",
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^29.2.0",
@@ -94,10 +90,6 @@
     "ts-node": "^10.9.1",
     "tslib": "^2.3.1",
     "typedoc": "^0.23.21",
-    "typescript": "^4.8.4",
-    "vite": "^3.2.4",
-    "vitepress": "1.0.0-alpha.29",
-    "vitepress-plugin-search": "1.0.4-alpha.15",
-    "vue": "3"
+    "typescript": "^4.8.4"
   }
 }
