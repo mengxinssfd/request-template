@@ -1,4 +1,5 @@
 {
+  "$schema": "https://typedoc.org/schema.json",
   "entryPointStrategy": "packages",
   "entryPoints": [
     "packages/request-template",
@@ -6,5 +7,6 @@
     "packages/vue3-hooks",
     "packages/wechat"
   ],
+  "sort": ["static-first", "kind","enum-value-ascending"],
   "out": "./docs-html"
 }
