@@ -9,7 +9,7 @@ importers:
       '@babel/core': ^7.19.6
       '@microsoft/api-extractor': 7.20.1
       '@mxssfd/core': 5.0.1-beta.0
-      '@mxssfd/typedoc-theme': ^1.0.2
+      '@mxssfd/typedoc-theme': ^1.0.3
       '@rollup/plugin-json': ^5.0.1
       '@types/fs-extra': ^9.0.13
       '@types/jest': ^29.2.0
@@ -50,7 +50,7 @@ importers:
       '@babel/core': 7.19.6
       '@microsoft/api-extractor': 7.20.1
       '@mxssfd/core': 5.0.1-beta.0
-      '@mxssfd/typedoc-theme': 1.0.2_typedoc@0.23.21
+      '@mxssfd/typedoc-theme': 1.0.3_typedoc@0.23.21
       '@rollup/plugin-json': 5.0.1_rollup@3.2.3
       '@types/fs-extra': 9.0.13
       '@types/jest': 29.2.0
@@ -920,8 +920,8 @@ packages:
       '@mxssfd/types': 5.0.1-beta.0
     dev: true
 
-  /@mxssfd/typedoc-theme/1.0.2_typedoc@0.23.21:
-    resolution: {integrity: sha512-/gSKWZB4Ohh4Dwk/SsJDL5jK+VNJjHAczSd8GDkvOZ2ITElFdnqUOM6PfkiTLkoDHXL9v2f5OulBgDR2O9oJcQ==}
+  /@mxssfd/typedoc-theme/1.0.3_typedoc@0.23.21:
+    resolution: {integrity: sha512-xtgE5+Pe3Dk2NSqYyZKIz8Zi6/Mupps+nIFtfL7hFTN3vjXpvcFFevJg7DcCwD51q/tPy0VEivOhbfpCrocvsA==}
     engines: {node: '>= 14'}
     peerDependencies:
       typedoc: ^0.23.21
