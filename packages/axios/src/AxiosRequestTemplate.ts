@@ -2,7 +2,8 @@ import type { AxiosInstance, AxiosStatic } from 'axios';
 import { RequestTemplate, CustomConfig, Context, RetryContext } from 'request-template';
 
 /**
- * @public
+ * axios请求封装类，继承自RequestTemplate
+ *
  * 使用模板方法模式处理axios请求, 具体类可实现protected的方法替换掉原有方法
  * 自定义配置可继承CustomConfig实现
  */
@@ -21,7 +22,6 @@ export class AxiosRequestTemplate<
   /**
    * 获取axios，并判断是否已设置了axios
    * @returns {AxiosStatic}
-   * @protected
    */
   protected get axios(): AxiosStatic {
     const proto = Object.getPrototypeOf(this).constructor;
@@ -37,7 +37,10 @@ export class AxiosRequestTemplate<
    */
   protected axiosIns!: AxiosInstance;
 
-  protected init() {
+  /**
+   * 重写初始化函数
+   */
+  protected override init() {
     // 1、保存基础配置
     this.axiosIns = this.axios.create(this.globalConfigs.requestConfig);
     super.init();

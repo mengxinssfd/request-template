@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "lib": ["esnext", "dom"],
+    "target": "esnext",
+    "sourceMap": true,
+    // jest webstorm debugger和报错信息显示必须开启sourcemap
+    "allowJs": true,
+    // "jsx": "react",
+    "moduleResolution": "node",
+    // "removeComments": true,
+    "declaration": true,
+    //    "rootDir": "src",
+    "forceConsistentCasingInFileNames": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": false,
+    "noImplicitAny": false,
+    "importHelpers": true,
+    "strictNullChecks": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "noUnusedLocals": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "files": ["docs/vite.config.ts"],
+  "include": ["docs/.vitepress", "scripts/*.ts"]
+}
