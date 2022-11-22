@@ -13,7 +13,7 @@
   "typedoc": {
     "entryPoint": "./src/index.ts",
     "readmeFile": "./README.md",
-    "displayName": "@request-template/vue3-hooks",
+    "displayName": "request-template/vue3-hooks",
     "tsconfig": "../../tsconfig.json"
   },
   "sideEffects": false,

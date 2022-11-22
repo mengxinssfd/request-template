@@ -14,7 +14,7 @@
   "typedoc": {
     "entryPoint": "./src/index.ts",
     "readmeFile": "./README.md",
-    "displayName": "@request-template/wechat",
+    "displayName": "request-template/wechat",
     "tsconfig": "../../tsconfig.json"
   },
   "sideEffects": false,

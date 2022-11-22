@@ -27,7 +27,7 @@
   "typedoc": {
     "entryPoint": "./src/index.ts",
     "readmeFile": "./README.md",
-    "displayName": "@request-template/axios",
+    "displayName": "request-template/axios",
     "tsconfig": "../../tsconfig.json"
   },
   "sideEffects": false,
