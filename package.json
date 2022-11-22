@@ -39,7 +39,8 @@
     "realease": "node scripts/release-mono.js",
     "apie": "api-extractor run",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "typedoc:build": "typedoc --plugin @mxssfd/typedoc-theme --theme my-theme"
+    "typedoc:build": "typedoc --plugin @mxssfd/typedoc-theme --theme my-theme",
+    "typedoc:deploy": "gh-pages -d docs-html"
   },
   "repository": {
     "type": "git",
@@ -76,6 +77,7 @@
     "execa": "^5.1.1",
     "flexsearch": "^0.7.31",
     "fs-extra": "^10.1.0",
+    "gh-pages": "^4.0.0",
     "jest": "^29.2.1",
     "minimist": "^1.2.6",
     "miniprogram-api-typings": "^3.6.0",
