@@ -33,7 +33,7 @@
     "access": "public"
   },
   "typedoc": {
-    "entryPoint": "./src/index.ts",
+    "entryPoint": "./src/index.typedoc.ts",
     "readmeFile": "./README.md",
     "displayName": "request-template",
     "tsconfig": "../../tsconfig.json"
