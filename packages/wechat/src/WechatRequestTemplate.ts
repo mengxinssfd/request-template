@@ -1,4 +1,5 @@
 import { Context, CustomConfig, RequestTemplate } from 'request-template';
+import type { AxiosRequestConfig } from 'axios';
 
 /**
  * 微信小程序请求自定义配置，继承自CustomConfig
@@ -32,28 +33,43 @@ export class WechatRequestTemplate<
   }
 
   /**
+   * axios配置对接wx.request配置
+   */
+  protected override handleRequestConfig(config: AxiosRequestConfig): AxiosRequestConfig {
+    const baseConfig = this.globalConfigs.requestConfig;
+
+    const method = config.method || baseConfig.method || 'get';
+    return {
+      ...baseConfig,
+      ...config,
+      method,
+      url: (config.baseURL || baseConfig.baseURL || '') + (config.url || baseConfig.url || ''),
+      headers: { ...baseConfig.headers, ...config.headers },
+      data:
+        method === 'get'
+          ? { ...baseConfig.params, ...config.params }
+          : { ...baseConfig.data, ...config.data },
+    };
+  }
+
+  /**
    * 使用小程序内部的请求重写fetch方法
    */
   protected override fetch(ctx) {
-    const baseConfig = this.globalConfigs.requestConfig;
     const config = ctx.requestConfig;
 
-    const method = config.method || baseConfig.method;
     return new Promise((resolve, reject) => {
       const task = wx.request({
-        url: (config.baseURL || baseConfig.baseURL) + (config.url || baseConfig.url),
-        method,
-        data:
-          method === 'get'
-            ? { ...baseConfig.params, ...config.params }
-            : { ...baseConfig.data, ...config.data },
-        header: { ...baseConfig.headers, ...config.headers },
+        url: config.url,
+        method: config.method,
+        data: config.data,
+        header: config.headers,
         success: resolve,
         fail: reject,
       });
       // 注册取消事件
       this.registerCanceler(ctx, task.abort.bind(task));
-    }) as any;
+    });
   }
 
   // eslint-disable-next-line
