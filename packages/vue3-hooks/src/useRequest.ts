@@ -50,7 +50,7 @@ export function useRequest<
   ALIAS extends string = 'request',
   DATA extends object | void = void,
   DF extends Awaited<ReturnType<REQ>>['data'] | null = null,
->(requestFn: REQ, options: Options<ALIAS, DATA> = {} as any, defaultData: DF = null as DF) {
+>(requestFn: REQ, options = {} as Options<ALIAS, DATA>, defaultData: DF = null as DF) {
   const state = reactive<State<REQ, DF>>({
     loading: false,
     data: defaultData,
@@ -59,7 +59,7 @@ export function useRequest<
 
   const refs = toRefs(state);
 
-  const request = (...args: any[]) => {
+  const request = (...args: unknown[]) => {
     // computed变量不能JSON.stringfy
     args = args.map((item) => (isRef(item) ? item.value : item));
     state.loading = true;

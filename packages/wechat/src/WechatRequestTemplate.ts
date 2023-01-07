@@ -28,8 +28,8 @@ export class WechatRequestTemplate<
   /**
    * 使用小程序的取消判断逻辑
    */
-  protected override isCancel(value: any) {
-    return value?.errMsg === 'request:fail abort';
+  protected override isCancel(value: unknown): boolean {
+    return Boolean(value && value?.['errMsg'] === 'request:fail abort');
   }
 
   /**
