@@ -11,6 +11,7 @@ module.exports = {
   },
   collectCoverageFrom: [
     'packages/**/src/**.ts',
+    '!**/**.typedoc.ts',
     '!**/packages/**/dist/**',
     '!**/packages/wechat/**',
   ],
