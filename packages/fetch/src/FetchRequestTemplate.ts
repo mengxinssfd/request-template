@@ -1,5 +1,6 @@
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { RequestTemplate, CustomConfig, Context, RetryContext } from 'request-template';
+import { isUrl } from '@mxssfd/core';
 
 /**
  * fetch请求封装类，继承自RequestTemplate
@@ -17,7 +18,14 @@ export class FetchRequestTemplate<
 
     const method = config.method || baseConfig.method || 'get';
 
-    const url = new URL(config.url || baseConfig.url || '', config.baseURL || baseConfig.baseURL);
+    const urls = [config.url || baseConfig.url || '', config.baseURL || baseConfig.baseURL] as [
+      string,
+      string | undefined,
+    ];
+
+    if (isUrl(urls[0])) urls.pop();
+
+    const url = new URL(...urls);
     if (method === 'get') {
       // 处理url query
       for (const [k, v] of Object.entries({ ...baseConfig.params, ...config.params })) {
