@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { AxiosRequestTemplate } from '../src';
-import { Cache } from 'request-template';
+import { Cache, ResType } from 'request-template';
 import { mockAxiosResponse, sleep } from './utils';
 
 jest.mock('axios');
@@ -16,6 +16,9 @@ const mockCreate = () => {
       map.set(cancelToken, (msg?: string) => {
         rej({ message: msg });
       });
+      if (url === '/success') {
+        res(mockAxiosResponse(requestConfig, { code: 200, data: { times }, msg: 'success' }));
+      }
       if (url === '/config') {
         if (times === 3) {
           setTimeout(() => res(mockAxiosResponse(requestConfig, requestConfig)));
@@ -116,6 +119,27 @@ describe('AxiosRequestTemplate retry', () => {
       { tag: 'cancel', retry: 3 },
     );
     expect(res).toEqual({ code: 200, data: {}, msg: 'success' });
+  });
+  test('请求成功，但statusHandler认为是失败的', async () => {
+    let retryTimes = 0;
+    const res = await get(
+      { url: '/success' },
+      {
+        retry: 2,
+        statusHandlers: {
+          default(_, _res, data): Promise<void> | void {
+            const {
+              data: { times },
+            } = data as ResType<{ times: number }>;
+            retryTimes = times;
+            // 当重试次数小于2时，认为是失败的
+            if (times < 2) return Promise.reject('fail');
+          },
+        },
+      },
+    );
+    expect(retryTimes).toBe(2);
+    expect(res).toEqual({ code: 200, data: { times: 2 }, msg: 'success' });
   });
 
   test('cache&retry，有retry时不要用缓存', async () => {
