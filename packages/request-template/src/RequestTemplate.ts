@@ -377,7 +377,7 @@ export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
   protected handleError(
     ctx: Context<CC>,
     e: AxiosError<ResType<unknown>>,
-  ): ReturnType<typeof this.handleStatus> {
+  ): ReturnType<typeof RequestTemplate.prototype.handleStatus> {
     // 错误处理
     const response = e.response as AxiosResponse<ResType<unknown>>;
     // 4、请求结果数据结构处理
