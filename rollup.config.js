@@ -1,6 +1,9 @@
 const path = require('path');
 const ts = require('rollup-plugin-typescript2');
 const json = require('@rollup/plugin-json');
+const commonJS = require('@rollup/plugin-commonjs');
+const polyfillNode = require('rollup-plugin-polyfill-node');
+const { nodeResolve } = require('@rollup/plugin-node-resolve');
 
 if (!process.env.TARGET) {
   throw new Error('TARGET package must be specified via --environment flag.');
@@ -159,6 +162,7 @@ function createConfig(format, output, plugins = []) {
       }),
       tsPlugin,
       ...plugins,
+      format === 'global' ? [commonJS({ sourceMap: false }), polyfillNode(), nodeResolve()] : []
     ],
     output,
     onwarn: (msg, warn) => {

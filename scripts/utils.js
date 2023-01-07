@@ -34,6 +34,7 @@ const targets = fs.readdirSync(path.resolve(__dirname, '../packages')).filter((f
   if (!fs.statSync(path.resolve(__dirname, `../packages/${f}`)).isDirectory()) {
     return false;
   }
+  if (!fs.existsSync(path.resolve(__dirname, `../packages/${f}/package.json`))) return false;
   const pkg = require(`../packages/${f}/package.json`);
   return !(pkg.private && !pkg.buildOptions);
 });
