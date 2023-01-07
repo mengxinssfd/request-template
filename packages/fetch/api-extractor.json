@@ -2,6 +2,6 @@
   "extends": "../../api-extractor.json",
   "mainEntryPointFilePath": "./dist/packages/<unscopedPackageName>/src/index.d.ts",
   "dtsRollup": {
-    "publicTrimmedFilePath": "./dist/axios-request-template.d.ts"
+    "publicTrimmedFilePath": "./dist/request-template-fetch.d.ts"
   }
 }

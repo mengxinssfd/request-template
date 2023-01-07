@@ -2,21 +2,21 @@
   "name": "@request-template/fetch",
   "version": "2.0.1",
   "description": "axios请求模板封装-fetch",
-  "main": "dist/fetch-request-template.cjs.js",
-  "module": "dist/fetch-request-template.esm-bundler.js",
-  "types": "dist/fetch-request-template.d.ts",
+  "main": "dist/request-template-fetch.cjs.js",
+  "module": "dist/request-template-fetch.esm-bundler.js",
+  "types": "dist/request-template-fetch.d.ts",
   "exports": {
     ".": {
       "import": {
-        "node": "./dist/fetch-request-template.cjs.js",
-        "default": "./dist/fetch-request-template.esm-bundler.js"
+        "node": "./dist/request-template-fetch.cjs.js",
+        "default": "./dist/request-template-fetch.esm-bundler.js"
       },
-      "require": "./dist/fetch-request-template.cjs.js"
+      "require": "./dist/request-template-fetch.cjs.js"
     }
   },
   "buildOptions": {
     "name": "FetchRequestTemplate",
-    "filename": "fetch-request-template",
+    "filename": "request-template-fetch",
     "formats": [
       "esm-bundler",
       "esm-browser",

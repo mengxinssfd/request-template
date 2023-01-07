@@ -1,1 +1,1 @@
-export * from './AxiosRequestTemplate';
+export * from './FetchRequestTemplate';
