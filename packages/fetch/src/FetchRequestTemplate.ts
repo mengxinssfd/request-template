@@ -1,4 +1,4 @@
-import type { AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosRequestConfig, AxiosResponse, Method } from 'axios';
 import { RequestTemplate, CustomConfig, Context, RetryContext } from 'request-template';
 import { isUrl } from '@mxssfd/core';
 
@@ -11,47 +11,80 @@ export class FetchRequestTemplate<
   CC extends CustomConfig = CustomConfig,
 > extends RequestTemplate<CC> {
   /**
+   * 处理URL
+   */
+  protected handleURL(config: AxiosRequestConfig, method: Lowercase<Method>): URL {
+    const { requestConfig: baseConfig } = this.globalConfigs;
+
+    const urlParams = [
+      config.url || baseConfig.url || '',
+      config.baseURL || baseConfig.baseURL,
+    ] as [string, string | undefined];
+
+    // 如果传的url是完整的，那么不使用baseURL
+    if (isUrl(urlParams[0])) urlParams.pop();
+    // 如果传的url不是完整的，且不存在baseURL，那么baseURL使用当前的域名
+    else if (!urlParams[1] || !isUrl(urlParams[1])) urlParams[1] = location.origin;
+
+    const url = new URL(...urlParams);
+
+    const setQuery = (params: Record<string, unknown>) => {
+      for (const [k, v] of Object.entries(params)) {
+        url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : (v as string));
+      }
+    };
+
+    // 处理url query
+    setQuery({ ...baseConfig.params, ...config.params });
+
+    if (method !== 'get') return url;
+
+    // data转成url参数
+    setQuery({ ...baseConfig.data, ...config.data });
+
+    return url;
+  }
+
+  /**
+   * 处理data
+   */
+  protected handleData(config: AxiosRequestConfig): URLSearchParams | FormData | string {
+    const { requestConfig: baseConfig } = this.globalConfigs;
+
+    // 如果data是字符串，则什么都不做
+    if (typeof config.data === 'string') return config.data;
+
+    // 合并data，且不能影响到原来的入参data
+    // 非FormData则合并，baseConfig有没有都行
+    if (!(config.data instanceof FormData))
+      return new URLSearchParams({ ...baseConfig.data, ...config.data });
+
+    // 如果data是FormData且baseConfig不存在data，则原样返回
+    if (!baseConfig.data) return config.data;
+
+    const data = new FormData();
+    // 复制baseConfig.data，注意：baseConfig.data不能是FormData类型
+    Object.entries(baseConfig.data).forEach(([k, v]) =>
+      data.set(k, typeof v === 'object' ? JSON.stringify(v) : (v as string)),
+    );
+    // 复制config.data
+    config.data.forEach((value, key) => data.set(key, value));
+    return data;
+  }
+
+  /**
    * 对接配置
    */
   protected override handleRequestConfig(config: AxiosRequestConfig): AxiosRequestConfig {
     const baseConfig = this.globalConfigs.requestConfig;
 
-    const method = config.method || baseConfig.method || 'get';
-
-    const urls = [config.url || baseConfig.url || '', config.baseURL || baseConfig.baseURL] as [
-      string,
-      string | undefined,
-    ];
-
-    if (isUrl(urls[0])) urls.pop();
-
-    const url = new URL(...urls);
-    if (method === 'get') {
-      // 处理url query
-      for (const [k, v] of Object.entries({ ...baseConfig.params, ...config.params })) {
-        url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : (v as string));
-      }
-    }
-
-    let data;
-    // 合并data，且不能影响到原来的入参data
-    if (baseConfig.data) {
-      if (config.data instanceof FormData) {
-        data = new FormData();
-        // 复制baseConfig.data，注意：baseConfig.data不能是FormData类型
-        Object.entries(baseConfig.data).forEach(([k, v]) =>
-          data.set(k, typeof v === 'object' ? JSON.stringify(v) : (v as string)),
-        );
-        // 复制config.data
-        config.data.forEach((value, key) => data.set(key, value));
-      } else data = { ...baseConfig.data, ...config.data };
-    }
+    const method = (config.method || baseConfig.method || 'get').toLowerCase() as Lowercase<Method>;
 
     return {
       ...config,
-      url: url.toString(),
+      url: this.handleURL(config, method).toString(),
       method,
-      data,
+      data: method === 'get' ? undefined : this.handleData(config),
       headers: { ...baseConfig.headers, ...config.headers },
       withCredentials: config.withCredentials || baseConfig.withCredentials,
     };
@@ -60,21 +93,37 @@ export class FetchRequestTemplate<
   /**
    * axios对接fetch的参数和返回值
    */
-  protected override fetch(ctx: RetryContext<CC>) {
-    const config = ctx.requestConfig;
+  protected override fetch(ctx: RetryContext<CC>): Promise<AxiosResponse> {
+    const { requestConfig: cfg } = ctx;
 
-    return fetch(config.url as string, {
-      method: config.method,
-      credentials: config.withCredentials ? 'include' : 'same-origin',
-      body: config.data,
-      headers: config.headers as Record<string, string>,
-      signal: config.signal,
-    }).then((res) => {
-      const headers: Record<string, string> = {};
-      res.headers.forEach((value, key) => (headers[key] = value));
-
-      return { status: res.status, data: res.json(), headers, config } as AxiosResponse;
+    const responsePromise = fetch(cfg.url as string, {
+      method: cfg.method,
+      credentials: cfg.withCredentials ? 'include' : 'same-origin',
+      body: cfg.data,
+      headers: cfg.headers as Record<string, string>,
+      signal: cfg.signal,
     });
+    return this.handleFetchResult(responsePromise, ctx);
+  }
+
+  /**
+   * 处理fetch结果
+   */
+  protected async handleFetchResult(
+    responsePromise: Promise<Response>,
+    ctx: RetryContext<CC>,
+  ): Promise<AxiosResponse> {
+    const res = await responsePromise;
+
+    const headers: Record<string, string> = {};
+    res.headers.forEach((value, key) => (headers[key] = value));
+
+    return {
+      status: res.status,
+      data: await res.json(),
+      headers,
+      config: ctx.requestConfig,
+    } as AxiosResponse;
   }
 
   /**
@@ -85,14 +134,14 @@ export class FetchRequestTemplate<
   /**
    * 实现取消请求判断
    */
-  protected override isCancel() {
+  protected override isCancel(): boolean {
     return Boolean(this.abortController?.signal.aborted);
   }
 
   /**
    * 处理取消器
    */
-  protected override handleCanceler(ctx: Context<CC>) {
+  protected override handleCanceler(ctx: Context<CC>): void {
     const { requestConfig } = ctx;
 
     const abortController = (this.abortController = new AbortController());
