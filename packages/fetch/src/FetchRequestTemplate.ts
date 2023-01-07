@@ -1,4 +1,4 @@
-import type { AxiosRequestConfig, AxiosResponse, Method } from 'axios';
+import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { RequestTemplate, CustomConfig, Context, RetryContext } from 'request-template';
 import { isUrl } from '@mxssfd/core';
 
@@ -13,7 +13,7 @@ export class FetchRequestTemplate<
   /**
    * 处理URL
    */
-  protected handleURL(config: AxiosRequestConfig, method: Lowercase<Method>): URL {
+  protected handleURL(config: AxiosRequestConfig): URL {
     const { requestConfig: baseConfig } = this.globalConfigs;
 
     const urlParams = [
@@ -28,19 +28,10 @@ export class FetchRequestTemplate<
 
     const url = new URL(...urlParams);
 
-    const setQuery = (params: Record<string, unknown>) => {
-      for (const [k, v] of Object.entries(params)) {
-        url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : (v as string));
-      }
-    };
-
     // 处理url query
-    setQuery({ ...baseConfig.params, ...config.params });
-
-    if (method !== 'get') return url;
-
-    // data转成url参数
-    setQuery({ ...baseConfig.data, ...config.data });
+    for (const [k, v] of Object.entries({ ...baseConfig.params, ...config.params })) {
+      url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : (v as string));
+    }
 
     return url;
   }
@@ -78,13 +69,13 @@ export class FetchRequestTemplate<
   protected override handleRequestConfig(config: AxiosRequestConfig): AxiosRequestConfig {
     const baseConfig = this.globalConfigs.requestConfig;
 
-    const method = (config.method || baseConfig.method || 'get').toLowerCase() as Lowercase<Method>;
+    const method = config.method || baseConfig.method || 'get';
 
     return {
       ...config,
-      url: this.handleURL(config, method).toString(),
+      url: this.handleURL(config).toString(),
       method,
-      data: method === 'get' ? undefined : this.handleData(config),
+      data: method.toLowerCase() === 'get' ? undefined : this.handleData(config),
       headers: { ...baseConfig.headers, ...config.headers },
       withCredentials: config.withCredentials || baseConfig.withCredentials,
     };
