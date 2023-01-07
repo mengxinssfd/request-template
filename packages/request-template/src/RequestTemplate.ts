@@ -338,12 +338,10 @@ export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
       // 请求结果数据结构处理
       const data = this.handleResponse(ctx, response);
       // 状态码处理，并返回结果
-      return this.handleStatus(ctx, response, data);
+      return await this.handleStatus(ctx, response, data);
     } catch (e: any) {
       // 重试
-      if (!ctx.isRetry && ctx.retry && !this.isCancel(e)) {
-        return ctx.retry(e);
-      }
+      if (!ctx.isRetry && ctx.retry && !this.isCancel(e)) return ctx.retry(e);
       return Promise.reject(e);
     }
   }
