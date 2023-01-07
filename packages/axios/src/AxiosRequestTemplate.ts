@@ -75,7 +75,7 @@ export class AxiosRequestTemplate<
   /**
    * 使isCancel支持子类覆盖
    */
-  protected isCancel(value: any) {
+  protected isCancel(value: unknown) {
     return this.axios.isCancel(value);
   }
 

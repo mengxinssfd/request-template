@@ -1,14 +1,13 @@
 import type { AxiosPromise, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { AxiosError } from 'axios';
 
 /**
  * 单个状态处理类型声明
  */
 export type StatusHandler<CC extends CustomConfig> = (
   ctx: Context<CC>,
-  res: AxiosResponse<ResType<any>>,
-  data: ResType<any>,
-) => void | Promise<any>;
+  res: AxiosResponse<ResType<unknown>>,
+  data: ResType<unknown>,
+) => void | Promise<unknown>;
 
 /**
  * 多状态处理类型声明
@@ -144,7 +143,7 @@ export interface Configs<CC extends CustomConfig = CustomConfig> {
 export interface Context<CC extends CustomConfig> extends Configs<CC> {
   clearSet: Set<Function>;
   requestKey: string;
-  retry?: (e: AxiosError<ResType<any>>) => AxiosPromise;
+  retry?: (e: unknown) => AxiosPromise;
 }
 
 /**
