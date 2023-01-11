@@ -62,6 +62,7 @@
     "@rollup/plugin-json": "^5.0.1",
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@tool-pack/basic": "^0.0.9",
+    "@tool-pack/dom": "0.0.1-beta.5",
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^29.2.0",
     "@types/node": "^18.11.9",
