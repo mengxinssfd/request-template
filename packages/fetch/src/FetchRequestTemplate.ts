@@ -1,6 +1,6 @@
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { RequestTemplate, CustomConfig, Context, RetryContext } from 'request-template';
-import { isUrl } from '@mxssfd/core';
+import { RequestConfigHandler } from './RequestConfigHandler';
 
 /**
  * fetch请求封装类，继承自RequestTemplate
@@ -11,56 +11,10 @@ export class FetchRequestTemplate<
   CC extends CustomConfig = CustomConfig,
 > extends RequestTemplate<CC> {
   /**
-   * 处理URL
+   * 获取请求配置处理器，单独一个方法方便子类实现替换
    */
-  protected handleURL(config: AxiosRequestConfig): URL {
-    const { requestConfig: baseConfig } = this.globalConfigs;
-
-    const urlParams = [
-      config.url || baseConfig.url || '',
-      config.baseURL || baseConfig.baseURL,
-    ] as [string, string | undefined];
-
-    // 如果传的url是完整的，那么不使用baseURL
-    if (isUrl(urlParams[0])) urlParams.pop();
-    // 如果传的url不是完整的，且不存在baseURL，那么baseURL使用当前的域名
-    else if (!urlParams[1] || !isUrl(urlParams[1])) urlParams[1] = location.origin;
-
-    const url = new URL(...urlParams);
-
-    // 处理url query
-    for (const [k, v] of Object.entries({ ...baseConfig.params, ...config.params })) {
-      url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : (v as string));
-    }
-
-    return url;
-  }
-
-  /**
-   * 处理data
-   */
-  protected handleData(config: AxiosRequestConfig): URLSearchParams | FormData | string {
-    const { requestConfig: baseConfig } = this.globalConfigs;
-
-    // 如果data是字符串，则什么都不做
-    if (typeof config.data === 'string') return config.data;
-
-    // 合并data，且不能影响到原来的入参data
-    // 非FormData则合并，baseConfig有没有都行
-    if (!(config.data instanceof FormData))
-      return new URLSearchParams({ ...baseConfig.data, ...config.data });
-
-    // 如果data是FormData且baseConfig不存在data，则原样返回
-    if (!baseConfig.data) return config.data;
-
-    const data = new FormData();
-    // 复制baseConfig.data，注意：baseConfig.data不能是FormData类型
-    Object.entries(baseConfig.data).forEach(([k, v]) =>
-      data.set(k, typeof v === 'object' ? JSON.stringify(v) : (v as string)),
-    );
-    // 复制config.data
-    config.data.forEach((value, key) => data.set(key, value));
-    return data;
+  protected getRequestConfigHandler(config: AxiosRequestConfig): RequestConfigHandler {
+    return new RequestConfigHandler(this.globalConfigs.requestConfig, config);
   }
 
   /**
@@ -71,11 +25,13 @@ export class FetchRequestTemplate<
 
     const method = config.method || baseConfig.method || 'get';
 
+    const rch = this.getRequestConfigHandler(config);
+
     return {
       ...config,
-      url: this.handleURL(config).toString(),
+      url: rch.handleURL().toString(),
       method,
-      data: method.toLowerCase() === 'get' ? undefined : this.handleData(config),
+      data: method.toLowerCase() === 'get' ? undefined : rch.handleData(),
       headers: { ...baseConfig.headers, ...config.headers },
       withCredentials: config.withCredentials || baseConfig.withCredentials,
     };
