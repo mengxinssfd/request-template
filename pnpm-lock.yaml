@@ -8,11 +8,11 @@ importers:
       '@babel/cli': ^7.19.3
       '@babel/core': ^7.19.6
       '@microsoft/api-extractor': 7.20.1
-      '@mxssfd/core': 5.0.1-beta.0
       '@mxssfd/typedoc-theme': ^1.0.3
       '@rollup/plugin-commonjs': ^24.0.0
       '@rollup/plugin-json': ^5.0.1
       '@rollup/plugin-node-resolve': ^15.0.1
+      '@tool-pack/basic': ^0.0.9
       '@types/fs-extra': ^9.0.13
       '@types/jest': ^29.2.0
       '@types/node': ^18.11.9
@@ -52,11 +52,11 @@ importers:
       '@babel/cli': 7.19.3_@babel+core@7.19.6
       '@babel/core': 7.19.6
       '@microsoft/api-extractor': 7.20.1
-      '@mxssfd/core': 5.0.1-beta.0
       '@mxssfd/typedoc-theme': 1.0.3_typedoc@0.23.21
       '@rollup/plugin-commonjs': 24.0.0_rollup@3.2.3
       '@rollup/plugin-json': 5.0.1_rollup@3.2.3
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.2.3
+      '@tool-pack/basic': 0.0.9
       '@types/fs-extra': 9.0.13
       '@types/jest': 29.2.0
       '@types/node': 18.11.9
@@ -920,12 +920,6 @@ packages:
     resolution: {integrity: sha512-WrHvO8PDL8wd8T2+zBGKrMwVL5IyzR3ryWUsl0PXgEV0QHup4mTLi0QcATefGI6Gx9Anu7vthPyyyLpY0EpiQg==}
     dev: true
 
-  /@mxssfd/core/5.0.1-beta.0:
-    resolution: {integrity: sha512-Xx7SuBkVinUgwXv2L9ltBJxtqvDed6wC0C598H1WbeBM2Ce6nKZirmVPzwnbx7YOqYuKqIJb5RvGyy3g3aQ0/A==}
-    dependencies:
-      '@mxssfd/types': 5.0.1-beta.0
-    dev: true
-
   /@mxssfd/typedoc-theme/1.0.3_typedoc@0.23.21:
     resolution: {integrity: sha512-xtgE5+Pe3Dk2NSqYyZKIz8Zi6/Mupps+nIFtfL7hFTN3vjXpvcFFevJg7DcCwD51q/tPy0VEivOhbfpCrocvsA==}
     engines: {node: '>= 14'}
@@ -933,10 +927,6 @@ packages:
       typedoc: ^0.23.21
     dependencies:
       typedoc: 0.23.21_typescript@4.8.4
-    dev: true
-
-  /@mxssfd/types/5.0.1-beta.0:
-    resolution: {integrity: sha512-K+DLpL92Cw+QDYryLX/nSzP7XOAwKukA1/hCmKiQo1Yo+/BR15Bzs3tdO1gmMmNikMhL6ToX/75x78DMEYUFdg==}
     dev: true
 
   /@nicolo-ribaudo/chokidar-2/2.1.8-no-fsevents.3:
@@ -1097,6 +1087,16 @@ packages:
     resolution: {integrity: sha512-BPS4ynJW/o92PUR4wgriz2Ud5gpST5vz6GQfMixEDK0Z8ZCUv2M7SkBLykH56T++Xs+8ln9zTGbOvNGIe02/jw==}
     dependencies:
       '@sinonjs/commons': 1.8.3
+    dev: true
+
+  /@tool-pack/basic/0.0.9:
+    resolution: {integrity: sha512-cZ/UmMD0Mnp+AodcQIKR+xMwwZ/A9vYCOWVtbotqzpzp9ngPm/I0ej+vhVz1epnYiBnm5iYTUbB7EepRH0Mdmw==}
+    dependencies:
+      '@tool-pack/types': 0.0.1
+    dev: true
+
+  /@tool-pack/types/0.0.1:
+    resolution: {integrity: sha512-PuOKplXpssrNTTj5UPEvRSSVlWT5T4Pt7WtgPpazAlFynY8FZFofLJlOmsQMXlmdZmS1P9yKHCZECNgOoPCbeA==}
     dev: true
 
   /@tsconfig/node10/1.0.9:
