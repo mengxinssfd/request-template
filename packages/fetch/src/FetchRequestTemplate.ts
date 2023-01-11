@@ -31,6 +31,7 @@ export class FetchRequestTemplate<
       ...config,
       url: rch.handleURL().toString(),
       method,
+      responseType: config.responseType || baseConfig.responseType || 'json',
       data: method.toLowerCase() === 'get' ? undefined : rch.handleData(),
       headers: { ...baseConfig.headers, ...config.headers },
       withCredentials: config.withCredentials || baseConfig.withCredentials,
@@ -60,14 +61,39 @@ export class FetchRequestTemplate<
     responsePromise: Promise<Response>,
     ctx: RetryContext<CC>,
   ): Promise<AxiosResponse> {
+    const { requestConfig: cfg } = ctx;
+
     const res = await responsePromise;
 
     const headers: Record<string, string> = {};
     res.headers.forEach((value, key) => (headers[key] = value));
 
+    const getData = (): Promise<any> | void => {
+      // | 'arraybuffer'
+      // | 'blob'
+      // | 'document'
+      // | 'json'
+      // | 'text'
+      // | 'stream';
+      switch (cfg.responseType) {
+        case 'json':
+          return res.json();
+        case 'blob':
+          return res.blob();
+        case 'arraybuffer':
+          return res.arrayBuffer();
+        case 'text':
+          return res.text();
+        case 'stream':
+          return Promise.resolve(res.body?.getReader());
+        // case 'document':
+        //   return;
+      }
+    };
+
     return {
       status: res.status,
-      data: await res.json(),
+      data: await getData(),
       headers,
       config: ctx.requestConfig,
     } as AxiosResponse;
