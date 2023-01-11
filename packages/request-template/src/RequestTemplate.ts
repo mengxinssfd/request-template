@@ -351,11 +351,29 @@ export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
 
   /**
    * 模板方法，请求入口，重试不会执行该方法
+   * ---
+   * json类返回值类型
+   * @overload
    */
   request<T = never, RC extends boolean = false>(
-    requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & { url: string },
+    requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url' | 'responseType'> & {
+      url: string;
+      responseType?: 'json';
+    },
     customConfig?: DynamicCustomConfig<CC, RC>,
   ): Promise<RC extends true ? AxiosResponse<ResType<T>> : ResType<T>>;
+  /**
+   * 模板方法，请求入口，重试不会执行该方法
+   * ---
+   * 非json返回值类型
+   * @overload
+   */
+  request<T = never, RC extends boolean = false>(
+    requestConfig: Omit<AxiosRequestConfig, 'cancelToken' | 'url'> & {
+      url: string;
+    },
+    customConfig?: DynamicCustomConfig<CC, RC>,
+  ): Promise<RC extends true ? AxiosResponse<T> : T>;
   /**
    * 模板方法，请求入口，重试不会执行该方法
    */

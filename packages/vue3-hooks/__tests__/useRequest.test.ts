@@ -1,5 +1,5 @@
 import { useRequest } from '../src';
-import { sleep } from '@mxssfd/core';
+import { sleep } from '@tool-pack/basic';
 import { isRef, reactive, ref, isReactive, computed } from 'vue';
 
 // 模拟请求api

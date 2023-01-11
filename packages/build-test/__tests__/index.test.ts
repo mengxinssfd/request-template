@@ -1,6 +1,6 @@
 import { ins } from '../src';
 import { useRequest } from '@request-template/vue3-hooks';
-import { sleep } from '@mxssfd/core';
+import { sleep } from '@tool-pack/basic';
 
 describe('test', function () {
   test('base', () => {
