@@ -65,6 +65,9 @@ export class FetchRequestTemplate<
 
     const abortController = (ctx.abortController = new AbortController());
 
+    if (requestConfig.timeout)
+      setTimeout(() => abortController.abort('timeout'), requestConfig.timeout);
+
     // 注册取消事件
     this.registerCanceler(ctx, (message) => {
       abortController.abort(message);
