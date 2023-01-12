@@ -26,7 +26,11 @@ export class RequestConfigHandler {
     const { baseConfig, config } = this;
 
     const urlParams = [
-      config.url || baseConfig.url || '',
+      (config.url || baseConfig.url || '') +
+        ((config.paramsSerializer || baseConfig.paramsSerializer)?.([
+          config.params,
+          baseConfig.params,
+        ]) || ''),
       config.baseURL || baseConfig.baseURL,
     ] as [string, string | undefined];
 
@@ -38,7 +42,8 @@ export class RequestConfigHandler {
     const url = new URL(...urlParams);
 
     // 处理url search params
-    this.mergeURLParams(url.searchParams);
+    if (!config.paramsSerializer && !baseConfig.paramsSerializer)
+      this.mergeURLParams(url.searchParams);
 
     return url;
   }
