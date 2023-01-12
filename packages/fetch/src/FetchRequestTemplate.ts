@@ -11,31 +11,10 @@ export class FetchRequestTemplate<
   CC extends CustomConfig = CustomConfig,
 > extends RequestTemplate<CC> {
   /**
-   * 获取请求配置处理器，单独一个方法方便子类实现替换
-   */
-  protected getRequestConfigHandler(config: AxiosRequestConfig): RequestConfigHandler {
-    return new RequestConfigHandler(this.globalConfigs.requestConfig, config);
-  }
-
-  /**
    * 对接配置
    */
   protected override handleRequestConfig(config: AxiosRequestConfig): AxiosRequestConfig {
-    const baseConfig = this.globalConfigs.requestConfig;
-
-    const method = config.method || baseConfig.method || 'get';
-
-    const rch = this.getRequestConfigHandler(config);
-
-    return {
-      ...config,
-      url: rch.handleURL().toString(),
-      method,
-      responseType: config.responseType || baseConfig.responseType || 'json',
-      data: method.toLowerCase() === 'get' ? undefined : rch.handleData(),
-      headers: { ...baseConfig.headers, ...config.headers },
-      withCredentials: config.withCredentials || baseConfig.withCredentials,
-    };
+    return new RequestConfigHandler(this.globalConfigs.requestConfig, config).getResult();
   }
 
   /**

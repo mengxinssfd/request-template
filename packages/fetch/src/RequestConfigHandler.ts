@@ -69,4 +69,20 @@ export class RequestConfigHandler {
     config.data.forEach((value, key) => data.set(key, value));
     return data;
   }
+
+  getResult(): AxiosRequestConfig {
+    const { baseConfig, config } = this;
+
+    const method = config.method || baseConfig.method || 'get';
+
+    return {
+      ...config,
+      url: this.handleURL().toString(),
+      method,
+      responseType: config.responseType || baseConfig.responseType || 'json',
+      data: method.toLowerCase() === 'get' ? undefined : this.handleData(),
+      headers: { ...baseConfig.headers, ...config.headers },
+      withCredentials: config.withCredentials || baseConfig.withCredentials,
+    };
+  }
 }
