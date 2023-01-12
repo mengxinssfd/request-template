@@ -1,6 +1,7 @@
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { RequestTemplate, CustomConfig, Context, RetryContext } from 'request-template';
 import { RequestConfigHandler } from './RequestConfigHandler';
+import { FetchResultHandler } from './FetchResultHandler';
 
 /**
  * fetch请求封装类，继承自RequestTemplate
@@ -18,6 +19,16 @@ export class FetchRequestTemplate<
   }
 
   /**
+   * 处理fetch结果
+   */
+  protected async handleFetchResult(
+    responsePromise: Promise<Response>,
+    ctx: RetryContext<CC>,
+  ): Promise<AxiosResponse> {
+    return new FetchResultHandler(ctx.requestConfig).getResult(responsePromise);
+  }
+
+  /**
    * axios对接fetch的参数和返回值
    */
   protected override fetch(ctx: RetryContext<CC>): Promise<AxiosResponse> {
@@ -31,51 +42,6 @@ export class FetchRequestTemplate<
       signal: cfg.signal,
     });
     return this.handleFetchResult(responsePromise, ctx);
-  }
-
-  /**
-   * 处理fetch结果
-   */
-  protected async handleFetchResult(
-    responsePromise: Promise<Response>,
-    ctx: RetryContext<CC>,
-  ): Promise<AxiosResponse> {
-    const { requestConfig: cfg } = ctx;
-
-    const res = await responsePromise;
-
-    const headers: Record<string, string> = {};
-    res.headers.forEach((value, key) => (headers[key] = value));
-
-    const getData = (): Promise<any> | void => {
-      // | 'arraybuffer'
-      // | 'blob'
-      // | 'document'
-      // | 'json'
-      // | 'text'
-      // | 'stream';
-      switch (cfg.responseType) {
-        case 'json':
-          return res.json();
-        case 'blob':
-          return res.blob();
-        case 'arraybuffer':
-          return res.arrayBuffer();
-        case 'text':
-          return res.text();
-        case 'stream':
-          return Promise.resolve(res.body?.getReader());
-        // case 'document':
-        //   return;
-      }
-    };
-
-    return {
-      status: res.status,
-      data: await getData(),
-      headers,
-      config: ctx.requestConfig,
-    } as AxiosResponse;
   }
 
   /**
