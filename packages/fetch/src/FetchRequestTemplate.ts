@@ -3,6 +3,12 @@ import { RequestTemplate, CustomConfig, Context, RetryContext } from 'request-te
 import { RequestConfigHandler } from './RequestConfigHandler';
 import { FetchResultHandler } from './FetchResultHandler';
 
+export interface FetchContext<CC extends CustomConfig> extends Context<CC> {
+  /**
+   * 请求中断控制器
+   */
+  abortController?: AbortController;
+}
 /**
  * fetch请求封装类，继承自RequestTemplate
  * ---
@@ -35,34 +41,29 @@ export class FetchRequestTemplate<
     const { requestConfig: cfg } = ctx;
 
     const responsePromise = fetch(cfg.url as string, {
-      method: cfg.method,
+      method: cfg.method as string,
       credentials: cfg.withCredentials ? 'include' : 'same-origin',
       body: cfg.data,
       headers: cfg.headers as Record<string, string>,
-      signal: cfg.signal,
+      signal: cfg.signal as AbortSignal,
     });
     return this.handleFetchResult(responsePromise, ctx);
   }
 
   /**
-   * 请求中断控制器
-   */
-  protected abortController?: AbortController;
-
-  /**
    * 实现取消请求判断
    */
-  protected override isCancel(): boolean {
-    return Boolean(this.abortController?.signal.aborted);
+  protected override isCancel(_: unknown, ctx: FetchContext<CC>): boolean {
+    return Boolean(ctx.abortController?.signal.aborted);
   }
 
   /**
    * 处理取消器
    */
-  protected override handleCanceler(ctx: Context<CC>): void {
+  protected override handleCanceler(ctx: FetchContext<CC>): void {
     const { requestConfig } = ctx;
 
-    const abortController = (this.abortController = new AbortController());
+    const abortController = (ctx.abortController = new AbortController());
 
     // 注册取消事件
     this.registerCanceler(ctx, (message) => {
