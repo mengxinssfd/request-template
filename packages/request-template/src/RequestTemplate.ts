@@ -45,7 +45,7 @@ import { Canceler } from './Canceler';
  *     // 在此重写如何挂载canceler，可为空
  *   }
  *
- *   protected isCancel(value: any): boolean {
+ *   protected isCancel(value: unknown, ctx: Context<CC>): boolean {
  *     // 在此重写如何判断是取消的请求
  *     return false;
  *   }
@@ -119,7 +119,7 @@ export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
   /**
    * 使isCancel支持子类覆盖
    */
-  protected abstract isCancel(value: unknown): boolean;
+  protected abstract isCancel(value: unknown, ctx: RetryContext<CC>): boolean;
 
   /**
    * 处理requestConfig
@@ -232,7 +232,7 @@ export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
       this.cache.set(requestKey, promise, { ...cacheConfig, tag: customConfig.tag });
       // 如果该请求是被取消的话，就清理掉该缓存
       promise.catch((reason) => {
-        if (!cacheConfig.failedReq || this.isCancel(reason)) {
+        if (!cacheConfig.failedReq || this.isCancel(reason, ctx)) {
           this.cache.delete(requestKey);
         }
       });
@@ -344,7 +344,7 @@ export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
       return await this.handleStatus(ctx, response, data);
     } catch (e: unknown) {
       // 重试
-      if (!ctx.isRetry && ctx.retry && !this.isCancel(e)) return ctx.retry(e);
+      if (!ctx.isRetry && ctx.retry && !this.isCancel(e, ctx)) return ctx.retry(e);
       return Promise.reject(e);
     }
   }
