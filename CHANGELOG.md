@@ -1,3 +1,18 @@
+## [2.0.2](https://github.com/mengxinssfd/request-template/compare/v2.0.1...v2.0.2) (2023-03-09)
+
+
+### Bug Fixes
+
+* **RequestTemplate:** 开启retry-修复请求成功但statusHandler返回Promise.reject不会触发retry ([c1ceffa](https://github.com/mengxinssfd/request-template/commit/c1ceffa0e3d4954132d823a50befbbb2ecba3e6d))
+
+
+### Features
+
+* **RequestTemplate:** request添加类型重载，json与非json分开 ([952ad90](https://github.com/mengxinssfd/request-template/commit/952ad90a738d794c8d3f3c8aee642800d251ded9))
+* **vue3-hooks:** debounce/throttle，内置防抖节流 ([7126f7b](https://github.com/mengxinssfd/request-template/commit/7126f7ba6069258deb7f5fabdb81fe0f090d0180)), closes [#39](https://github.com/mengxinssfd/request-template/issues/39)
+
+
+
 ## [2.0.1](https://github.com/mengxinssfd/request-template/compare/v2.0.0...v2.0.1) (2022-10-30)
 
 
