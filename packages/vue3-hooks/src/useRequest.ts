@@ -1,5 +1,6 @@
 import { reactive, toRefs, isReactive, watch, isRef } from 'vue';
-import type { FN, State, Options } from './types';
+import { debounce, throttle } from '@tool-pack/basic';
+import type { FN, State, Options, AllOptions } from './types';
 
 /**
  * vue3 请求hooks
@@ -41,14 +42,30 @@ import type { FN, State, Options } from './types';
  * console.log(res3.data.value?.token);
  *```
  *
- * @param  requestFn
+ * @param  requestFn 请求函数
  * @param  options
- * @param  defaultData
+ * @param  [options.requestAlias='request'] 手动调用请求时的别名
+ * @param  [options.immediate=false] 立即执行
+ * @param  {{}?} options.debounce 防抖
+ * @param  options.debounce.delay 延时
+ * @param  [options.debounce.immediate=false] 第一次立即执行
+ * @param  {{}?} options.throttle 节流
+ * @param  options.throttle.interval 间隔
+ * @param  [options.throttle.leading=true] 第一次立即执行
+ * @param  [options.throttle.trailing=false] 最后一次一定执行
+ * @param  {Function?} options.throttle.invalidCB 间隔期间调用throttle返回的函数执行的回调
+ * @param  {any} options.data requestFn的参数
+ * @param  defaultData 请求失败时返回的默认数据
+ *  requestAlias = 'request',
+ *     immediate = false,
+ *     data,
+ *     debounce: _debounce,
+ *     throttle: _throttle
  */
 export function useRequest<
   REQ extends FN,
   ALIAS extends string = 'request',
-  DATA extends object | void = void,
+  DATA extends Parameters<REQ>[0] | void = void,
   DF extends Awaited<ReturnType<REQ>>['data'] | null = null,
 >(requestFn: REQ, options = {} as Options<ALIAS, DATA>, defaultData: DF = null as DF) {
   const state = reactive<State<REQ, DF>>({
@@ -59,7 +76,7 @@ export function useRequest<
 
   const refs = toRefs(state);
 
-  const request = (...args: unknown[]) => {
+  let request = (...args: unknown[]) => {
     // computed变量不能JSON.stringfy
     args = args.map((item) => (isRef(item) ? item.value : item));
     state.loading = true;
@@ -78,17 +95,22 @@ export function useRequest<
     requestAlias = 'request',
     immediate = false,
     data,
-  } = options as Options<ALIAS, {}> & Options<ALIAS>;
+    debounce: _debounce,
+    throttle: _throttle,
+  } = options as AllOptions;
+
+  if (_debounce) {
+    request = debounce(request, _debounce.delay, _debounce.immediate);
+  } else if (_throttle) {
+    const { interval, ...opts } = _throttle;
+    request = throttle(request, interval, opts);
+  }
 
   // 数据驱动
   if (data) {
     // 数据驱动没法从ts类型体操处限制，像vue的watch就能传普通对象，而不会有watch效果，也没有任何报错或者提示
     if (!(isReactive(data) || isRef(data))) throw new TypeError('数据驱动data必须是响应式数据');
-    watch(data, (n) => request(n), { deep: true });
-  }
-
-  if (immediate) {
-    request(data);
+    watch(data, (n) => request(n), { deep: true, immediate });
   }
 
   return {
