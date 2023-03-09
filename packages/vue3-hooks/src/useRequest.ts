@@ -56,11 +56,6 @@ import type { FN, State, Options, AllOptions } from './types';
  * @param  {Function?} options.throttle.invalidCB 间隔期间调用throttle返回的函数执行的回调
  * @param  {any} options.data requestFn的参数
  * @param  defaultData 请求失败时返回的默认数据
- *  requestAlias = 'request',
- *     immediate = false,
- *     data,
- *     debounce: _debounce,
- *     throttle: _throttle
  */
 export function useRequest<
   REQ extends FN,
