@@ -1,6 +1,6 @@
 import { useRequest } from '../src';
-import { sleep } from '@tool-pack/basic';
-import { isRef, reactive, ref, isReactive, computed } from 'vue';
+import { debounce, sleep } from '@tool-pack/basic';
+import { isRef, reactive, ref, isReactive, computed, watch } from 'vue';
 
 // 模拟请求api
 function requestFn<T extends { a: number; b: string }>(data: T): Promise<{ data: T }> {
@@ -148,7 +148,7 @@ describe('useRequest', function () {
     expect(error.value).toBe(null);
   });
   test('数据驱动:立即启动', async () => {
-    const params = ref({ a: 1, b: '2' });
+    const params = ref({ a: 1, p: '2' });
     const { data, loading, error } = useRequest(mockRequest, { data: params, immediate: true });
 
     // 立即启动 初始时data值为null，loading是true，请求已经调用过
@@ -196,13 +196,13 @@ describe('useRequest', function () {
     const params = { a: 1, b: '2' };
 
     // 有默认Data
-    const res = useRequest(requestFn, { immediate: false }, params);
+    const res = useRequest(requestFn, {}, params);
     expect(res.loading.value).toBeFalsy();
     expect(res.error.value).toBe(null);
     expect(res.data.value.a).toBe(1);
 
     // 无默认Data
-    const res2 = useRequest(requestFn, { immediate: false });
+    const res2 = useRequest(requestFn);
     expect(res2.loading.value).toBeFalsy();
     expect(res2.error.value).toBe(null);
     // 未传默认data时，data.value可能是null，所以要加可选连
@@ -212,5 +212,376 @@ describe('useRequest', function () {
     const params2 = reactive(params);
     const res3 = useRequest(requestFn, { data: params2 });
     expect(typeof (res3 as any).request === 'function').toBeTruthy();
+  });
+  describe('debounce', () => {
+    test('debounce 1', async () => {
+      let times = 0;
+      const req = debounce(() => times++, 10, true);
+
+      req();
+      req();
+      req();
+      req();
+      req();
+
+      await sleep(100);
+
+      expect(times).toBe(2);
+    });
+    describe('手动调用', function () {
+      test('immediate:false', async () => {
+        const { loading, req } = useRequest(requestFn, {
+          requestAlias: 'req',
+          debounce: { delay: 10 },
+        });
+
+        const values: [boolean, boolean][] = [];
+        let times = 0;
+
+        watch(loading, (o, n) => {
+          values.push([o, n]);
+          times++;
+        });
+
+        await sleep(60);
+
+        expect(values).toEqual([]);
+        expect(times).toBe(0);
+
+        req({ a: 1, b: '' });
+        req({ a: 1, b: '' });
+        req({ a: 1, b: '' });
+
+        await sleep(100);
+
+        expect(values).toEqual([
+          [true, false],
+          [false, true],
+        ]);
+      });
+      test('immediate:true', async () => {
+        const { loading, req } = useRequest(requestFn, {
+          requestAlias: 'req',
+          debounce: { delay: 10, immediate: true },
+        });
+
+        const values: [boolean, boolean][] = [];
+        let times = 0;
+
+        watch(loading, (o, n) => {
+          values.push([o, n]);
+          times++;
+        });
+
+        await sleep(60);
+
+        expect(values).toEqual([]);
+        expect(times).toBe(0);
+
+        req({ a: 1, b: '' });
+        req({ a: 1, b: '' });
+        req({ a: 1, b: '' });
+
+        await sleep(100);
+
+        expect(values).toEqual([
+          [true, false],
+          [false, true],
+          [true, false],
+          [false, true],
+        ]);
+      });
+    });
+    describe('数据驱动', function () {
+      test('不使用debounce', async () => {
+        const data = reactive({ a: 1, b: '2' });
+        const { loading } = useRequest(requestFn, { data });
+
+        const values: [boolean, boolean][] = [];
+
+        watch(loading, (o, n) => {
+          values.push([o, n]);
+        });
+
+        // 1不会触发
+        data.a = 1;
+        await sleep(20);
+        data.a = 2;
+        await sleep(20);
+        data.a = 3;
+
+        await sleep(20);
+
+        expect(values).toEqual([
+          [true, false],
+          [false, true],
+          [true, false],
+          [false, true],
+        ]);
+
+        data.a = 1;
+        await sleep(20);
+        expect(values).toEqual([
+          [true, false],
+          [false, true],
+          [true, false],
+          [false, true],
+          [true, false],
+          [false, true],
+        ]);
+      });
+      test('immediate:false', async () => {
+        const data = reactive({ a: 1, b: '2' });
+        const { loading } = useRequest(requestFn, {
+          debounce: { delay: 10 },
+          data,
+        });
+
+        const values: [boolean, boolean][] = [];
+        let times = 0;
+
+        watch(loading, (o, n) => {
+          values.push([o, n]);
+          times++;
+        });
+
+        await sleep(20);
+
+        expect(values).toEqual([]);
+        expect(times).toBe(0);
+
+        data.a = 1;
+        await sleep(1);
+        data.a = 2;
+        await sleep(1);
+        data.a = 3;
+
+        await sleep(100);
+
+        expect(values).toEqual([
+          [true, false],
+          [false, true],
+        ]);
+      });
+      test('immediate:true', async () => {
+        const data = reactive({ a: 1, b: '2' });
+        const { loading } = useRequest(requestFn, {
+          debounce: { delay: 10, immediate: true },
+          data,
+        });
+
+        const values: [boolean, boolean][] = [];
+        let times = 0;
+
+        watch(loading, (o, n) => {
+          values.push([o, n]);
+          times++;
+        });
+
+        await sleep(20);
+
+        expect(values).toEqual([]);
+        expect(times).toBe(0);
+
+        data.a = 1;
+        await sleep(1);
+        data.a = 2;
+        await sleep(1);
+        data.a = 3;
+
+        await sleep(100);
+
+        expect(values).toEqual([
+          [true, false],
+          [false, true],
+          [true, false],
+          [false, true],
+        ]);
+      });
+      test('immediate:immediate:true', async () => {
+        const data = reactive({ a: 1, b: '2' });
+        const { loading } = useRequest(requestFn, {
+          immediate: true,
+          debounce: { delay: 10, immediate: true },
+          data,
+        });
+
+        const values: [boolean, boolean][] = [];
+        let times = 0;
+
+        watch(loading, (o, n) => {
+          values.push([o, n]);
+          times++;
+        });
+
+        await sleep(50);
+
+        // 由于immediate useRequest内部早就调用过一次请求
+        // 外部的watch还没来得及监听，所以第一次变true会被漏掉
+        expect(values).toEqual([[false, true]]);
+        expect(times).toBe(1);
+
+        data.a = 1;
+        await sleep(1);
+        data.a = 2;
+        await sleep(1);
+        data.a = 3;
+
+        await sleep(100);
+
+        expect(values).toEqual([
+          [false, true],
+          [true, false],
+          [false, true],
+          [true, false],
+          [false, true],
+        ]);
+      });
+    });
+  });
+  describe('throttle', () => {
+    test('leading:false,trailing:false', async () => {
+      const { loading, req } = useRequest(requestFn, {
+        requestAlias: 'req',
+        throttle: { interval: 10, leading: false },
+      });
+
+      const values: [boolean, boolean][] = [];
+      let times = 0;
+
+      watch(loading, (o, n) => {
+        values.push([o, n]);
+        times++;
+      });
+
+      expect(values).toEqual([]);
+      expect(times).toBe(0);
+
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+
+      expect(values).toEqual([]);
+
+      // 等待一段时间后throttle被重置了，底下的req才可以被调用
+      await sleep(50);
+      expect(values).toEqual([]);
+
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+      await sleep(50);
+
+      expect(values).toEqual([
+        [true, false],
+        [false, true],
+      ]);
+    });
+    test('leading:true', async () => {
+      const { loading, req } = useRequest(requestFn, {
+        requestAlias: 'req',
+        throttle: { interval: 10, leading: true },
+      });
+
+      const values: [boolean, boolean][] = [];
+      let times = 0;
+
+      watch(loading, (o, n) => {
+        values.push([o, n]);
+        times++;
+      });
+
+      await sleep(60);
+
+      expect(values).toEqual([]);
+      expect(times).toBe(0);
+
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+
+      await sleep(100);
+
+      expect(values).toEqual([
+        [true, false],
+        [false, true],
+      ]);
+    });
+    test('leading:false,trailing:true', async () => {
+      const { loading, req } = useRequest(requestFn, {
+        requestAlias: 'req',
+        throttle: { interval: 10, leading: false, trailing: true },
+      });
+
+      const values: [boolean, boolean][] = [];
+      let times = 0;
+
+      watch(loading, (o, n) => {
+        values.push([o, n]);
+        times++;
+      });
+
+      expect(values).toEqual([]);
+      expect(times).toBe(0);
+
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+
+      expect(values).toEqual([]);
+
+      // 加了trailing，最后会执行一次
+      await sleep(50);
+      expect(values).toEqual([
+        [true, false],
+        [false, true],
+      ]);
+
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+      await sleep(50);
+
+      expect(values).toEqual([
+        [true, false],
+        [false, true],
+        [true, false],
+        [false, true],
+        [true, false],
+        [false, true],
+      ]);
+    });
+    test('leading:true,trailing:true', async () => {
+      const { loading, req } = useRequest(requestFn, {
+        requestAlias: 'req',
+        throttle: { interval: 10, leading: true, trailing: true },
+      });
+
+      const values: [boolean, boolean][] = [];
+      let times = 0;
+
+      watch(loading, (o, n) => {
+        values.push([o, n]);
+        times++;
+      });
+
+      await sleep(60);
+
+      expect(values).toEqual([]);
+      expect(times).toBe(0);
+
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+      req({ a: 1, b: '' });
+
+      await sleep(100);
+
+      expect(values).toEqual([
+        [true, false],
+        [false, true],
+        [true, false],
+        [false, true],
+      ]);
+    });
   });
 });
