@@ -229,7 +229,7 @@ describe('useRequest', function () {
       expect(times).toBe(2);
     });
     describe('手动调用', function () {
-      test('immediate:false', async () => {
+      test('leading:false', async () => {
         const { loading, req } = useRequest(requestFn, {
           requestAlias: 'req',
           debounce: { delay: 10 },
@@ -259,10 +259,10 @@ describe('useRequest', function () {
           [false, true],
         ]);
       });
-      test('immediate:true', async () => {
+      test('leading:true', async () => {
         const { loading, req } = useRequest(requestFn, {
           requestAlias: 'req',
-          debounce: { delay: 10, immediate: true },
+          debounce: { delay: 10, leading: true },
         });
 
         const values: [boolean, boolean][] = [];
@@ -330,7 +330,7 @@ describe('useRequest', function () {
           [false, true],
         ]);
       });
-      test('immediate:false', async () => {
+      test('leading:false', async () => {
         const data = reactive({ a: 1, b: '2' });
         const { loading } = useRequest(requestFn, {
           debounce: { delay: 10 },
@@ -363,10 +363,10 @@ describe('useRequest', function () {
           [false, true],
         ]);
       });
-      test('immediate:true', async () => {
+      test('leading:true', async () => {
         const data = reactive({ a: 1, b: '2' });
         const { loading } = useRequest(requestFn, {
-          debounce: { delay: 10, immediate: true },
+          debounce: { delay: 10, leading: true },
           data,
         });
 
@@ -398,11 +398,11 @@ describe('useRequest', function () {
           [false, true],
         ]);
       });
-      test('immediate:immediate:true', async () => {
+      test('immediate:leading:true', async () => {
         const data = reactive({ a: 1, b: '2' });
         const { loading } = useRequest(requestFn, {
           immediate: true,
-          debounce: { delay: 10, immediate: true },
+          debounce: { delay: 10, leading: true },
           data,
         });
 
@@ -418,8 +418,12 @@ describe('useRequest', function () {
 
         // 由于immediate useRequest内部早就调用过一次请求
         // 外部的watch还没来得及监听，所以第一次变true会被漏掉
-        expect(values).toEqual([[false, true]]);
-        expect(times).toBe(1);
+        expect(values).toEqual([
+          [false, true],
+          [true, false],
+          [false, true],
+        ]);
+        expect(times).toBe(3);
 
         data.a = 1;
         await sleep(1);
@@ -430,6 +434,8 @@ describe('useRequest', function () {
         await sleep(100);
 
         expect(values).toEqual([
+          [false, true],
+          [true, false],
           [false, true],
           [true, false],
           [false, true],
