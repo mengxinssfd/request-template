@@ -26,7 +26,7 @@ export interface Debounce {
   /**
    * 第一次立即执行
    */
-  immediate?: boolean;
+  leading?: boolean;
   /**
    * 延迟时间
    */

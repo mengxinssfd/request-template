@@ -48,7 +48,7 @@ import type { FN, State, Options, AllOptions } from './types';
  * @param  [options.immediate=false] 立即执行
  * @param  {{}?} options.debounce 防抖
  * @param  options.debounce.delay 延时
- * @param  [options.debounce.immediate=false] 第一次立即执行
+ * @param  [options.debounce.leading=false] 第一次立即执行；假如只调用了一次请求，那么会执行首尾两次调用
  * @param  {{}?} options.throttle 节流
  * @param  options.throttle.interval 间隔
  * @param  [options.throttle.leading=true] 第一次立即执行
@@ -95,7 +95,7 @@ export function useRequest<
   } = options as AllOptions;
 
   if (_debounce) {
-    request = debounce(request, _debounce.delay, _debounce.immediate);
+    request = debounce(request, _debounce.delay, _debounce.leading);
   } else if (_throttle) {
     const { interval, ...opts } = _throttle;
     request = throttle(request, interval, opts);
