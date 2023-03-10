@@ -37,10 +37,10 @@
   },
   "homepage": "https://github.com/mengxinssfd/request-template#readme",
   "devDependencies": {
-    "axios": "^0.26.1",
     "vue": "^3.2.41"
   },
   "peerDependencies": {
-    "vue": "^2.7.0 || >=3.0.0"
+    "vue": "^2.7.0 || >=3.0.0",
+    "@tool-pack/basic": "^0.0.13"
   }
 }

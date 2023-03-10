@@ -12,7 +12,7 @@ importers:
       '@rollup/plugin-commonjs': ^24.0.0
       '@rollup/plugin-json': ^5.0.1
       '@rollup/plugin-node-resolve': ^15.0.1
-      '@tool-pack/basic': ^0.0.12
+      '@tool-pack/basic': ^0.0.13
       '@types/fs-extra': ^9.0.13
       '@types/jest': ^29.2.0
       '@types/node': ^18.11.9
@@ -56,7 +56,7 @@ importers:
       '@rollup/plugin-commonjs': 24.0.0_rollup@3.2.3
       '@rollup/plugin-json': 5.0.1_rollup@3.2.3
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.2.3
-      '@tool-pack/basic': 0.0.12
+      '@tool-pack/basic': 0.0.13
       '@types/fs-extra': 9.0.13
       '@types/jest': 29.2.0
       '@types/node': 18.11.9
@@ -119,10 +119,8 @@ importers:
 
   packages/vue3-hooks:
     specifiers:
-      axios: ^0.26.1
       vue: ^3.2.41
     devDependencies:
-      axios: 0.26.1
       vue: 3.2.41
 
   packages/wechat:
@@ -1089,8 +1087,8 @@ packages:
       '@sinonjs/commons': 1.8.3
     dev: true
 
-  /@tool-pack/basic/0.0.12:
-    resolution: {integrity: sha512-Vz93+ZmoxTyGT/STuv4evDld7G+O1tOvzOA676c7xzP4PJS7PJrSrheLVioQRcMwgWJ+EzHA5G0HiOQqoHL4Fg==}
+  /@tool-pack/basic/0.0.13:
+    resolution: {integrity: sha512-NtkQd4JTyuBqBYeY4hNHWJxE9Te66oRj5mNnu+6ic58ddMjMaddD3usWYxB0jUba0WSIGS+zWW9lO2Fk6fKQ6g==}
     dependencies:
       '@tool-pack/types': 0.0.1
     dev: true
