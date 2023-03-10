@@ -1,3 +1,12 @@
+# [2.1.0](https://github.com/mengxinssfd/request-template/compare/v2.0.2...v2.1.0) (2023-03-10)
+
+
+### Bug Fixes
+
+* **vue3-hooks:** debounce ([7486b25](https://github.com/mengxinssfd/request-template/commit/7486b2557420d08d01405111fae7babd3ab21032))
+
+
+
 ## [2.0.2](https://github.com/mengxinssfd/request-template/compare/v2.0.1...v2.0.2) (2023-03-09)
 
 
