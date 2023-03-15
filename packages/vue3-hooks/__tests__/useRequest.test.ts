@@ -240,6 +240,16 @@ describe('useRequest', function () {
     const res3 = useRequest(requestFn, { data: params2 });
     expect(typeof (res3 as any).request === 'function').toBeTruthy();
   });
+  test('默认值：失败请求', async () => {
+    const req = (): Promise<{ data: { a: string } }> => Promise.reject('fail');
+    const { data, request } = useRequest(req, {}, { a: '1' });
+    expect(data.value.a).toBe('1');
+    data.value = { a: '2' };
+    expect(data.value.a).toBe('2');
+    request();
+    await sleep(10);
+    expect(data.value.a).toBe('1');
+  });
   describe('debounce', () => {
     test('debounce 1', async () => {
       let times = 0;
