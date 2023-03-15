@@ -1,5 +1,5 @@
 import { useRequest } from '../src';
-import { debounce, sleep } from '@tool-pack/basic';
+import { debounce, sleep, throttle } from '@tool-pack/basic';
 import { isRef, reactive, ref, isReactive, computed, watch } from 'vue';
 
 // 模拟请求api
@@ -28,6 +28,9 @@ describe('useRequest', function () {
 
     const c = computed(() => ({ a: 1 }));
     expect(isRef(c)).toBeTruthy();
+    const a = reactive<number[]>([]);
+    a.push(1);
+    expect(a).toEqual([1]);
   });
   test('手动调用', async () => {
     const { data, loading, requestFn } = useRequest(mockRequest, { requestAlias: 'requestFn' });
@@ -230,10 +233,11 @@ describe('useRequest', function () {
     });
     describe('手动调用', function () {
       test('leading:false', async () => {
-        const { loading, req } = useRequest(requestFn, {
+        const { loading, req, setInnerRequest } = useRequest(requestFn, {
           requestAlias: 'req',
-          debounce: { delay: 10 },
         });
+
+        setInnerRequest((req) => debounce(req, 10));
 
         const values: [boolean, boolean][] = [];
         let times = 0;
@@ -260,10 +264,11 @@ describe('useRequest', function () {
         ]);
       });
       test('leading:true', async () => {
-        const { loading, req } = useRequest(requestFn, {
+        const { loading, req, setInnerRequest } = useRequest(requestFn, {
           requestAlias: 'req',
-          debounce: { delay: 10, leading: true },
         });
+
+        setInnerRequest((req) => debounce(req, 10, true));
 
         const values: [boolean, boolean][] = [];
         let times = 0;
@@ -332,10 +337,10 @@ describe('useRequest', function () {
       });
       test('leading:false', async () => {
         const data = reactive({ a: 1, b: '2' });
-        const { loading } = useRequest(requestFn, {
-          debounce: { delay: 10 },
+        const { loading, setInnerRequest } = useRequest(requestFn, {
           data,
         });
+        setInnerRequest((req) => debounce(req, 10));
 
         const values: [boolean, boolean][] = [];
         let times = 0;
@@ -365,10 +370,10 @@ describe('useRequest', function () {
       });
       test('leading:true', async () => {
         const data = reactive({ a: 1, b: '2' });
-        const { loading } = useRequest(requestFn, {
-          debounce: { delay: 10, leading: true },
+        const { loading, setInnerRequest } = useRequest(requestFn, {
           data,
         });
+        setInnerRequest((req) => debounce(req, 10, true));
 
         const values: [boolean, boolean][] = [];
         let times = 0;
@@ -400,11 +405,11 @@ describe('useRequest', function () {
       });
       test('immediate:leading:true', async () => {
         const data = reactive({ a: 1, b: '2' });
-        const { loading } = useRequest(requestFn, {
+        const { loading, setInnerRequest } = useRequest(requestFn, {
           immediate: true,
-          debounce: { delay: 10, leading: true },
           data,
         });
+        setInnerRequest((req) => debounce(req, 10, true));
 
         const values: [boolean, boolean][] = [];
         let times = 0;
@@ -420,10 +425,10 @@ describe('useRequest', function () {
         // 外部的watch还没来得及监听，所以第一次变true会被漏掉
         expect(values).toEqual([
           [false, true],
-          [true, false],
-          [false, true],
+          // [true, false],
+          // [false, true],
         ]);
-        expect(times).toBe(3);
+        expect(times).toBe(1);
 
         data.a = 1;
         await sleep(1);
@@ -435,8 +440,8 @@ describe('useRequest', function () {
 
         expect(values).toEqual([
           [false, true],
-          [true, false],
-          [false, true],
+          // [true, false],
+          // [false, true],
           [true, false],
           [false, true],
           [true, false],
@@ -447,10 +452,10 @@ describe('useRequest', function () {
   });
   describe('throttle', () => {
     test('leading:false,trailing:false', async () => {
-      const { loading, req } = useRequest(requestFn, {
+      const { loading, req, setInnerRequest } = useRequest(requestFn, {
         requestAlias: 'req',
-        throttle: { interval: 10, leading: false },
       });
+      setInnerRequest((req) => throttle(req, 10, { leading: false }));
 
       const values: [boolean, boolean][] = [];
       let times = 0;
@@ -484,10 +489,10 @@ describe('useRequest', function () {
       ]);
     });
     test('leading:true', async () => {
-      const { loading, req } = useRequest(requestFn, {
+      const { loading, req, setInnerRequest } = useRequest(requestFn, {
         requestAlias: 'req',
-        throttle: { interval: 10, leading: true },
       });
+      setInnerRequest((req) => throttle(req, 10, { leading: true }));
 
       const values: [boolean, boolean][] = [];
       let times = 0;
@@ -514,10 +519,10 @@ describe('useRequest', function () {
       ]);
     });
     test('leading:false,trailing:true', async () => {
-      const { loading, req } = useRequest(requestFn, {
+      const { loading, req, setInnerRequest } = useRequest(requestFn, {
         requestAlias: 'req',
-        throttle: { interval: 10, leading: false, trailing: true },
       });
+      setInnerRequest((req) => throttle(req, 10, { leading: false, trailing: true }));
 
       const values: [boolean, boolean][] = [];
       let times = 0;
@@ -558,10 +563,10 @@ describe('useRequest', function () {
       ]);
     });
     test('leading:true,trailing:true', async () => {
-      const { loading, req } = useRequest(requestFn, {
+      const { loading, req, setInnerRequest } = useRequest(requestFn, {
         requestAlias: 'req',
-        throttle: { interval: 10, leading: true, trailing: true },
       });
+      setInnerRequest((req) => throttle(req, 10, { leading: true, trailing: true }));
 
       const values: [boolean, boolean][] = [];
       let times = 0;
