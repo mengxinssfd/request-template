@@ -3,8 +3,10 @@ import type { FN, AllOptions, AliasOptions, DataDriverOptions, State } from './t
 
 /**
  * vue3 请求hooks
- *
+ * ---
  * 不依赖RequestTemplate，可独立使用
+ *
+ * @overload 手动请求
  *
  * @example
  * ```ts
@@ -28,7 +30,48 @@ import type { FN, AllOptions, AliasOptions, DataDriverOptions, State } from './t
  * ```
  *
  * @example
+ * 直接对requestFn使用防抖虽然对最终的请求有防抖效果，
+ * 但是hooks的loading、error的变动不会跟随防抖，
+ * 这时需要额外处理下hooks的内部请求
  * ```ts
+ * // 添加防抖
+ * const data = reactive<Parameters<typeof requestFn>>([{ a: 1, b: '2' }]);
+ * const { loading, setInnerRequest,request } = useRequest(requestFn, { data});
+ * // 使用setInnerRequest对内部请求函数添加防抖效果
+ * setInnerRequest((req) => debounce(req, 10));
+ *
+ * // 只会触发最后一次
+ * request(data);
+ * request(data);
+ * request(data);
+ * ```
+ *
+ * @param  requestFn 请求函数
+ * @param  options
+ * @param  [options.requestAlias='request'] 手动调用请求时的别名
+ * @param  defaultData 请求失败时返回的默认数据
+ */
+export function useRequest<
+  REQ extends FN,
+  ALIAS extends string = 'request',
+  DF extends Awaited<ReturnType<REQ>>['data'] | null = null,
+>(
+  requestFn: REQ,
+  options?: AliasOptions<ALIAS>,
+  defaultData?: DF,
+): ToRefs<State<REQ, DF>> & {
+  setInnerRequest<T extends (...args: unknown[]) => void>(cb: (req: T) => T): void;
+} & Record<ALIAS, (...args: Parameters<REQ>) => void>;
+/**
+ * vue3 请求hooks
+ * ---
+ * 不依赖RequestTemplate，可独立使用
+ *
+ * @overload 数据驱动
+
+ * @example
+ * ```ts
+ * const formModel = reactive({ username: '', password: '' });
  * const data = computed<Parameters<typeof User.login>>(()=> [formModel])
  * // 数据驱动
  * const res3 = useRequest(User.login, {
@@ -56,22 +99,10 @@ import type { FN, AllOptions, AliasOptions, DataDriverOptions, State } from './t
  *
  * @param  requestFn 请求函数
  * @param  options
- * @param  [options.requestAlias='request'] 手动调用请求时的别名
  * @param  [options.immediate=false] 立即执行
  * @param  {any} options.data requestFn的参数
  * @param  defaultData 请求失败时返回的默认数据
  */
-export function useRequest<
-  REQ extends FN,
-  ALIAS extends string = 'request',
-  DF extends Awaited<ReturnType<REQ>>['data'] | null = null,
->(
-  requestFn: REQ,
-  options?: AliasOptions<ALIAS>,
-  defaultData?: DF,
-): ToRefs<State<REQ, DF>> & {
-  setInnerRequest<T extends (...args: unknown[]) => void>(cb: (req: T) => T): void;
-} & Record<ALIAS, (...args: Parameters<REQ>) => void>;
 export function useRequest<
   REQ extends FN,
   DATA extends Parameters<REQ>,
