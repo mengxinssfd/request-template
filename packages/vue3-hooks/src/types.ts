@@ -12,15 +12,13 @@ export interface State<T extends FN, D, TD = Awaited<ReturnType<T>>['data']> {
   error: any | null;
 }
 
-/**
- * hook需要的参数选项
- */
-export type Options<A extends string, D extends unknown | void = void> = D extends void
-  ? { requestAlias?: A }
-  : {
-      immediate?: boolean;
-      data?: D;
-    };
+export interface AliasOptions<A> {
+  requestAlias?: A;
+}
+export interface DataDriverOptions<D> {
+  immediate?: boolean;
+  data: D;
+}
 
 /**
  * Options中所有的选项

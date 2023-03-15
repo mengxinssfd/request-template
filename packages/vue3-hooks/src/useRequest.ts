@@ -1,5 +1,5 @@
-import { reactive, toRefs, isReactive, watch, isRef, ComputedRef, Ref } from 'vue';
-import type { FN, State, Options, AllOptions } from './types';
+import { reactive, toRefs, isReactive, watch, isRef, ComputedRef, Ref, ToRefs } from 'vue';
+import type { FN, AllOptions, AliasOptions, DataDriverOptions, State } from './types';
 
 /**
  * vue3 请求hooks
@@ -64,14 +64,27 @@ import type { FN, State, Options, AllOptions } from './types';
 export function useRequest<
   REQ extends FN,
   ALIAS extends string = 'request',
-  DATA extends Parameters<REQ> | void = void,
   DF extends Awaited<ReturnType<REQ>>['data'] | null = null,
 >(
   requestFn: REQ,
-  options = {} as Options<ALIAS, DATA | ComputedRef<DATA> | Ref<DATA>>,
-  defaultData: DF = null as DF,
-) {
-  const state = reactive<State<REQ, DF>>({
+  options?: AliasOptions<ALIAS>,
+  defaultData?: DF,
+): ToRefs<State<REQ, DF>> & {
+  setInnerRequest<T extends (...args: unknown[]) => void>(cb: (req: T) => T): void;
+} & Record<ALIAS, (...args: Parameters<REQ>) => void>;
+export function useRequest<
+  REQ extends FN,
+  DATA extends Parameters<REQ>,
+  DF extends Awaited<ReturnType<REQ>>['data'] | null = null,
+>(
+  requestFn: REQ,
+  options?: DataDriverOptions<DATA | ComputedRef<DATA> | Ref<DATA>>,
+  defaultData?: DF,
+): ToRefs<State<REQ, DF>> & {
+  setInnerRequest<T extends (...args: unknown[]) => void>(cb: (req: T) => T): void;
+};
+export function useRequest(requestFn: FN, options = {}, defaultData = null) {
+  const state = reactive({
     loading: false,
     data: defaultData,
     error: null,
@@ -106,10 +119,10 @@ export function useRequest<
   return {
     ...refs,
     // 数据驱动时as any一下还是能用的
-    [requestAlias]: (...args) => request(...args),
+    [requestAlias]: (...args: unknown[]) => request(...args),
     // 对请求添加防抖节流时使用
-    setInnerRequest: (cb) => (request = cb(request)),
-  } as typeof refs & {
-    setInnerRequest(cb: (req: typeof request) => typeof request): void;
-  } & Record<DATA extends void ? ALIAS : never, (...args: Parameters<REQ>) => void>;
+    setInnerRequest: (cb: (...args: unknown[]) => typeof request): void => {
+      request = cb(request);
+    },
+  };
 }
