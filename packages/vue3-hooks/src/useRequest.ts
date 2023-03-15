@@ -131,7 +131,10 @@ export function useRequest(requestFn: FN, options = {}, defaultData = null) {
     requestFn(...args)
       .then(
         (res) => (state.data = res.data),
-        (err) => (state.error = err),
+        (err) => {
+          state.error = err;
+          state.data = defaultData;
+        },
       )
       .finally(() => {
         state.loading = false;
