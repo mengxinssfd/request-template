@@ -15,7 +15,7 @@ export interface State<T extends FN, D, TD = Awaited<ReturnType<T>>['data']> {
 /**
  * hook需要的参数选项
  */
-export type Options<A extends string, D extends object | void = void> = D extends void
+export type Options<A extends string, D extends unknown | void = void> = D extends void
   ? { requestAlias?: A }
   : {
       immediate?: boolean;
@@ -28,5 +28,5 @@ export type Options<A extends string, D extends object | void = void> = D extend
 export interface AllOptions {
   requestAlias?: string;
   immediate?: boolean;
-  data?: unknown;
+  data?: unknown[];
 }

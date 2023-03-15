@@ -1,4 +1,4 @@
-import { reactive, toRefs, isReactive, watch, isRef } from 'vue';
+import { reactive, toRefs, isReactive, watch, isRef, ComputedRef, Ref } from 'vue';
 import type { FN, State, Options, AllOptions } from './types';
 
 /**
@@ -9,7 +9,7 @@ import type { FN, State, Options, AllOptions } from './types';
  * @example
  * ```ts
  * // 手动请求 request不带参数
- * const res = useRequest(User.getSelf, { requestAlias: 'getSelf', immediate: true });
+ * const res = useRequest(User.getSelf, { requestAlias: 'getSelf' });
  * res.getSelf();
  * console.log(res.data.value?.user);
  *```
@@ -29,9 +29,10 @@ import type { FN, State, Options, AllOptions } from './types';
  *
  * @example
  * ```ts
+ * const data = computed<Parameters<typeof User.login>>(()=> [formModel])
  * // 数据驱动
  * const res3 = useRequest(User.login, {
- *   data: formModel, // 数据，注意：该数据一定要响应式的，例如ref，reactive,computed返回的数据
+ *   data, // 数据，注意：该数据一定要响应式的，例如ref，reactive,computed返回的数据
  *   immediate: true,
  * });
  * // res3.request(formModel); // error Property 'request' does not exist
@@ -47,7 +48,7 @@ import type { FN, State, Options, AllOptions } from './types';
  * 这时需要额外处理下hooks的内部请求
  * ```ts
  * // 添加防抖
- * const data = reactive({ a: 1, b: '2' });
+ * const data = reactive<Parameters<typeof requestFn>>([{ a: 1, b: '2' }]);
  * const { loading, setInnerRequest } = useRequest(requestFn, { data});
  * // 使用setInnerRequest对内部请求函数添加防抖效果
  * setInnerRequest((req) => debounce(req, 10));
@@ -63,9 +64,13 @@ import type { FN, State, Options, AllOptions } from './types';
 export function useRequest<
   REQ extends FN,
   ALIAS extends string = 'request',
-  DATA extends Parameters<REQ>[0] | void = void,
+  DATA extends Parameters<REQ> | void = void,
   DF extends Awaited<ReturnType<REQ>>['data'] | null = null,
->(requestFn: REQ, options = {} as Options<ALIAS, DATA>, defaultData: DF = null as DF) {
+>(
+  requestFn: REQ,
+  options = {} as Options<ALIAS, DATA | ComputedRef<DATA> | Ref<DATA>>,
+  defaultData: DF = null as DF,
+) {
   const state = reactive<State<REQ, DF>>({
     loading: false,
     data: defaultData,
@@ -95,7 +100,7 @@ export function useRequest<
   if (data) {
     // 数据驱动没法从ts类型体操处限制，像vue的watch就能传普通对象，而不会有watch效果，也没有任何报错或者提示
     if (!(isReactive(data) || isRef(data))) throw new TypeError('数据驱动data必须是响应式数据');
-    watch(data, (n) => request(n), { deep: true, immediate });
+    watch(data, (n) => request(...n), { deep: true, immediate });
   }
 
   return {
