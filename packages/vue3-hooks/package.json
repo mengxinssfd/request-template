@@ -1,6 +1,6 @@
 {
   "name": "@request-template/vue3-hooks",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "axios请求模板封装-vue3-hooks",
   "main": "dist/request-template-vue3-hooks.esm-bundler.js",
   "types": "dist/request-template-vue3-hooks.d.ts",

@@ -95,17 +95,17 @@ importers:
   packages/axios:
     specifiers:
       axios: ^0.26.1
-      request-template: 2.1.0
+      request-template: 2.2.0
     devDependencies:
       axios: 0.26.1
       request-template: link:../request-template
 
   packages/build-test:
     specifiers:
-      '@request-template/axios': 2.1.0
-      '@request-template/vue3-hooks': 2.1.0
+      '@request-template/axios': 2.2.0
+      '@request-template/vue3-hooks': 2.2.0
       axios: ^0.26.1
-      request-template: 2.1.0
+      request-template: 2.2.0
       vue: ^3.2.41
     dependencies:
       '@request-template/axios': link:../axios
@@ -126,7 +126,7 @@ importers:
   packages/wechat:
     specifiers:
       axios: ^0.26.1
-      request-template: 2.1.0
+      request-template: 2.2.0
     devDependencies:
       axios: 0.26.1
       request-template: link:../request-template

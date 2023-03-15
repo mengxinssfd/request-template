@@ -1,3 +1,19 @@
+# [2.2.0](https://github.com/mengxinssfd/request-template/compare/v2.1.0...v2.2.0) (2023-03-15)
+
+
+### Features
+
+* **vue3-hooks:** data必须是数组 ([23fe3f9](https://github.com/mengxinssfd/request-template/commit/23fe3f94a59019eda35b9f0b40b2dbf6b64fe780))
+* **vue3-hooks:** 移除内部debounce/throttle，并使用setInnerRequest代替 ([84643e6](https://github.com/mengxinssfd/request-template/commit/84643e6b727edeffe2c9cfdf84985d213abe47b2))
+
+
+### BREAKING CHANGES
+
+* **vue3-hooks:** data从原请求函数的第一个参数改为全部参数组成的数组
+* **vue3-hooks:** 移除了内部debounce/throttle
+
+
+
 # [2.1.0](https://github.com/mengxinssfd/request-template/compare/v2.0.2...v2.1.0) (2023-03-10)
 
 
