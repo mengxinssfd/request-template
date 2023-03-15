@@ -199,12 +199,17 @@ describe('useRequest', function () {
     expect(error.value).toBe(null);
   });
 
-  test('数据驱动时手动驱动报错', () => {
-    const params = reactive<Parameters<typeof mockRequest>>([{ a: 1, b: '2' }]);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  test('数据驱动时手动调用报错', () => {
+    const params = reactive<Parameters<typeof requestFn>>([{ a: 1, b: '2' }]);
+    const hooks = useRequest(requestFn, { data: params });
     // @ts-expect-error
-    const { request } = useRequest(mockRequest, { data: params });
-    expect(typeof request).toBe('function');
+    expect(typeof hooks.request).toBe('function');
+
+    const hooks2 = useRequest(requestFn, {
+      data: ref<Parameters<typeof requestFn>>([{ a: 1, b: '2' }]),
+    });
+    // @ts-expect-error
+    expect(typeof hooks2.request).toBe('function');
   });
   test('数据驱动:data非响应式', async () => {
     const params = { a: 1, b: '2' };
@@ -225,6 +230,10 @@ describe('useRequest', function () {
     expect(res2.error.value).toBe(null);
     // 未传默认data时，data.value可能是null，所以要加可选连
     expect(res2.data.value?.a).toBe(undefined);
+    expect(() => {
+      // @ts-expect-error
+      console.log(res2.data.value.a);
+    }).toThrow();
 
     // 数据驱动也可以手动请求，request还是要传参的
     const params2 = computed<Parameters<typeof requestFn>>(() => [params2]);
