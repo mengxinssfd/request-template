@@ -1,5 +1,4 @@
 import { reactive, toRefs, isReactive, watch, isRef } from 'vue';
-import { debounce, throttle } from '@tool-pack/basic';
 import type { FN, State, Options, AllOptions } from './types';
 
 /**
@@ -40,20 +39,24 @@ import type { FN, State, Options, AllOptions } from './types';
  * formModel.username = '2';
  * formModel.password = '2';
  * console.log(res3.data.value?.token);
- *```
+ * ```
+ *
+ * @example
+ * 直接对requestFn使用防抖虽然对最终的请求有防抖效果，
+ * 但是hooks的loading、error的变动不会跟随防抖，
+ * 这时需要额外处理下hooks的内部请求
+ * ```ts
+ * // 添加防抖
+ * const data = reactive({ a: 1, b: '2' });
+ * const { loading, setInnerRequest } = useRequest(requestFn, { data});
+ * // 使用setInnerRequest对内部请求函数添加防抖效果
+ * setInnerRequest((req) => debounce(req, 10));
+ * ```
  *
  * @param  requestFn 请求函数
  * @param  options
  * @param  [options.requestAlias='request'] 手动调用请求时的别名
  * @param  [options.immediate=false] 立即执行
- * @param  {{}?} options.debounce 防抖
- * @param  options.debounce.delay 延时
- * @param  [options.debounce.leading=false] 第一次立即执行；假如只调用了一次请求，那么会执行首尾两次调用
- * @param  {{}?} options.throttle 节流
- * @param  options.throttle.interval 间隔
- * @param  [options.throttle.leading=true] 第一次立即执行
- * @param  [options.throttle.trailing=false] 最后一次一定执行
- * @param  {Function?} options.throttle.invalidCB 间隔期间调用throttle返回的函数执行的回调
  * @param  {any} options.data requestFn的参数
  * @param  defaultData 请求失败时返回的默认数据
  */
@@ -86,20 +89,7 @@ export function useRequest<
       });
   };
 
-  const {
-    requestAlias = 'request',
-    immediate = false,
-    data,
-    debounce: _debounce,
-    throttle: _throttle,
-  } = options as AllOptions;
-
-  if (_debounce) {
-    request = debounce(request, _debounce.delay, _debounce.leading);
-  } else if (_throttle) {
-    const { interval, ...opts } = _throttle;
-    request = throttle(request, interval, opts);
-  }
+  const { requestAlias = 'request', immediate = false, data } = options as AllOptions;
 
   // 数据驱动
   if (data) {
@@ -111,9 +101,10 @@ export function useRequest<
   return {
     ...refs,
     // 数据驱动时as any一下还是能用的
-    [requestAlias]: request,
-  } as typeof refs &
-    (DATA extends void
-      ? { [k in keyof Record<ALIAS, void>]: (...args: Parameters<REQ>) => void }
-      : void);
+    [requestAlias]: (...args) => request(...args),
+    // 对请求添加防抖节流时使用
+    setInnerRequest: (cb) => (request = cb(request)),
+  } as typeof refs & {
+    setInnerRequest(cb: (req: typeof request) => typeof request): void;
+  } & Record<DATA extends void ? ALIAS : never, (...args: Parameters<REQ>) => void>;
 }
