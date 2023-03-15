@@ -13,11 +13,7 @@ const mockRequestFail = jest.fn((data: { a: number; b: string }) => {
   return Promise.reject('error:' + JSON.stringify(data));
 });
 
-describe('useRequest', function () {
-  afterEach(() => {
-    mockRequest.mock.calls.length = 0;
-    mockRequestFail.mock.calls.length = 0;
-  });
+describe('vue', function () {
   test('isRef/isReactive', () => {
     expect(isRef(reactive({}))).toBeFalsy();
     expect(isReactive(reactive({}))).toBeTruthy();
@@ -31,6 +27,17 @@ describe('useRequest', function () {
     const a = reactive<number[]>([]);
     a.push(1);
     expect(a).toEqual([1]);
+  });
+  test('解构', () => {
+    expect([...reactive([1, 2, 3])]).toEqual([1, 2, 3]);
+    expect([...ref([1, 2, 3]).value]).toEqual([1, 2, 3]);
+    expect([...computed(() => [1, 2, 3]).value]).toEqual([1, 2, 3]);
+  });
+});
+describe('useRequest', function () {
+  afterEach(() => {
+    mockRequest.mock.calls.length = 0;
+    mockRequestFail.mock.calls.length = 0;
   });
   test('手动调用', async () => {
     const { data, loading, requestFn } = useRequest(mockRequest, { requestAlias: 'requestFn' });
@@ -105,7 +112,8 @@ describe('useRequest', function () {
   });
   test('数据驱动:数据变动启动', async () => {
     const params = reactive({ a: 1, b: '2' });
-    const { data, loading, error } = useRequest(requestFn, { data: params });
+    const _data = computed<Parameters<typeof requestFn>>(() => [params]);
+    const { data, loading, error } = useRequest(requestFn, { data: _data });
 
     // 初始时data值为null，loading还是false，请求也没调用过
     expect(data.value).toBe(null);
@@ -151,27 +159,27 @@ describe('useRequest', function () {
     expect(error.value).toBe(null);
   });
   test('数据驱动:立即启动', async () => {
-    const params = ref({ a: 1, p: '2' });
+    const params = ref<Parameters<typeof mockRequest>>([{ a: 1, p: '2' }]);
     const { data, loading, error } = useRequest(mockRequest, { data: params, immediate: true });
 
     // 立即启动 初始时data值为null，loading是true，请求已经调用过
     expect(data.value).toBe(null);
     expect(loading.value).toBeTruthy();
     expect(mockRequest.mock.calls.length).toBe(1);
-    expect(mockRequest.mock.calls[0][0]).toBe(params.value);
+    expect(mockRequest.mock.calls[0][0]).toBe(params.value[0]);
     expect(error.value).toBe(null);
 
     await sleep(15);
 
     // 请求完成后，data为_data，loading是false
-    expect(data.value).toEqual(params.value);
-    expect(data.value.a).toBe(params.value.a);
+    expect(data.value).toEqual(params.value[0]);
+    expect(data.value.a).toBe(params.value[0].a);
     expect(loading.value).toBeFalsy();
     expect(mockRequest.mock.calls.length).toBe(1);
     expect(error.value).toBe(null);
 
     // 数据变动，触发第二次请求
-    params.value.a = 2;
+    params.value[0].a = 2;
     // data不会自动重置，需要手动设置
     data.value = null;
     await sleep(0);
@@ -179,21 +187,28 @@ describe('useRequest', function () {
     expect(data.value).toBe(null);
     expect(loading.value).toBeTruthy();
     expect(mockRequest.mock.calls.length).toBe(2);
-    expect(mockRequest.mock.calls[1][0]).toBe(params.value);
+    expect(mockRequest.mock.calls[1][0]).toBe(params.value[0]);
     expect(error.value).toBe(null);
 
     await sleep(15);
 
     // 请求完成后，data为_data，loading是false
-    expect(data.value).toEqual(params.value);
+    expect(data.value).toEqual(params.value[0]);
     expect(loading.value).toBeFalsy();
     expect(mockRequest.mock.calls.length).toBe(2);
     expect(error.value).toBe(null);
   });
 
+  test('数据驱动时手动驱动报错', () => {
+    const params = reactive<Parameters<typeof mockRequest>>([{ a: 1, b: '2' }]);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    const { request } = useRequest(mockRequest, { data: params });
+    expect(typeof request).toBe('function');
+  });
   test('数据驱动:data非响应式', async () => {
     const params = { a: 1, b: '2' };
-    expect(() => useRequest(mockRequest, { data: params })).toThrowError();
+    expect(() => useRequest(mockRequest, { data: [params] })).toThrowError();
   });
   test('默认值', async () => {
     const params = { a: 1, b: '2' };
@@ -212,7 +227,7 @@ describe('useRequest', function () {
     expect(res2.data.value?.a).toBe(undefined);
 
     // 数据驱动也可以手动请求，request还是要传参的
-    const params2 = reactive(params);
+    const params2 = computed<Parameters<typeof requestFn>>(() => [params2]);
     const res3 = useRequest(requestFn, { data: params2 });
     expect(typeof (res3 as any).request === 'function').toBeTruthy();
   });
@@ -300,7 +315,8 @@ describe('useRequest', function () {
     describe('数据驱动', function () {
       test('不使用debounce', async () => {
         const data = reactive({ a: 1, b: '2' });
-        const { loading } = useRequest(requestFn, { data });
+        const params = computed<Parameters<typeof requestFn>>(() => [data]);
+        const { loading } = useRequest(requestFn, { data: params });
 
         const values: [boolean, boolean][] = [];
 
@@ -337,8 +353,9 @@ describe('useRequest', function () {
       });
       test('leading:false', async () => {
         const data = reactive({ a: 1, b: '2' });
+        const params = computed<Parameters<typeof requestFn>>(() => [data]);
         const { loading, setInnerRequest } = useRequest(requestFn, {
-          data,
+          data: params,
         });
         setInnerRequest((req) => debounce(req, 10));
 
@@ -370,8 +387,9 @@ describe('useRequest', function () {
       });
       test('leading:true', async () => {
         const data = reactive({ a: 1, b: '2' });
+        const params = computed<Parameters<typeof requestFn>>(() => [data]);
         const { loading, setInnerRequest } = useRequest(requestFn, {
-          data,
+          data: params,
         });
         setInnerRequest((req) => debounce(req, 10, true));
 
@@ -405,9 +423,10 @@ describe('useRequest', function () {
       });
       test('immediate:leading:true', async () => {
         const data = reactive({ a: 1, b: '2' });
+        const params = computed<Parameters<typeof requestFn>>(() => [data]);
         const { loading, setInnerRequest } = useRequest(requestFn, {
           immediate: true,
-          data,
+          data: params,
         });
         setInnerRequest((req) => debounce(req, 10, true));
 
