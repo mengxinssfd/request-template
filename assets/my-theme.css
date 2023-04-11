@@ -1,14 +1,43 @@
-.container {
-  padding: 0 2rem;
+@media (prefers-color-scheme: light) {
+  :root {
+    --menu-item-active-bg: #dfe0e2;
+  }
 }
-.tsd-page-toolbar {
+@media (prefers-color-scheme: dark) {
+  :root {
+    --menu-item-active-bg: #1e2024;
+  }
+}
+:root[data-theme='light'] {
+  --menu-item-active-bg: #dfe0e2;
+}
+:root[data-theme='dark'] {
+  --menu-item-active-bg: #1e2024;
+}
+.tsd-navigation a.current,
+.tsd-page-navigation a.current {
+  background-color: var(--menu-item-active-bg);
+}
+.container {
+  padding: 0;
+}
+.tsd-page-toolbar,
+.tsd-generator {
   border: 0;
 }
+.tsd-generator {
+  padding: 0;
+  line-height: 40px;
+  height: 40px;
+  background: var(--color-background-secondary);
+}
+.tsd-generator > p {
+  max-width: 1700px;
+  margin: auto;
+}
 .container-main {
-  padding: 2.5rem 0 0;
-  height: 100vh;
-  box-sizing: border-box;
-  overflow: hidden;
+  margin: 0 auto;
+  min-height: calc(100vh - 80px);
 }
 .menu-sticky-wrap {
 }
@@ -19,6 +48,7 @@
 .tsd-navigation.settings {
   display: inline-block;
   vertical-align: top;
+  margin: 0;
 }
 .tsd-navigation.settings .tsd-index-accordion {
   position: relative;
@@ -28,6 +58,10 @@
   vertical-align: top;
   align-items: center;
   margin-left: 1rem;
+}
+.tsd-navigation a {
+  display: flex;
+  width: auto;
 }
 .col-menu,
 .col-content {
@@ -46,7 +80,6 @@
   padding-top: 1rem;
   padding-left: 1rem;
   padding-right: 1rem;
-  overflow-x: hidden;
   flex: 1;
 }
 .menu-item-desc {
@@ -93,4 +126,25 @@ code.tsd-tag {
     display: inline-block;
     text-overflow: ellipsis;
   }
+}
+@media (min-width: 1200px) {
+  .page-menu,
+  .site-menu {
+    max-height: calc(100vh - 60px);
+    padding: 10px 0 10px 10px;
+    top: 40px;
+  }
+  .container-main.empty-page-menu {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3.5fr) minmax(0, 0);
+    grid-template-areas: 'sidebar content';
+  }
+}
+@media (min-width: 770px) and (max-width: 1399px) {
+  .col-sidebar {
+    max-height: calc(100vh - 60px);
+    top: 40px;
+  }
+}
+#tsd-search .title {
+  padding-left: 10px;
 }
