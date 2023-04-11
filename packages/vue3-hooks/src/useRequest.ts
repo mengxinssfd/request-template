@@ -2,11 +2,10 @@ import { reactive, toRefs, isReactive, watch, isRef, ComputedRef, Ref, ToRefs } 
 import type { FN, AllOptions, AliasOptions, DataDriverOptions, State } from './types';
 
 /**
- * vue3 请求hooks
- * ---
+ * vue3 请求hooks @overload `手动请求`
+ *
  * 不依赖RequestTemplate，可独立使用
  *
- * @overload 手动请求
  *
  * @example
  * ```ts
@@ -63,11 +62,11 @@ export function useRequest<
   setInnerRequest<T extends (...args: unknown[]) => void>(cb: (req: T) => T): void;
 } & Record<ALIAS, (...args: Parameters<REQ>) => void>;
 /**
- * vue3 请求hooks
- * ---
+ * vue3 请求hooks @overload `数据驱动`
+ *
  * 不依赖RequestTemplate，可独立使用
  *
- * @overload 数据驱动
+ *
 
  * @example
  * ```ts

@@ -54,7 +54,7 @@ export function useRequest<
           setLoading(false);
         });
     },
-    [requestFn],
+    [requestFn, defaultData],
   );
 
   return { data, loading, error, request };
