@@ -1,15 +1,3 @@
-.col-menu {
-  flex-basis: 20rem;
-}
-.tsd-navigation.primary ul li li a {
-  margin-left: 0.5rem;
-}
-@media (min-width: 1024px) {
-  .tsd-navigation.modules-total-0 {
-    display: none;
-  }
-}
-.modules > .selectedmodule > a,
-.modules > .currentmodule > a {
+.tsd-generator {
   display: none;
 }

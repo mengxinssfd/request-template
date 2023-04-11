@@ -1,6 +1,6 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPointStrategy": "packages",
+  "entryPointStrategy": "legacy-packages",
   "htmlLang": "zh-CN",
   "customCss": "./typedoc.theme.css",
   "includeVersion": true,
@@ -10,7 +10,9 @@
     "packages/vue3-hooks",
     "packages/wechat"
   ],
-  "sort": ["static-first", "kind","enum-value-ascending"],
+  "plugin": ["@mxssfd/typedoc-theme"],
+  "theme": "my-theme",
+  "sort": ["static-first", "kind", "enum-value-ascending"],
   "out": "./docs-html",
   "categorizeByGroup": false,
   "searchCategoryBoosts": {
