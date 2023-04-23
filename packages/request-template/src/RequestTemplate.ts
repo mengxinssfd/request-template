@@ -458,7 +458,7 @@ export abstract class RequestTemplate<CC extends CustomConfig = CustomConfig> {
     ) => {
       const requestConfig: AxiosRequestConfig = { method };
 
-      if (method === 'get') requestConfig.params = data;
+      if (method.toLowerCase() === 'get') requestConfig.params = data;
       else requestConfig.data = data;
 
       requestConfig.url = urlPrefix + url;

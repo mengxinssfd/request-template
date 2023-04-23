@@ -64,4 +64,16 @@ describe('use', () => {
     const res2 = await post<AxiosRequestConfig>({ url: 'test', data: { b: 2 } });
     expect(res2.data.data).toEqual({ a: 1, b: 2 });
   });
+
+  test('simplifyMethodFactory params', async () => {
+    const get = req.simplifyMethodFactory('get');
+    // console.log((axios.create({ url: 'test' }) as any)(1, 2, 3), Req);
+    const res = await get<any>('/use', { a: 1 });
+    expect(res.data.params).toEqual({ a: 1 });
+
+    const get2 = req.simplifyMethodFactory('GET');
+    // console.log((axios.create({ url: 'test' }) as any)(1, 2, 3), Req);
+    const res2 = await get2<any>('/use', { a: 1 });
+    expect(res2.data.params).toEqual({ a: 1 });
+  });
 });
