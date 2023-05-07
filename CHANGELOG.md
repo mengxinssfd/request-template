@@ -1,3 +1,17 @@
+## [2.2.2](https://github.com/mengxinssfd/request-template/compare/v2.2.1...v2.2.2) (2023-05-07)
+
+
+### Features
+
+* **vue3-hooks:** 添加loading.immediate ([85796f9](https://github.com/mengxinssfd/request-template/commit/85796f966bdf7077dcec2231b00fbe2b4635fc67))
+
+
+### BREAKING CHANGES
+
+* **vue3-hooks:** loadingThreshold改为loading.threshold
+
+
+
 ## [2.2.1](https://github.com/mengxinssfd/request-template/compare/v2.2.0...v2.2.1) (2023-05-07)
 
 

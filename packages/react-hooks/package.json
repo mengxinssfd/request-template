@@ -1,6 +1,6 @@
 {
   "name": "@request-template/react-hooks",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "请求模板封装-react-hooks",
   "main": "dist/request-template-react-hooks.esm-bundler.js",
   "types": "dist/request-template-react-hooks.d.ts",
