@@ -633,4 +633,28 @@ describe('useRequest', function () {
       ]);
     });
   });
+  test('loadingThreshold', async () => {
+    const { data, loading, requestFn } = useRequest(mockRequest, {
+      requestAlias: 'requestFn',
+      loadingThreshold: 100,
+    });
+
+    const _data = { a: 1, b: '2' };
+    requestFn(_data);
+    // 请求手动调用后，data为null，loading是true，请求被调用过
+    expect(data.value).toBe(null);
+    expect(loading.value).toBeTruthy();
+    expect(mockRequest.mock.calls.length).toBe(1);
+    expect(mockRequest.mock.calls[0][0]).toBe(_data);
+
+    await sleep(20);
+    expect(data.value).toEqual(_data);
+    expect(loading.value).toBeTruthy();
+    expect(mockRequest.mock.calls.length).toBe(1);
+
+    await sleep(100);
+    expect(data.value).toEqual(_data);
+    expect(loading.value).toBeFalsy();
+    expect(mockRequest.mock.calls.length).toBe(1);
+  });
 });
