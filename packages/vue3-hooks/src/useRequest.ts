@@ -114,20 +114,26 @@ export function useRequest<
   setInnerRequest<T extends (...args: unknown[]) => void>(cb: (req: T) => T): void;
 };
 export function useRequest(requestFn: FN, options = {}, defaultData = null) {
+  const {
+    requestAlias = 'request',
+    immediate = false,
+    data,
+    loading: _loadingOptions = {},
+  } = options as AllOptions;
+
+  const loadingOptions: Required<Required<AllOptions>['loading']> = {
+    threshold: 0,
+    immediate: false,
+    ..._loadingOptions,
+  };
+
   const state = reactive({
-    loading: false,
+    loading: loadingOptions.immediate,
     data: defaultData,
     error: null,
   });
 
   const refs = toRefs(state);
-
-  const {
-    requestAlias = 'request',
-    immediate = false,
-    data,
-    loadingThreshold = 0,
-  } = options as AllOptions;
 
   let request = (...args: unknown[]) => {
     // computed变量不能JSON.stringfy
@@ -145,8 +151,8 @@ export function useRequest(requestFn: FN, options = {}, defaultData = null) {
       )
       .finally(() => {
         const timeDiff = Date.now() - start;
-        if (timeDiff > loadingThreshold) state.loading = false;
-        else setTimeout(() => (state.loading = false), loadingThreshold - timeDiff);
+        if (timeDiff > loadingOptions.threshold) state.loading = false;
+        else setTimeout(() => (state.loading = false), loadingOptions.threshold - timeDiff);
       });
   };
 

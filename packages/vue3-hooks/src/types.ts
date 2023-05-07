@@ -13,8 +13,12 @@ export interface State<T extends FN, D, TD = Awaited<ReturnType<T>>['data']> {
 }
 
 export interface CommonOptions {
-  // 毫秒值；loading必须显示的时间
-  loadingThreshold?: number;
+  loading?: {
+    // 立即把loading设置为true
+    immediate?: boolean;
+    // 毫秒值；loading必须显示的时间
+    threshold?: number;
+  };
 }
 
 export interface AliasOptions<A> extends CommonOptions {
