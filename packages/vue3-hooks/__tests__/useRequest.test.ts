@@ -633,28 +633,53 @@ describe('useRequest', function () {
       ]);
     });
   });
-  test('loadingThreshold', async () => {
-    const { data, loading, requestFn } = useRequest(mockRequest, {
-      requestAlias: 'requestFn',
-      loadingThreshold: 100,
+  describe('loading', () => {
+    test('threshold', async () => {
+      const { data, loading, requestFn } = useRequest(mockRequest, {
+        requestAlias: 'requestFn',
+        loading: { threshold: 100 },
+      });
+
+      // 初始时data值为null，loading还是false，请求也没调用过
+      expect(data.value).toBe(null);
+      expect(loading.value).toBeFalsy();
+      expect(mockRequest).not.toBeCalled();
+
+      const _data = { a: 1, b: '2' };
+      requestFn(_data);
+      // 请求手动调用后，data为null，loading是true，请求被调用过
+      expect(data.value).toBe(null);
+      expect(loading.value).toBeTruthy();
+      expect(mockRequest.mock.calls.length).toBe(1);
+      expect(mockRequest.mock.calls[0][0]).toBe(_data);
+
+      await sleep(20);
+      expect(data.value).toEqual(_data);
+      expect(loading.value).toBeTruthy();
+      expect(mockRequest.mock.calls.length).toBe(1);
+
+      await sleep(100);
+      expect(data.value).toEqual(_data);
+      expect(loading.value).toBeFalsy();
+      expect(mockRequest.mock.calls.length).toBe(1);
     });
+    test('immediate', async () => {
+      const { loading, requestFn } = useRequest(mockRequest, {
+        requestAlias: 'requestFn',
+        loading: { immediate: true },
+      });
 
-    const _data = { a: 1, b: '2' };
-    requestFn(_data);
-    // 请求手动调用后，data为null，loading是true，请求被调用过
-    expect(data.value).toBe(null);
-    expect(loading.value).toBeTruthy();
-    expect(mockRequest.mock.calls.length).toBe(1);
-    expect(mockRequest.mock.calls[0][0]).toBe(_data);
+      // 立即把loading改为true
+      expect(loading.value).toBeTruthy();
 
-    await sleep(20);
-    expect(data.value).toEqual(_data);
-    expect(loading.value).toBeTruthy();
-    expect(mockRequest.mock.calls.length).toBe(1);
+      const _data = { a: 1, b: '2' };
+      requestFn(_data);
+      // 请求手动调用后，loading是true
+      expect(loading.value).toBeTruthy();
 
-    await sleep(100);
-    expect(data.value).toEqual(_data);
-    expect(loading.value).toBeFalsy();
-    expect(mockRequest.mock.calls.length).toBe(1);
+      await sleep(20);
+      // 请求完成后，loading是false
+      expect(loading.value).toBeFalsy();
+    });
   });
 });
