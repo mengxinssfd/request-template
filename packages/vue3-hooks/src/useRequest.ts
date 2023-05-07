@@ -122,11 +122,19 @@ export function useRequest(requestFn: FN, options = {}, defaultData = null) {
 
   const refs = toRefs(state);
 
+  const {
+    requestAlias = 'request',
+    immediate = false,
+    data,
+    loadingThreshold = 0,
+  } = options as AllOptions;
+
   let request = (...args: unknown[]) => {
     // computed变量不能JSON.stringfy
     args = args.map((item) => (isRef(item) ? item.value : item));
     state.loading = true;
     state.error = null;
+    const start = Date.now();
     requestFn(...args)
       .then(
         (res) => (state.data = res.data),
@@ -136,11 +144,11 @@ export function useRequest(requestFn: FN, options = {}, defaultData = null) {
         },
       )
       .finally(() => {
-        state.loading = false;
+        const timeDiff = Date.now() - start;
+        if (timeDiff > loadingThreshold) state.loading = false;
+        else setTimeout(() => (state.loading = false), loadingThreshold - timeDiff);
       });
   };
-
-  const { requestAlias = 'request', immediate = false, data } = options as AllOptions;
 
   // 数据驱动
   if (data) {

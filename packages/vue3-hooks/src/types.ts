@@ -12,10 +12,15 @@ export interface State<T extends FN, D, TD = Awaited<ReturnType<T>>['data']> {
   error: any | null;
 }
 
-export interface AliasOptions<A> {
+export interface CommonOptions {
+  // 毫秒值；loading必须显示的时间
+  loadingThreshold?: number;
+}
+
+export interface AliasOptions<A> extends CommonOptions {
   requestAlias?: A;
 }
-export interface DataDriverOptions<D> {
+export interface DataDriverOptions<D> extends CommonOptions {
   immediate?: boolean;
   data: D;
 }
@@ -23,7 +28,7 @@ export interface DataDriverOptions<D> {
 /**
  * Options中所有的选项
  */
-export interface AllOptions {
+export interface AllOptions extends CommonOptions {
   requestAlias?: string;
   immediate?: boolean;
   data?: unknown[];
