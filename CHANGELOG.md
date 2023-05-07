@@ -1,3 +1,19 @@
+## [2.2.1](https://github.com/mengxinssfd/request-template/compare/v2.2.0...v2.2.1) (2023-05-07)
+
+
+### Bug Fixes
+
+* simplifyMethodFactory method为大写的get时，data不会转换为params ([6bdad60](https://github.com/mengxinssfd/request-template/commit/6bdad6050bdba72a449c89b96627221f308acf0b))
+* **vue3-hooks:** 请求失败时未为data设置为默认值 ([324669c](https://github.com/mengxinssfd/request-template/commit/324669c2dfd0afe6fd40c8f471e0e3f8162fe4b7))
+
+
+### Features
+
+* **react-hooks:** 新增 ([109c497](https://github.com/mengxinssfd/request-template/commit/109c497af02d0ce8566de0c2b606ee65f159cede))
+* **vue3-hooks:** 添加loadingThreshold阈值，设置后需要在请求成功一段时间后loading才设置为false，不和data同步 ([8d65a18](https://github.com/mengxinssfd/request-template/commit/8d65a1826248c92d1d1e761e0086c5f6c0103857))
+
+
+
 # [2.2.0](https://github.com/mengxinssfd/request-template/compare/v2.1.0...v2.2.0) (2023-03-15)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@request-template/wechat",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "请求模板封装-微信版",
   "main": "dist/request-template-wechat.esm-bundler.js",
   "types": "dist/request-template-wechat.d.ts",
@@ -39,7 +39,7 @@
   "homepage": "https://github.com/mengxinssfd/request-template#readme",
   "devDependencies": {
     "axios": "^0.26.1",
-    "request-template": "2.2.0"
+    "request-template": "2.2.1"
   },
   "peerDependencies": {
     "request-template": "^2.0.0"
