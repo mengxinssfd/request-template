@@ -1,3 +1,12 @@
+## [2.2.3](https://github.com/mengxinssfd/request-template/compare/v2.2.2...v2.2.3) (2023-05-14)
+
+
+### Features
+
+* **vue3-hooks:** 内部request返回promise，使其在可以在外部调用时可以await ([8156289](https://github.com/mengxinssfd/request-template/commit/8156289e474e9a85745607fa5064eb1720a10cee))
+
+
+
 ## [2.2.2](https://github.com/mengxinssfd/request-template/compare/v2.2.1...v2.2.2) (2023-05-07)
 
 
