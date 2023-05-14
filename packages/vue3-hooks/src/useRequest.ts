@@ -60,7 +60,7 @@ export function useRequest<
   defaultData?: DF,
 ): ToRefs<State<REQ, DF>> & {
   setInnerRequest<T extends (...args: unknown[]) => void>(cb: (req: T) => T): void;
-} & Record<ALIAS, (...args: Parameters<REQ>) => void>;
+} & Record<ALIAS, (...args: Parameters<REQ>) => Promise<void>>;
 /**
  * vue3 请求hooks @overload `数据驱动`
  *
@@ -127,7 +127,7 @@ export function useRequest(requestFn: FN, options = {}, defaultData = null) {
     ..._loadingOptions,
   };
 
-  const state = reactive({
+  const state = reactive<State<FN, typeof defaultData>>({
     loading: loadingOptions.immediate,
     data: defaultData,
     error: null,
@@ -135,13 +135,13 @@ export function useRequest(requestFn: FN, options = {}, defaultData = null) {
 
   const refs = toRefs(state);
 
-  let request = (...args: unknown[]) => {
+  let request = (...args: unknown[]): Promise<void> => {
     // computed变量不能JSON.stringfy
     args = args.map((item) => (isRef(item) ? item.value : item));
     state.loading = true;
     state.error = null;
     const start = Date.now();
-    requestFn(...args)
+    return requestFn(...args)
       .then(
         (res) => (state.data = res.data),
         (err) => {
