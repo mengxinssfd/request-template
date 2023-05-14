@@ -682,4 +682,19 @@ describe('useRequest', function () {
       expect(loading.value).toBeFalsy();
     });
   });
+  test('request promise', async () => {
+    const { loading, requestFn } = useRequest(mockRequest, {
+      requestAlias: 'requestFn',
+      loading: { immediate: true },
+    });
+
+    // 立即把loading改为true
+    expect(loading.value).toBeTruthy();
+
+    const _data = { a: 1, b: '2' };
+    await requestFn(_data);
+
+    // 请求完成后，loading是false
+    expect(loading.value).toBeFalsy();
+  });
 });
