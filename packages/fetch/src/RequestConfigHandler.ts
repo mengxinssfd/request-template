@@ -1,5 +1,5 @@
 import type { AxiosRequestConfig } from 'axios';
-import { isUrl } from '@mxssfd/core';
+import { isUrl } from '@tool-pack/basic';
 
 /**
  * 请求配置处理器
