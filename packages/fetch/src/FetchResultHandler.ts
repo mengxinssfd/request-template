@@ -1,4 +1,5 @@
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { castArray } from '@tool-pack/basic';
 
 /**
  * fetch结果处理器
@@ -49,10 +50,17 @@ export class FetchResultHandler {
 
     const res = await responsePromise;
 
+    const transformers = castArray(cfg.transformResponse || []);
+
+    const headers = this.handleHeaders(res);
+    const data = transformers.reduce((p, c) => {
+      return c(p, headers);
+    }, await this.handleData(res));
+
     return {
       status: res.status,
-      data: await this.handleData(res),
-      headers: this.handleHeaders(res),
+      data: data,
+      headers: headers,
       config: cfg,
     } as AxiosResponse;
   }
