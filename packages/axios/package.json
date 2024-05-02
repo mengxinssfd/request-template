@@ -9,9 +9,13 @@
     ".": {
       "import": {
         "node": "./dist/axios-request-template.cjs.js",
-        "default": "./dist/axios-request-template.esm-bundler.js"
+        "default": "./dist/axios-request-template.esm-bundler.js",
+        "types": "./dist/axios-request-template.d.ts"
       },
-      "require": "./dist/axios-request-template.cjs.js"
+      "require": {
+        "default": "./dist/axios-request-template.cjs.js",
+        "types": "./dist/axios-request-template.d.ts"
+      }
     }
   },
   "buildOptions": {

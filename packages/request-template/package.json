@@ -9,9 +9,13 @@
     ".": {
       "import": {
         "node": "./dist/request-template.cjs.js",
-        "default": "./dist/request-template.esm-browser.js"
+        "default": "./dist/request-template.esm-browser.js",
+        "types": "./dist/request-template.d.ts"
       },
-      "require": "./dist/request-template.cjs.js"
+      "require": {
+        "default": "./dist/request-template.cjs.js",
+        "types": "./dist/request-template.d.ts"
+      }
     }
   },
   "buildOptions": {
