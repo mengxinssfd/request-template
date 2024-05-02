@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "request-template-monorepo",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "请求模板封装",
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",

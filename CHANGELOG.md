@@ -1,3 +1,12 @@
+## [2.2.4](https://github.com/mengxinssfd/request-template/compare/v2.2.3...v2.2.4) (2024-05-02)
+
+
+### Bug Fixes
+
+* 在 5.0 后不识别类型导入 ([984e22b](https://github.com/mengxinssfd/request-template/commit/984e22b6a4c2e8cf1d2758e61611c619232a19f4))
+
+
+
 ## [2.2.3](https://github.com/mengxinssfd/request-template/compare/v2.2.2...v2.2.3) (2023-05-14)
 
 

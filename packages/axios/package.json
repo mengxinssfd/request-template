@@ -1,6 +1,6 @@
 {
   "name": "@request-template/axios",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "axios请求模板封装",
   "main": "dist/axios-request-template.cjs.js",
   "module": "dist/axios-request-template.esm-bundler.js",
@@ -56,7 +56,7 @@
   "homepage": "https://github.com/mengxinssfd/request-template#readme",
   "devDependencies": {
     "axios": "^0.26.1",
-    "request-template": "2.2.3"
+    "request-template": "2.2.4"
   },
   "peerDependencies": {
     "axios": ">=0.26.1",
